@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ContoursForm</class>
+ <widget class="QWidget" name="ContoursForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>685</width>
+    <height>589</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Окно контуров изображений</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="2" column="0" colspan="2">
+    <widget class="QPushButton" name="combineImagesByReferencePointsButton">
+     <property name="text">
+      <string>Совместить изображения по реперным точкам</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2">
+    <widget class="QToolButton" name="helpButton">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="cursor">
+      <cursorShape>WhatsThisCursor</cursorShape>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;В данном окне выводятся контура изображений эталонной и текущей деталей. &lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Имеется возможность автоматически совместить изображения по реперным точкам, если они были указаны для обоих изображений. &lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;По умолчанию контур эталонной детали не выводится, выводятся только контура допусков +/-. Вывод контура эталонной детали настраивается с помощью переключателя на панели &amp;quot;Настройки&amp;quot;. Для того, чтобы можно было посчитать контуры допусков, для изображения эталонной детали нужно указать точки внутреннего остова(в главном окне). Если эти точки не были заданы, то контура допусков выводится не будут.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>?</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0" colspan="3">
+    <widget class="QGroupBox" name="settingsGroupBox">
+     <property name="title">
+      <string>Настройки</string>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QCheckBox" name="etalonContourCheckBox">
+        <property name="text">
+         <string>Показывать контур эталона</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="cannyThres1Label">
+        <property name="text">
+         <string>Порог 1 для детектора Кенни</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSpinBox" name="cannyThres1SpinBox"/>
+      </item>
+      <item>
+       <widget class="QLabel" name="cannyThres2Label">
+        <property name="text">
+         <string>Порог 2 для детектора Кенни</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSpinBox" name="cannyThres2SpinBox"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="3">
+    <widget class="ImageGraphicsView" name="graphicsView"/>
+   </item>
+   <item row="0" column="0" colspan="3">
+    <widget class="QLabel" name="label">
+     <property name="font">
+      <font>
+       <family>Times New Roman</family>
+       <pointsize>12</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="layoutDirection">
+      <enum>Qt::LeftToRight</enum>
+     </property>
+     <property name="text">
+      <string>Контуры изображений</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ImageGraphicsView</class>
+   <extends>QGraphicsView</extends>
+   <header>imagewindow.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
