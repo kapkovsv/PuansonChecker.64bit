@@ -5,7 +5,7 @@
 #include <QMessageBox>
 
 CurrentFormGraphicsScene::CurrentFormGraphicsScene(CurrentForm *owner_window):
-    window(owner_window), scene_context_menu(window), previousX(0), previousY(0), left_button_down(false)
+    previousX(0), previousY(0), left_button_down(false), window(owner_window), scene_context_menu(window)
 {
     QAction *viewing_mode_action;
     QAction *editing_mode_action;
@@ -179,19 +179,11 @@ void CurrentForm::moveImage(const qreal dx, const qreal dy)
 {
     QGraphicsScene *scene = ui->graphicsView->scene();
 
-    qDebug() << "in " << __PRETTY_FUNCTION__ << "main window line " << __LINE__;
-    qDebug() << "scene " << scene;
-
-    if(scene)
-        qDebug() << "scene->items count " << scene->items().count();
-
     QGraphicsPixmapItem *pixmap_item = scene == NULL ? NULL : qgraphicsitem_cast<QGraphicsPixmapItem *>(scene->items().at(scene->items().count()-1));
-qDebug() << "in " << __PRETTY_FUNCTION__ << "current window line " << __LINE__;
-qDebug() << "pixmap_item " << pixmap_item;
     if(pixmap_item)
     {
         qreal new_x, new_y;
-qDebug() << "in " << __PRETTY_FUNCTION__ << "current window line " << __LINE__;
+
         new_x = image_x - dx;
         new_y = image_y - dy;
 
@@ -199,17 +191,17 @@ qDebug() << "in " << __PRETTY_FUNCTION__ << "current window line " << __LINE__;
             new_x = 1;
         else if(new_x >= pixmap_item->pixmap().width() - ui->graphicsView->width())
             new_x = pixmap_item->pixmap().width() - ui->graphicsView->width();
-qDebug() << "in " << __PRETTY_FUNCTION__ << "current window line " << __LINE__;
+
         if(new_y <= 0)
             new_y = 1;
         else if(new_y >= pixmap_item->pixmap().height() - ui->graphicsView->height())
             new_y = pixmap_item->pixmap().height() - ui->graphicsView->height();
-qDebug() << "in " << __PRETTY_FUNCTION__ << "current window line " << __LINE__;
+
         ui->graphicsView->centerOn(new_x + ui->graphicsView->width() / 2, new_y + ui->graphicsView->height() / 2);
-qDebug() << "in " << __PRETTY_FUNCTION__ << "current window line " << __LINE__;
+
         image_x = new_x;
         image_y = new_y;
-    }qDebug() << "in " << __PRETTY_FUNCTION__ << "current window line " << __LINE__;
+    }
 }
 
 void CurrentForm::drawImage(const QImage &img)
@@ -233,45 +225,38 @@ void CurrentForm::removeReferencePoints()
 
 void CurrentForm::drawReferencePoints()
 {
-    qDebug() << "CurrentForm::drawReferencePoints line " << __LINE__;
     if(checker->getCurrent().isReferencePointsAreSet())
     {
-        qreal R = 12.0;
-
         QPoint reference_point1;
         QPoint reference_point2;
-qDebug() << "CurrentForm::drawReferencePoints line " << __LINE__;
         QGraphicsTextItem *text_item;
 
         checker->getCurrent().getReferencePoints(reference_point1, reference_point2);
-qDebug() << "CurrentForm::drawReferencePoints line " << __LINE__;
-        ui->graphicsView->scene()->addEllipse(reference_point1.x() - R, reference_point1.y() - R, R*2, R*2, QPen(Qt::black, 1), QBrush(Qt::red, Qt::Dense5Pattern));
+
+        ui->graphicsView->scene()->addEllipse(reference_point1.x() - GRAPHICAL_POINT_RADIUS, reference_point1.y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::red, Qt::Dense5Pattern));
         text_item = ui->graphicsView->scene()->addText("Реперная точка 1", QFont("Arial", 10, QFont::Bold));
         text_item->setDefaultTextColor(Qt::red);
-        text_item->setPos(reference_point1.x() + R + 3, reference_point1.y() - R - 3);
-qDebug() << "CurrentForm::drawReferencePoints line " << __LINE__;
-        ui->graphicsView->scene()->addEllipse(reference_point2.x() - R, reference_point2.y() - R, R*2, R*2, QPen(Qt::black, 1), QBrush(Qt::red, Qt::Dense5Pattern));
+        text_item->setPos(reference_point1.x() + GRAPHICAL_POINT_RADIUS + 3, reference_point1.y() - GRAPHICAL_POINT_RADIUS - 3);
+
+        ui->graphicsView->scene()->addEllipse(reference_point2.x() - GRAPHICAL_POINT_RADIUS, reference_point2.y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::red, Qt::Dense5Pattern));
         text_item = ui->graphicsView->scene()->addText("Реперная точка 2", QFont("Arial", 10, QFont::Bold));
         text_item->setDefaultTextColor(Qt::red);
-        text_item->setPos(reference_point2.x() - R - 60, reference_point2.y() + R + 3);
-        qDebug() << "CurrentForm::drawReferencePoints line " << __LINE__;
-    }qDebug() << "CurrentForm::drawReferencePoints line " << __LINE__;
+        text_item->setPos(reference_point2.x() - GRAPHICAL_POINT_RADIUS - 60, reference_point2.y() + GRAPHICAL_POINT_RADIUS + 3);
+    }
 }
 
 void CurrentForm::mousePressEvent(const QPoint &p)
 {
-    qreal R = 12.0;
-
     switch(calibration_mode)
     {
         case REFERENCE_POINT_1:
         {
             reference_point1 = p;
 
-            ui->graphicsView->scene()->addEllipse(p.x() - R, p.y() - R, R*2, R*2, QPen(Qt::black, 1), QBrush(Qt::red, Qt::Dense5Pattern));
+            ui->graphicsView->scene()->addEllipse(p.x() - GRAPHICAL_POINT_RADIUS, p.y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::red, Qt::Dense5Pattern));
             QGraphicsTextItem *text_item = ui->graphicsView->scene()->addText("Реперная точка 1", QFont("Arial", 10, QFont::Bold));
             text_item->setDefaultTextColor(Qt::red);
-            text_item->setPos(p.x() + R + 3, p.y() - R - 3);
+            text_item->setPos(p.x() + GRAPHICAL_POINT_RADIUS + 3, p.y() - GRAPHICAL_POINT_RADIUS - 3);
         }
         break;
         case REFERENCE_POINT_2:
@@ -279,10 +264,10 @@ void CurrentForm::mousePressEvent(const QPoint &p)
             reference_point2 = p;
             checker->getCurrent().setReferencePoints(reference_point1, reference_point2);
 
-            ui->graphicsView->scene()->addEllipse(p.x() - R, p.y() - R, R*2, R*2, QPen(Qt::black, 1), QBrush(Qt::red, Qt::Dense5Pattern));
+            ui->graphicsView->scene()->addEllipse(p.x() - GRAPHICAL_POINT_RADIUS, p.y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::red, Qt::Dense5Pattern));
             QGraphicsTextItem *text_item = ui->graphicsView->scene()->addText("Реперная точка 2", QFont("Arial", 10, QFont::Bold));
             text_item->setDefaultTextColor(Qt::red);
-            text_item->setPos(p.x() - R - 60, p.y() + R + 3);
+            text_item->setPos(p.x() - GRAPHICAL_POINT_RADIUS - 60, p.y() + GRAPHICAL_POINT_RADIUS + 3);
         }
         break;
         case NO_CALIBRATION:
@@ -296,9 +281,14 @@ void CurrentForm::mouseReleaseEvent(const QPoint &p)
     Q_UNUSED(p)
 
     if(calibration_mode == REFERENCE_POINT_1)
+    {
         setCalibrationMode(REFERENCE_POINT_2);
+    }
     else if(calibration_mode == REFERENCE_POINT_2)
+    {
         setCalibrationMode(NO_CALIBRATION);
+        PuansonChecker::getInstance()->updateContoursImage();
+    }
 }
 
 void CurrentForm::setLabel2Text(const QString &text)
@@ -308,41 +298,34 @@ void CurrentForm::setLabel2Text(const QString &text)
 
 void CurrentForm::keyPressEvent(QKeyEvent *event)
 {
-    switch(event->key())
+    if(image_move_mode == IMAGE_MOVE_EDITING)
     {
-        case Qt::Key_Left:
-            if(image_move_mode == IMAGE_MOVE_EDITING)
-                checker->shiftCurrentImage(-1, 0);
-                checker->drawCurrentImage();
-                checker->drawContoursImage();
-            break;
-        case Qt::Key_Up:
-            if(image_move_mode == IMAGE_MOVE_EDITING)
-                checker->shiftCurrentImage(0, -1);
-                checker->drawCurrentImage();
-                checker->drawContoursImage();
-            break;
-        case Qt::Key_Right:
-            if(image_move_mode == IMAGE_MOVE_EDITING)
-                checker->shiftCurrentImage(1, 0);
-                checker->drawCurrentImage();
-                checker->drawContoursImage();
-            break;
-        case Qt::Key_Down:
-            if(image_move_mode == IMAGE_MOVE_EDITING)
-                checker->shiftCurrentImage(0, 1);
-                checker->drawCurrentImage();
-                checker->drawContoursImage();
-            break;
-        case Qt::Key_Escape:
-            if(calibration_mode != NO_CALIBRATION)
-            {
-                removeReferencePoints();
-                setCalibrationMode(NO_CALIBRATION);
-            }
-            break;
-        default:
-            break;
+        switch(event->key())
+        {
+            case Qt::Key_Left:
+                    checker->shiftCurrentImage(-1, 0);
+                break;
+            case Qt::Key_Up:
+                    checker->shiftCurrentImage(0, -1);
+                break;
+            case Qt::Key_Right:
+                    checker->shiftCurrentImage(1, 0);
+                break;
+            case Qt::Key_Down:
+                    checker->shiftCurrentImage(0, 1);
+                break;
+            default:
+                break;
+        }
+
+        checker->drawCurrentImage();
+        checker->drawContoursImage();
+    }
+    else if(calibration_mode != NO_CALIBRATION && event->key() == Qt::Key_Escape)
+    {
+        removeReferencePoints();
+        drawReferencePoints();
+        setCalibrationMode(NO_CALIBRATION);
     }
 }
 
@@ -381,10 +364,8 @@ void CurrentForm::cameraConnectionStatusChangedSlot(bool connected)
 
 void CurrentForm::loadImageFinished()
 {
-    qDebug() << "CurrentForm::loadImageFinished line " << __LINE__;
     if(!ui->shotAndLoadButton->isEnabled())
         ui->shotAndLoadButton->setEnabled(true);
-    qDebug() << "CurrentForm::loadImageFinished line " << __LINE__;
 }
 
 void CurrentForm::setCalibrationMode(CalibrationMode_e mode)
@@ -395,15 +376,16 @@ void CurrentForm::setCalibrationMode(CalibrationMode_e mode)
     {
         case REFERENCE_POINT_1:
             removeReferencePoints();
-            this->ui->label_2->setText("Калибровка. Укажите реперную точку 1.");
+            setLabel2Text("Калибровка. Укажите реперную точку 1.");
             setImageCursor(Qt::CrossCursor);
         break;
         case REFERENCE_POINT_2:
-            this->ui->label_2->setText("Калибровка. Укажите реперную точку 2.");
+            setLabel2Text("Калибровка. Укажите реперную точку 2.");
         break;
         case NO_CALIBRATION:
         default:
-            this->ui->label_2->setText("");
+            setLabel2Text("Файл " + checker->getCurrent().getFilename());
+
             switch(mode)
             {
                 case IMAGE_MOVE_EDITING:
@@ -441,7 +423,5 @@ CurrentForm::CurrentForm(PuansonChecker *checker) :
 
 CurrentForm::~CurrentForm()
 {
-    qDebug() << "in CurrentForm::~CurrentForm line " << __LINE__;
     delete ui;
-    qDebug() << "in CurrentForm::~CurrentForm line " << __LINE__;
 }

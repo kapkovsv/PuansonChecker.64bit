@@ -7,8 +7,9 @@
 #include <QGraphicsView>
 #include <QScrollBar>
 #include <QSlider>
+#include <QKeyEvent>
 
-#include <QDebug>
+#define GRAPHICAL_POINT_RADIUS 12
 
 class PuansonChecker;
 
@@ -100,19 +101,17 @@ class ImageGraphicsView : public QGraphicsView
             ImageGraphicsView *graphics_view = (dynamic_cast<ImageGraphicsView *>(parent()->parent()));
 
             if(graphics_view)
-                graphics_view->slider_wheel_move_flag = true;
+                graphics_view->mouse_wheel_or_key_pressed_flag = true;
 
             QScrollBar::wheelEvent(e);
         }
 
         void keyPressEvent(QKeyEvent *ev)
         {
-            qDebug() << "in " << __PRETTY_FUNCTION__;
-
             ImageGraphicsView *graphics_view = (dynamic_cast<ImageGraphicsView *>(parent()->parent()));
 
             if(graphics_view)
-                graphics_view->slider_wheel_move_flag = true;
+                graphics_view->mouse_wheel_or_key_pressed_flag = true;
 
             QScrollBar::keyPressEvent(ev);
         }
@@ -124,7 +123,7 @@ public:
     ImageGraphicsView(QWidget *parent = Q_NULLPTR):QGraphicsView(parent)
     {
         slider_pressed_flag = false;
-        slider_wheel_move_flag = false;
+        mouse_wheel_or_key_pressed_flag = false;
 
         setVerticalScrollBar(new ImageGraphicsScrollBar(this));
         setHorizontalScrollBar(new ImageGraphicsScrollBar(this));
@@ -133,7 +132,7 @@ public:
     ImageGraphicsView(QGraphicsScene *scene, QWidget *parent = Q_NULLPTR):QGraphicsView(scene, parent)
     {
         slider_pressed_flag = false;
-        slider_wheel_move_flag = false;
+        mouse_wheel_or_key_pressed_flag = false;
 
         setVerticalScrollBar(new ImageGraphicsScrollBar(this));
         setHorizontalScrollBar(new ImageGraphicsScrollBar(this));
@@ -147,17 +146,22 @@ public:
 
     void keyPressEvent(QKeyEvent *event)
     {
-        slider_wheel_move_flag = true;
+        if(
+            event->key() == Qt::Key_Up ||
+            event->key() == Qt::Key_Down ||
+            event->key() == Qt::Key_Right ||
+            event->key() == Qt::Key_Left ||
+            event->key() == Qt::Key_PageUp ||
+            event->key() == Qt::Key_PageDown
+        )
+            mouse_wheel_or_key_pressed_flag = true;
 
         QGraphicsView::keyPressEvent(event);
     }
 
     void scrollContentsBy(int dx, int dy)
     {
-        qDebug() << "in " << __PRETTY_FUNCTION__ << " slider_pressed_flag " << slider_pressed_flag;
-        qDebug() << "in " << __PRETTY_FUNCTION__ << " slider_wheel_move_flag " << slider_wheel_move_flag;
-
-        if(slider_pressed_flag || slider_wheel_move_flag)
+        if(slider_pressed_flag || mouse_wheel_or_key_pressed_flag)
         {
             ImageWindow *window = dynamic_cast<ImageWindow *>(parent());
 
@@ -167,7 +171,7 @@ public:
             if(window)
                 PuansonChecker::getInstance()->moveImages(dx, dy, window, true);
 
-            slider_wheel_move_flag = false;
+            mouse_wheel_or_key_pressed_flag = false;
         }
 
         QGraphicsView::scrollContentsBy(dx, dy);
@@ -175,7 +179,7 @@ public:
 
 private:
     bool slider_pressed_flag;
-    bool slider_wheel_move_flag;
+    bool mouse_wheel_or_key_pressed_flag;
 };
 
 #endif // IMAGEWINDOW_H

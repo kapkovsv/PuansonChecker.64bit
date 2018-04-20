@@ -181,9 +181,7 @@ void SettingsDialog::SettingsDialogAccepted()
     PuansonChecker::getInstance()->getGeneralSettings()->setReferencePointDistancesMkm(distances_array);
 
     for(quint8 angle = 1; angle <= NUMBER_OF_ANGLES; angle++)
-    {qDebug() << "!!!! in " << __PRETTY_FUNCTION__ << "angle " << angle << " distance " << distances_array[angle-1];
         PuansonChecker::getInstance()->getEtalon(angle).setReferencePointDistanceMkm(distances_array[angle-1]);
-    }
 
     PuansonChecker::getInstance()->getGeneralSettings()->saveSettingsToConfigFile();
 

@@ -301,7 +301,7 @@ NKERROR CALLPASCAL CALLBACK DataProc( NKREF ref, LPVOID pInfo, LPVOID pData )
             // If the flag of fRemoveObject in NkMAIDFileInfo structure is true, we should remove this item.
             if ( pFileInfo->fRemoveObject && (pDataInfo->ulType & kNkMAIDDataObjType_Image) )
             {
-                printf("in %s before \g_bFileRemoved = true\n", __FUNCTION__);
+                printf("in %s before g_bFileRemoved = true\n", __FUNCTION__);
                 g_bFileRemoved = true;
             }
         }

@@ -3,18 +3,14 @@
 #include <QGraphicsPixmapItem>
 #include <QMessageBox>
 
-#include <new>
-#include <stdexcept>
-
 void ContoursForm::moveImage(const qreal dx, const qreal dy)
-{qDebug() << "in " << __PRETTY_FUNCTION__ << "main window line " << __LINE__;
-    qDebug() << "ui->graphicsView->scene() " << ui->graphicsView->scene();
+{
     QGraphicsPixmapItem *pixmap_item = ui->graphicsView->scene() ? qgraphicsitem_cast<QGraphicsPixmapItem *>(ui->graphicsView->scene()->items().at(0)) : NULL;
-qDebug() << "in " << __PRETTY_FUNCTION__ << "main window line " << __LINE__;
+
     if(pixmap_item)
     {
         qreal new_x, new_y;
-qDebug() << "in " << __PRETTY_FUNCTION__ << "main window line " << __LINE__;
+
         new_x = image_x - dx;
         new_y = image_y - dy;
 
@@ -27,9 +23,9 @@ qDebug() << "in " << __PRETTY_FUNCTION__ << "main window line " << __LINE__;
             new_y = 1;
         else if(new_y >= pixmap_item->pixmap().height() - ui->graphicsView->height())
             new_y = pixmap_item->pixmap().height() - ui->graphicsView->height();
-qDebug() << "in " << __PRETTY_FUNCTION__ << "main window line " << __LINE__;
+
         ui->graphicsView->centerOn(new_x + ui->graphicsView->width() / 2, new_y + ui->graphicsView->height() / 2);
-qDebug() << "in " << __PRETTY_FUNCTION__ << "main window line " << __LINE__;
+
         image_x = new_x;
         image_y = new_y;
     }
@@ -41,74 +37,41 @@ void ContoursForm::setImageCursor(const QCursor &cursor)
 }
 
 void ContoursForm::drawImage(const QImage &img)
-{qDebug() << "in " << __PRETTY_FUNCTION__ << " line " << __LINE__;
+{
     if(!scene->items().isEmpty())
         scene->clear();
-    qDebug() << "in " << __PRETTY_FUNCTION__ << " line " << __LINE__;
+
     QPixmap pixmap;
-    MEMORYSTATUSEX memory_status;
-    try
+    pixmap = QPixmap::fromImage(img);
+
+    if(pixmap.isNull())
     {
-        qDebug() << "before QPixmap::fromImage";
+        QString memory_string("pixmap is NULL\n\n");
 
+        MEMORYSTATUSEX memory_status;
         ZeroMemory(&memory_status, sizeof(MEMORYSTATUSEX));
         memory_status.dwLength = sizeof(MEMORYSTATUSEX);
-        if (GlobalMemoryStatusEx(&memory_status)) {
-            qDebug() << "!!!total physical memory: " << memory_status.ullTotalPhys / (1024 * 1024) << " MB";
-            qDebug() << "total virtual memory: " << memory_status.ullTotalVirtual / (1024 * 1024) << " MB";
 
-            qDebug() << "availible physical memory: " << memory_status.ullAvailPhys / (1024 * 1024) << " MB";
-            qDebug() << "availible virtual memory: " << memory_status.ullAvailVirtual / (1024 * 1024) << " MB!!!";
-        } else {
-            qDebug() << "Unknown RAM";
-          }
-
-        pixmap = QPixmap::fromImage(img);
-        if(pixmap.isNull())
-            throw std::runtime_error("pixmap is NULL!");
-
-        qDebug() << "after QPixmap::fromImage";
-
-        ZeroMemory(&memory_status, sizeof(MEMORYSTATUSEX));
-        memory_status.dwLength = sizeof(MEMORYSTATUSEX);
-        if (GlobalMemoryStatusEx(&memory_status)) {
-            qDebug() << "!!!total physical memory: " << memory_status.ullTotalPhys / (1024 * 1024) << " MB";
-            qDebug() << "total virtual memory: " << memory_status.ullTotalVirtual / (1024 * 1024) << " MB";
-
-            qDebug() << "availible physical memory: " << memory_status.ullAvailPhys / (1024 * 1024) << " MB";
-            qDebug() << "availible virtual memory: " << memory_status.ullAvailVirtual / (1024 * 1024) << " MB!!!";
-        } else {
-            qDebug() << "Unknown RAM";
-          }
-    }
-   // catch(std::bad_alloc &ex)
-    catch (std::exception const& ex)
-    {
-        QString memory_string("");
-
-        ZeroMemory(&memory_status, sizeof(MEMORYSTATUSEX));
-        memory_status.dwLength = sizeof(MEMORYSTATUSEX);
-        if (GlobalMemoryStatusEx(&memory_status)) {
-
-          memory_string += "total physical memory: " + QString::number(memory_status.ullTotalPhys / (1024 * 1024)) + " MB\n";
-          memory_string += "total virtual memory: " + QString::number(memory_status.ullTotalVirtual / (1024 * 1024)) + " MB\n";
-
-          memory_string += "availible physical memory: " + QString::number(memory_status.ullAvailPhys / (1024 * 1024)) + " MB\n";
-          memory_string += "availible virtual memory: " + QString::number(memory_status.ullAvailVirtual / (1024 * 1024)) + " MB\n";
-        } else {
-          memory_string += "Unknown RAM\n";
-        }
-
-        qDebug() << "in " << __PRETTY_FUNCTION__ << " ex.what() " << ex.what();
-        if(pixmap.isNull())
+        if (GlobalMemoryStatusEx(&memory_status))
         {
-            QMessageBox msgBox;
-            msgBox.setText(memory_string);
-            msgBox.exec();
+            memory_string += "total physical memory: " + QString::number(memory_status.ullTotalPhys / (1024 * 1024)) + " MB\n";
+            memory_string += "total virtual memory: " + QString::number(memory_status.ullTotalVirtual / (1024 * 1024)) + " MB\n";
+
+            memory_string += "availible physical memory: " + QString::number(memory_status.ullAvailPhys / (1024 * 1024)) + " MB\n";
+            memory_string += "availible virtual memory: " + QString::number(memory_status.ullAvailVirtual / (1024 * 1024)) + " MB\n";
         }
+        else
+        {
+            memory_string += "Unknown RAM\n";
+        }
+
+        QMessageBox msgBox;
+        msgBox.setText(memory_string);
+        msgBox.exec();
     }
-    scene->addPixmap(pixmap);qDebug() << "in " << __PRETTY_FUNCTION__ << " line " << __LINE__;
-    ui->graphicsView->setScene(scene);qDebug() << "in " << __PRETTY_FUNCTION__ << " line " << __LINE__;
+
+    scene->addPixmap(pixmap);
+    ui->graphicsView->setScene(scene);
 }
 
 void ContoursForm::etalonContourCheckBoxStateChanged(int state)
@@ -131,8 +94,6 @@ void ContoursForm::cannyThres2SpinBoxValueChanged(int value)
 
 void ContoursForm::combineImagesByReferencePointsButtonPressed()
 {
-    qDebug() << "combine etalon and current images function";
-
     checker->combineImagesByReferencePoints();
     checker->drawCurrentImage();
     checker->drawContoursImage();

@@ -8,6 +8,8 @@
 #include <QtMath>
 #include <vector>
 
+#include <QMessageBox>
+
 #include <QDebug>
 
 PuansonChecker *PuansonChecker::instance = NULL;
@@ -52,9 +54,7 @@ int PuansonChecker::loadImage(ImageType_e image_type, const QString &path, Puans
 PuansonChecker::PuansonChecker(const QApplication *app)
 {
     application = const_cast<QApplication *>(app);
-
     general_settings = new GeneralSettings(CONFIGURATION_FILE);
-
     camera = new PhotoCamera();
 
     CannyThreshold1 = DEFAULT_CANNY_THRES_1;
@@ -107,15 +107,12 @@ PuansonChecker::~PuansonChecker()
 
     delete main_window;
     main_window = NULL;
-qDebug() << "in PuansonChecker::~PuansonChecker line " << __LINE__;
+
     delete current_image_window;
-qDebug() << "in PuansonChecker::~PuansonChecker line " << __LINE__;
     current_image_window = NULL;
-qDebug() << "in PuansonChecker::~PuansonChecker line " << __LINE__;
+
     delete contours_window;
-qDebug() << "in PuansonChecker::~PuansonChecker line " << __LINE__;
     contours_window = NULL;
-qDebug() << "in PuansonChecker::~PuansonChecker line " << __LINE__;
 }
 
 void PuansonChecker::updateContoursImage()
@@ -179,8 +176,8 @@ void PuansonChecker::loadCurrentImage(const QString &path)
             current_image.setImageContour(getContour(current_image));
             current_image.setToleranceFields(0, 0);
         }
-        else
-            qDebug() << "PuansonChecker::loadCurrentImage error, current image!";
+        /*else
+            qDebug() << "PuansonChecker::loadCurrentImage error, current image!";*/
 
         return current_image.getImageType();
     });
@@ -195,24 +192,24 @@ bool PuansonChecker::loadEtalonImage(const quint8 angle, const QString &path)
 
     loading_etalon_angle = angle;
     etalon_puanson_image_ptr = &etalon_puanson_image[angle - 1];
-qDebug() << "in " << __PRETTY_FUNCTION__ << " line " << __LINE__ << " etalon_puanson_image_ptr " << etalon_puanson_image_ptr;
+
     load_image_future = QtConcurrent::run([&, path]() {
-        qDebug() << "in " << __PRETTY_FUNCTION__ << " line " << __LINE__;
+
         if(PuansonChecker::loadImage(ETALON_IMAGE, path, *etalon_puanson_image_ptr) == 0)
         {
             quint16 ext_tolerance_px_array[NUMBER_OF_ANGLES];
             quint16 int_tolerance_px_array[NUMBER_OF_ANGLES];
             quint32 reference_points_distance_array[NUMBER_OF_ANGLES];
-qDebug() << "in " << __PRETTY_FUNCTION__ << " line " << __LINE__;
+
             general_settings->getToleranceFields(ext_tolerance_px_array, int_tolerance_px_array);
             general_settings->getReferencePointDistancesMkm(reference_points_distance_array);
-qDebug() << "in " << __PRETTY_FUNCTION__ << " line " << __LINE__;
+
             etalon_puanson_image_ptr->setToleranceFields(ext_tolerance_px_array[loading_etalon_angle - 1], int_tolerance_px_array[loading_etalon_angle - 1]);
             etalon_puanson_image_ptr->setReferencePointDistanceMkm(reference_points_distance_array[loading_etalon_angle - 1]);
-qDebug() << "in " << __PRETTY_FUNCTION__ << " line " << __LINE__;
-            etalon_contour = getContour(*etalon_puanson_image_ptr);qDebug() << "in " << __PRETTY_FUNCTION__ << " line " << __LINE__;
+
+            etalon_contour = getContour(*etalon_puanson_image_ptr);
         }
-qDebug() << "in " << __PRETTY_FUNCTION__ << " line " << __LINE__;
+
         return ETALON_IMAGE;
     });
 
@@ -290,36 +287,28 @@ void PuansonChecker::moveImages(const int &dx, const int &dy, const ImageWindow 
     if(scroll_event && ignore_scroll_move_image)
         return;
 
-    /*qDebug() << "in " << __PRETTY_FUNCTION__ << " dx " << dx << " dy " << dy;
-    qDebug() << " owner_window " << dynamic_cast<const QWidget *>(owner_window);
-    qDebug() << " main_window " << main_window;
-    qDebug() << " contours_window " << contours_window;
-    qDebug() << " current_image_window " << current_image_window;*/
-
     if(main_window)
-    {qDebug() << "in " << __PRETTY_FUNCTION__ << " main_window  line " << __LINE__;
+    {
         if((!scroll_event || dynamic_cast<const QWidget *>(owner_window) != main_window) && isEtalonImageLoaded(etalon_angle))
             main_window->moveImage(dx, dy);
         else if(scroll_event && dynamic_cast<const QWidget *>(owner_window) == main_window)
             main_window->shiftImageCoords(dx, dy);
-        qDebug() << "in " << __PRETTY_FUNCTION__ << " main_window  line " << __LINE__;
     }
 
     if(current_image_window)
-    {qDebug() << "in " << __PRETTY_FUNCTION__ << " current_image_window  line " << __LINE__;
-        qDebug() << "cond 1 " << (dynamic_cast<const QWidget *>(owner_window) != current_image_window) << " cond 2 " << isCurrentImageLoaded();
+    {
         if((!scroll_event || dynamic_cast<const QWidget *>(owner_window) != current_image_window) && isCurrentImageLoaded())
             current_image_window->moveImage(dx, dy);
         else if(scroll_event && dynamic_cast<const QWidget *>(owner_window) == current_image_window)
-            current_image_window->shiftImageCoords(dx, dy);qDebug() << "in " << __PRETTY_FUNCTION__ << " current_image_window  line " << __LINE__;
+            current_image_window->shiftImageCoords(dx, dy);
     }
 
     if(contours_window)
-    {qDebug() << "in " << __PRETTY_FUNCTION__ << " contours_window  line " << __LINE__;
+    {
         if((!scroll_event || dynamic_cast<const QWidget *>(owner_window) != contours_window) && (!getEtalon(etalon_angle).isEmpty() && isCurrentImageLoaded()))
             contours_window->moveImage(dx, dy);
         else if(scroll_event && dynamic_cast<const QWidget *>(owner_window) == contours_window)
-            contours_window->shiftImageCoords(dx, dy);qDebug() << "in " << __PRETTY_FUNCTION__ << " contours_window  line " << __LINE__;
+            contours_window->shiftImageCoords(dx, dy);
     }
 }
 
@@ -884,9 +873,10 @@ private:
     quint32 internal_tolerance;
 
     Point _top;
-    Point _left;
     Point _right;
     Point _bottom;
+    Point _left;
+
 };
 
     Mat gray_image = Mat(puanson_image.getImage().rows, puanson_image.getImage().cols, CV_8UC1);
@@ -1401,16 +1391,6 @@ qDebug() << "this " << this << "after parallel_for_ " << QTime::currentTime();
         _bottom = cv::Point(inner_skeleton_bottom.x(), inner_skeleton_bottom.y());
         _left = cv::Point(inner_skeleton_left.x(), inner_skeleton_left.y());
 
-       /*_left.y += HORIZONTAL_FIELD_PX;
-         _bottom.y += HORIZONTAL_FIELD_PX;
-         _right.y += HORIZONTAL_FIELD_PX;
-         _top.y += HORIZONTAL_FIELD_PX;
-
-         qDebug() << "in " << __FUNCTION__ << " top " << _top;
-         qDebug() << "in " << __FUNCTION__ << " right " << _right;
-         qDebug() << "in " << __FUNCTION__ << " bottom " << _bottom;
-         qDebug() << "in " << __FUNCTION__ << " left " << _left;*/
-
         line(image_contour, _top, _right, inner_line_color, 3, LINE_AA);
         line(image_contour, _right, _bottom, inner_line_color, 3, LINE_AA);
         line(image_contour, _bottom, _left, inner_line_color, 3, LINE_AA);
@@ -1425,6 +1405,22 @@ qDebug() << "this " << this << "after parallel_for_ " << QTime::currentTime();
     return image_contour;
 }
 
+void PuansonChecker::drawReferencePointOnContoursImage(const QPaintDevice &paint_device, const QPoint &position, const Qt::GlobalColor color, const QString &text)
+{
+    QPainter painter;
+    painter.begin(const_cast<QPaintDevice *>(&paint_device));
+    painter.setPen(QPen(Qt::black, 1));
+    painter.setBrush(QBrush(color, Qt::Dense5Pattern));
+    QRect rect(position.x() - GRAPHICAL_POINT_RADIUS, position.y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2);
+    painter.drawEllipse(rect);
+    painter.setPen(QPen(color, 1));
+    painter.setFont(QFont("Arial", 10, QFont::Bold));
+    painter.drawText(QPointF(position.x() - GRAPHICAL_POINT_RADIUS - 60, position.y() + GRAPHICAL_POINT_RADIUS + 12), text);
+    painter.end();
+}
+
+//#define DRAW_LINES_BETWEEN_REFERENCE_POINS
+
 void PuansonChecker::drawContoursImage()
 {
     using namespace cv;
@@ -1433,23 +1429,65 @@ void PuansonChecker::drawContoursImage()
     if(!(isCurrentImageLoaded() && isEtalonImageLoaded(getEtalonAngle())))
         return;
 
-qDebug() << "in PuansonChecker::drawContoursImage line " << __LINE__;
     Mat current_contour = getCurrent().getImageContour();
     Mat current_contours_mask(current_contour.size(), CV_8UC1);
 
     contours_image.release();
     etalon_contour.copyTo(contours_image);
-qDebug() << "in PuansonChecker::drawContoursImage line " << __LINE__;
+
     cvtColor(current_contour, current_contours_mask, CV_RGB2GRAY);
-    qDebug() << "in PuansonChecker::drawContoursImage line " << __LINE__;
     current_contour.copyTo(contours_image, current_contours_mask);
-    qDebug() << "in PuansonChecker::drawContoursImage line " << __LINE__;
     current_contours_mask.release();
-qDebug() << "in PuansonChecker::drawContoursImage line " << __LINE__;
+
     QImage img(QImage((const unsigned char*)(contours_image.data),
                   contours_image.cols, contours_image.rows,
                   contours_image.step, QImage::Format_RGB888).rgbSwapped());
-qDebug() << "in PuansonChecker::drawContoursImage line " << __LINE__;
+
+    // Рисование реперных точек
+    QPoint etalon_reference_point_1, etalon_reference_point_2;
+    QPoint current_reference_point_1, current_reference_point_2;
+
+    getEtalon(getEtalonAngle()).getReferencePoints(etalon_reference_point_1, etalon_reference_point_2);
+    getCurrent().getReferencePoints(current_reference_point_1, current_reference_point_2);
+
+    if(etalon_reference_point_1 != etalon_reference_point_2)
+    {
+        drawReferencePointOnContoursImage(img, etalon_reference_point_1, Qt::green, QString(etalon_reference_point_1 != current_reference_point_1 ? "Реперная точка 1 эталона" : "Совмещённая реперная точка 1"));
+        drawReferencePointOnContoursImage(img, etalon_reference_point_2, Qt::green, QString(etalon_reference_point_2 != current_reference_point_2 ? "Реперная точка 2 эталона" : "Совмещённая реперная точка 2"));
+
+#if defined(DRAW_LINES_BETWEEN_REFERENCE_POINS)
+        {
+            QPainter painter;
+            painter.begin(dynamic_cast<QPaintDevice *>(&img));
+            painter.setPen(QPen(Qt::green, 3));
+            painter.setBrush(QBrush(Qt::green, Qt::Dense5Pattern));
+            painter.drawLine(reference_point_1, reference_point_2);
+            painter.end();
+        }
+#endif // DRAW_LINES_BETWEEN_REFERENCE_POINS
+    }
+
+    if(current_reference_point_1 != current_reference_point_2)
+    {
+        if(etalon_reference_point_1 != current_reference_point_1)
+            drawReferencePointOnContoursImage(img, current_reference_point_1, Qt::red, QString("Реперная точка 1 текущей детали"));
+
+        if(etalon_reference_point_2 != current_reference_point_2)
+            drawReferencePointOnContoursImage(img, current_reference_point_2, Qt::red, QString("Реперная точка 2 текущей детали"));
+
+#if defined(DRAW_LINES_BETWEEN_REFERENCE_POINS)
+        {
+            QPainter painter;
+            painter.begin(dynamic_cast<QPaintDevice *>(&img));
+            painter.setPen(QPen(Qt::red, 3));
+            painter.setBrush(QBrush(Qt::red, Qt::Dense5Pattern));
+            painter.drawLine(reference_point_1, reference_point_2);
+            painter.end();
+        }
+#endif // DRAW_LINES_BETWEEN_REFERENCE_POINS
+    }
+    ////////////////////////
+
     contours_window->drawImage(img);
 }
 
@@ -1506,6 +1544,8 @@ void PuansonChecker::rotateCurrentImage(const double angle)
         QPoint current_reference_point1;
         QPoint current_reference_point2;
 
+        double angle_in_degrees = angle*(180.0/M_PI);
+
         getCurrent().getReferencePoints(current_reference_point1, current_reference_point2);
 
         if(getCurrent().isReferencePointsAreSet())
@@ -1513,7 +1553,7 @@ void PuansonChecker::rotateCurrentImage(const double angle)
         else
             center_of_rotation = Point( current_contour.cols / 2 + 1, current_contour.rows / 2 + 1 );
 
-        rot_mat = getRotationMatrix2D( center_of_rotation, angle, scale );
+        rot_mat = getRotationMatrix2D( center_of_rotation, angle_in_degrees, scale );
 
         warpAffine( getCurrent().getImage(), getCurrent().getImage(), rot_mat, getCurrent().getImage().size() );
 
@@ -1524,14 +1564,15 @@ void PuansonChecker::rotateCurrentImage(const double angle)
             //current_reference_point1 = QPoint(reference_point1_column_vector.at<int>(0,0), reference_point1_column_vector.at<int>(1,0));
 
             Mat reference_point2_column_vector = (Mat_<double>(3,1) << current_reference_point2.x(), current_reference_point2.y(), 1.0);
-            reference_point2_column_vector = rot_mat * reference_point2_column_vector;
+            reference_point2_column_vector = rot_mat * reference_point2_column_vector; // Нужно именно так множить, согласно док-ции OpenCV
             current_reference_point2 = QPointF(reference_point2_column_vector.at<double>(0,0), reference_point2_column_vector.at<double>(1,0)).toPoint();
+            getCurrent().setReferencePoints(current_reference_point1, current_reference_point2);
         }
 
 //        if(this->getCalculateContourOnRotationFlag())
 //        {
             current_contour.release();
-            getContour(getCurrent());
+            current_puanson_image.setImageContour(getContour(current_puanson_image));
 //        }
 //        else
 //        {
@@ -1560,6 +1601,8 @@ bool PuansonChecker::combineImagesByReferencePoints()
         shiftCurrentImage(shift_dx, shift_dy);
         ///////////////////////////////////////////////////////////////////////////////////////
 
+        getCurrent().getReferencePoints(current_reference_point1, current_reference_point2);
+
         // Поворот изображения текущей детали для совмещения изображений по второй реперной точке
         qreal x_etal = etalon_reference_point2.x() - etalon_reference_point1.x();
         qreal x_cur = current_reference_point2.x() - current_reference_point1.x();
@@ -1567,13 +1610,24 @@ bool PuansonChecker::combineImagesByReferencePoints()
         qreal y_etal = etalon_reference_point2.y() - etalon_reference_point1.y();
         qreal y_cur = current_reference_point2.y() - current_reference_point1.y();
 
-        qreal cos_value = (x_etal*y_etal + x_cur*y_cur) / (qSqrt(x_etal*x_etal + y_etal*y_etal) * qSqrt(x_cur*x_cur + y_cur*y_cur));
-        qreal rotation_angle = qAcos(cos_value);
+        qreal cos_value = (x_etal*x_cur + y_etal*y_cur) / (qSqrt(x_etal*x_etal + y_etal*y_etal) * qSqrt(x_cur*x_cur + y_cur*y_cur));
+        qreal rotation_angle_in_radians = qAcos(cos_value);
 
-        rotateCurrentImage(rotation_angle);
+        // Вычисление косого произведения векторов (Rep2_etal - Rep1_etal) и (Rep2_cur - Rep1_cur) для определения направления вращения
+        qreal pseudoscalar_product = x_etal*y_cur - y_etal*x_cur;
+        if(pseudoscalar_product < 0)
+            rotation_angle_in_radians = -rotation_angle_in_radians;
+
+        rotateCurrentImage(rotation_angle_in_radians);
         ///////////////////////////////////////////////////////////////////////////////////////
 
-        qDebug() << "has combined: Shift dx " << shift_dx << " dy " << shift_dy << " rotation angle " << rotation_angle;
+        QString combine_transformation_message;
+        combine_transformation_message = "Изображения совмещены: сдвиг dx " + QString::number(shift_dx) + " dy " + QString::number(shift_dy) + "; угол поворота " + QString::number(rotation_angle_in_radians) +  " радиан.";
+
+        QMessageBox msgBox;
+        msgBox.setText(combine_transformation_message);
+        msgBox.setModal(false);
+        msgBox.exec();
 
         return true;
     }

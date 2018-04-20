@@ -19,7 +19,7 @@ bool GeneralSettings::loadSettingsFromConfigFile()
 
     if(!config_file.open(QIODevice::ReadOnly))
     {
-        qDebug() << "Configuration file opening error";
+        //qDebug() << "Configuration file opening error";
         return false;
     }
 

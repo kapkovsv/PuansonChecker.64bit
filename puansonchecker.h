@@ -222,6 +222,8 @@ private:
 
     static int loadImage(const ImageType_e type, const QString &path, PuansonImage &output);
 
+    static void drawReferencePointOnContoursImage(const QPaintDevice &paint_device, const QPoint &position, const Qt::GlobalColor color, const QString &text);
+
     // Приложение
     QApplication *application; // Указатель на единственный экземляр PuansonChecker
     // ----------
