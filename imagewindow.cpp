@@ -24,24 +24,32 @@ ImageGraphicsScene::ImageGraphicsScene(ImageWindow *owner_window):
 
 void ImageGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
 {
-    if(window && left_button_down)
+    if(window)
     {
-        static int x = 0;
-        static int y = 0;
-
-        if(y != mouseEvent->screenPos().y() || x != mouseEvent->screenPos().x())
+        if(left_button_down)
         {
-            if(x != mouseEvent->screenPos().x())
-                x = mouseEvent->screenPos().x();
-            if(y != mouseEvent->screenPos().y())
-                y = mouseEvent->screenPos().y();
+            static int x = 0;
+            static int y = 0;
 
-            qreal dx = x - previousX;
-            qreal dy = y - previousY;
+            if(y != mouseEvent->screenPos().y() || x != mouseEvent->screenPos().x())
+            {
+                if(x != mouseEvent->screenPos().x())
+                    x = mouseEvent->screenPos().x();
+                if(y != mouseEvent->screenPos().y())
+                    y = mouseEvent->screenPos().y();
 
-            PuansonChecker::getInstance()->moveImages(dx, dy);
-            previousX = x;
-            previousY = y;
+                qreal dx = x - previousX;
+                qreal dy = y - previousY;
+
+                PuansonChecker::getInstance()->moveImages(dx, dy);
+                previousX = x;
+                previousY = y;
+            }
+        }
+        else
+        {
+            QMouseEvent event(mouseEvent->type(), mouseEvent->scenePos(), mouseEvent->button(), mouseEvent->buttons(), mouseEvent->modifiers());
+            window->mouseMoveEvent(&event);
         }
     }
 }
@@ -79,5 +87,27 @@ void ImageGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
     else
     {
         window->mouseReleaseEvent(mouseEvent->pos().toPoint());
+    }
+}
+
+void ImageGraphicsScene::wheelEvent(QGraphicsSceneWheelEvent *wheelEvent)
+{
+    if(window->getCalibrationMode() == NO_CALIBRATION)
+    {
+    }
+    else
+    {
+        int delta = wheelEvent->delta();
+
+        if(wheelEvent->modifiers() & Qt::ControlModifier)
+            delta = qRound(delta / 10.0);
+
+        if(wheelEvent->modifiers() & Qt::ShiftModifier)
+            delta *= 100;
+
+        if(wheelEvent->buttons() & Qt::RightButton)
+            delta *= 10;
+
+        window->wheelEvent(delta);
     }
 }

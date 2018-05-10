@@ -376,6 +376,29 @@ void MainWindow::menuSetSkeletonInnerPointsActionTriggered()
     innerSkeletonPointsSetting();
 }
 
+void MainWindow::drawIdealContour(const QPointF &point_of_origin, qreal rotation_angle)
+{
+    QPainterPath ideal_path = PuansonChecker::getInstance()->getEtalon(etalon_angle).drawIdealContour(QRect(0, 0, ui->graphicsView->scene()->width(), ui->graphicsView->scene()->height()), const_cast<QPointF &>(point_of_origin), rotation_angle);
+
+    ui->graphicsView->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform | QPainter::HighQualityAntialiasing);
+    if(ui->graphicsView->scene() != NULL && ideal_item && ideal_item->scene() == ui->graphicsView->scene())
+        ui->graphicsView->scene()->removeItem(ideal_item);
+    ideal_item = ui->graphicsView->scene()->addPath(ideal_path, QPen(Qt::green, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+}
+
+void MainWindow::menuImposeIdealContourToEtalonActionTriggered()
+{
+    if(PuansonChecker::getInstance()->getEtalon(PuansonChecker::getInstance()->getEtalonAngle()).isReferencePointsAreSet())
+    {
+        drawIdealContour(ideal_origin_point, ideal_rotate_angle);
+        setCalibrationMode(IDEAL_IMPOSE);
+    }
+    else
+    {
+        QMessageBox::warning(this, "Внимание", "Сначала необходимо задать реперные точки");
+    }
+}
+
 // Удаление реперных и внутренних точек
 void MainWindow::removeReferenceAndInnerSkeletonPoints()
 {
@@ -384,7 +407,7 @@ void MainWindow::removeReferenceAndInnerSkeletonPoints()
         ui->graphicsView->scene()->removeItem(ui->graphicsView->scene()->items().first());
         ui->graphicsView->scene()->update();
     }
-    ui->graphicsView->scene()->update();
+    update();
 }
 
 // Рисование реперных точек, если они заданы
@@ -411,54 +434,13 @@ void MainWindow::drawReferencePoints()
     }
 }
 
-// Рисование точек внутреннего остова, если они заданы
-void MainWindow::drawInnerSkeletonPoints()
-{
-    QGraphicsTextItem *text_item;
-
-    PuansonChecker::getInstance()->getEtalon(etalon_angle).getInnerSkeleton(inner_skeleton_top, inner_skeleton_right, inner_skeleton_bottom, inner_skeleton_left);
-
-    // Внутренний остов
-    if(!((inner_skeleton_top == inner_skeleton_right) && (inner_skeleton_bottom == inner_skeleton_left) && (inner_skeleton_top == inner_skeleton_bottom)))
-    {
-        // Top
-        ui->graphicsView->scene()->addEllipse(inner_skeleton_top.x() - GRAPHICAL_POINT_RADIUS, inner_skeleton_top.y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::darkGreen, Qt::Dense5Pattern));
-        text_item = ui->graphicsView->scene()->addText("Верхняя внутренняя точка", QFont("Arial", 10, QFont::Bold));
-        text_item->setDefaultTextColor(Qt::darkGreen);
-        text_item->setPos(inner_skeleton_top.x() + GRAPHICAL_POINT_RADIUS + 3, inner_skeleton_top.y() - GRAPHICAL_POINT_RADIUS - 3);
-
-        // Right
-        ui->graphicsView->scene()->addEllipse(inner_skeleton_right.x() - GRAPHICAL_POINT_RADIUS, inner_skeleton_right.y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::darkGreen, Qt::Dense5Pattern));
-        text_item = ui->graphicsView->scene()->addText("Правая внутренняя точка", QFont("Arial", 10, QFont::Bold));
-        text_item->setDefaultTextColor(Qt::darkGreen);
-        text_item->setPos(inner_skeleton_right.x() + GRAPHICAL_POINT_RADIUS + 3, inner_skeleton_right.y() - GRAPHICAL_POINT_RADIUS - 3);
-
-        ui->graphicsView->scene()->addLine(static_cast<qreal>(inner_skeleton_top.x()), static_cast<qreal>(inner_skeleton_top.y()), static_cast<qreal>(inner_skeleton_right.x()), static_cast<qreal>(inner_skeleton_right.y()), QPen(QBrush(Qt::darkGreen, Qt::Dense5Pattern), 7));
-
-        // Bottom
-        ui->graphicsView->scene()->addEllipse(inner_skeleton_bottom.x() - GRAPHICAL_POINT_RADIUS, inner_skeleton_bottom.y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::darkGreen, Qt::Dense5Pattern));
-        text_item = ui->graphicsView->scene()->addText("Нижняя внутренняя точка", QFont("Arial", 10, QFont::Bold));
-        text_item->setDefaultTextColor(Qt::darkGreen);
-        text_item->setPos(inner_skeleton_bottom.x() + GRAPHICAL_POINT_RADIUS + 3, inner_skeleton_bottom.y() - GRAPHICAL_POINT_RADIUS - 3);
-
-        ui->graphicsView->scene()->addLine(static_cast<qreal>(inner_skeleton_right.x()), static_cast<qreal>(inner_skeleton_right.y()), static_cast<qreal>(inner_skeleton_bottom.x()), static_cast<qreal>(inner_skeleton_bottom.y()), QPen(QBrush(Qt::darkGreen, Qt::Dense5Pattern), 7));
-
-        // Left
-        ui->graphicsView->scene()->addEllipse(inner_skeleton_left.x() - GRAPHICAL_POINT_RADIUS, inner_skeleton_left.y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::darkGreen, Qt::Dense5Pattern));
-        text_item = ui->graphicsView->scene()->addText("Левая внутренняя точка", QFont("Arial", 10, QFont::Bold));
-        text_item->setDefaultTextColor(Qt::darkGreen);
-        text_item->setPos(inner_skeleton_left.x() + GRAPHICAL_POINT_RADIUS + 3, inner_skeleton_left.y() - GRAPHICAL_POINT_RADIUS - 3);
-
-        ui->graphicsView->scene()->addLine(static_cast<qreal>(inner_skeleton_bottom.x()), static_cast<qreal>(inner_skeleton_bottom.y()), static_cast<qreal>(inner_skeleton_left.x()), static_cast<qreal>(inner_skeleton_left.y()), QPen(QBrush(Qt::darkGreen, Qt::Dense5Pattern), 7));
-        ui->graphicsView->scene()->addLine(static_cast<qreal>(inner_skeleton_top.x()), static_cast<qreal>(inner_skeleton_top.y()), static_cast<qreal>(inner_skeleton_left.x()), static_cast<qreal>(inner_skeleton_left.y()), QPen(QBrush(Qt::darkGreen, Qt::Dense5Pattern), 7));
-    }
-}
-
 // Рисование реперных точек и точек внутреннего остова, если они заданы
-void MainWindow::drawReferenceAndInnerSkeletonPoints()
+void MainWindow::drawReferencePointsAndIdealContour()
 {
     drawReferencePoints();
-    drawInnerSkeletonPoints();
+
+    if(PuansonChecker::getInstance()->getEtalon(etalon_angle).isIdealContourSet())
+        drawIdealContour(ideal_origin_point, ideal_rotate_angle);
 }
 
 void MainWindow::setCalibrationMode(CalibrationMode_e mode)
@@ -469,7 +451,9 @@ void MainWindow::setCalibrationMode(CalibrationMode_e mode)
     {
         case REFERENCE_POINT_1:
             removeReferenceAndInnerSkeletonPoints();
-            drawInnerSkeletonPoints();
+
+            if(PuansonChecker::getInstance()->getEtalon(etalon_angle).isIdealContourSet())
+                drawIdealContour(ideal_origin_point, ideal_rotate_angle);
 
             ui->label_2->setText("Калибровка. Укажите реперную точку 1.");
             setImageCursor(Qt::CrossCursor);
@@ -493,13 +477,36 @@ void MainWindow::setCalibrationMode(CalibrationMode_e mode)
         case INNER_POINT_LEFT:
             ui->label_2->setText("Укажите левую внутреннюю точку.");
         break;
+        case IDEAL_IMPOSE:
+            ui->label_2->setText("Совместите контур идеальной детали с границами эталона и установите его двойным щелчком левой кнопки мыши.");
+            ideal_origin_point = QPoint(1000, 500);
+            ideal_rotate_angle = 135.0;
+            break;
         case NO_CALIBRATION:
         default:
             removeReferenceAndInnerSkeletonPoints();
-            drawReferenceAndInnerSkeletonPoints();
+            drawReferencePointsAndIdealContour();
 
             ui->label_2->setText("Файл " + PuansonChecker::getInstance()->getEtalon(PuansonChecker::getInstance()->getEtalonAngle()).getFilename());
             setImageCursor(Qt::ArrowCursor);
+        break;
+    }
+}
+
+void MainWindow::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    Q_UNUSED(event)
+
+    switch(calibration_mode)
+    {
+        case IDEAL_IMPOSE:
+        {
+            PuansonChecker::getInstance()->getEtalon(etalon_angle).setIdealContourSetFlag(true);
+            setCalibrationMode(NO_CALIBRATION);
+            PuansonChecker::getInstance()->updateContoursImage();
+        }
+        break;
+        default:
         break;
     }
 }
@@ -539,64 +546,9 @@ void MainWindow::mousePressEvent(const QPoint &p)
             PuansonChecker::getInstance()->updateContoursImage();
         }
         break;
-        case INNER_POINT_TOP:
-        {
-            inner_skeleton_top = p;
-
-            ui->graphicsView->scene()->addEllipse(p.x() - GRAPHICAL_POINT_RADIUS, p.y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::darkGreen, Qt::Dense5Pattern));
-            QGraphicsTextItem *text_item = ui->graphicsView->scene()->addText("Верхняя внутренняя точка", QFont("Arial", 10, QFont::Bold));
-            text_item->setDefaultTextColor(Qt::darkGreen);
-            text_item->setPos(p.x() + GRAPHICAL_POINT_RADIUS + 3, p.y() - GRAPHICAL_POINT_RADIUS - 3);
-
-            setCalibrationMode(INNER_POINT_RIGHT);
-        }
-        break;
-        case INNER_POINT_RIGHT:
-        {
-            inner_skeleton_right = p;
-
-            ui->graphicsView->scene()->addEllipse(p.x() - GRAPHICAL_POINT_RADIUS, p.y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::darkGreen, Qt::Dense5Pattern));
-            QGraphicsTextItem *text_item = ui->graphicsView->scene()->addText("Правая внутренняя точка", QFont("Arial", 10, QFont::Bold));
-            text_item->setDefaultTextColor(Qt::darkGreen);
-            text_item->setPos(p.x() + GRAPHICAL_POINT_RADIUS + 3, p.y() - GRAPHICAL_POINT_RADIUS - 3);
-
-            ui->graphicsView->scene()->addLine(static_cast<qreal>(inner_skeleton_top.x()), static_cast<qreal>(inner_skeleton_top.y()), static_cast<qreal>(p.x()), static_cast<qreal>(p.y()), QPen(QBrush(Qt::darkGreen, Qt::Dense5Pattern), 7));
-
-            setCalibrationMode(INNER_POINT_BOTTOM);
-        }
-        break;
-        case INNER_POINT_BOTTOM:
-        {
-            inner_skeleton_bottom = p;
-
-            ui->graphicsView->scene()->addEllipse(p.x() - GRAPHICAL_POINT_RADIUS, p.y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::darkGreen, Qt::Dense5Pattern));
-            QGraphicsTextItem *text_item = ui->graphicsView->scene()->addText("Нижняя внутренняя точка", QFont("Arial", 10, QFont::Bold));
-            text_item->setDefaultTextColor(Qt::darkGreen);
-            text_item->setPos(p.x() + GRAPHICAL_POINT_RADIUS + 3, p.y() - GRAPHICAL_POINT_RADIUS - 3);
-
-            ui->graphicsView->scene()->addLine(static_cast<qreal>(inner_skeleton_right.x()), static_cast<qreal>(inner_skeleton_right.y()), static_cast<qreal>(p.x()), static_cast<qreal>(p.y()), QPen(QBrush(Qt::darkGreen, Qt::Dense5Pattern), 7));
-
-            setCalibrationMode(INNER_POINT_LEFT);
-        }
-        break;
-        case INNER_POINT_LEFT:
-        {
-            inner_skeleton_left = p;
-
-            PuansonChecker::getInstance()->getEtalon(etalon_angle).setInnerSkeleton(inner_skeleton_top, inner_skeleton_right, inner_skeleton_bottom, inner_skeleton_left);
-
-            ui->graphicsView->scene()->addEllipse(p.x() - GRAPHICAL_POINT_RADIUS, p.y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::darkGreen, Qt::Dense5Pattern));
-            QGraphicsTextItem *text_item = ui->graphicsView->scene()->addText("Левая внутренняя точка", QFont("Arial", 10, QFont::Bold));
-            text_item->setDefaultTextColor(Qt::darkGreen);
-            text_item->setPos(p.x() + GRAPHICAL_POINT_RADIUS + 3, p.y() - GRAPHICAL_POINT_RADIUS - 3);
-
-            ui->graphicsView->scene()->addLine(static_cast<qreal>(inner_skeleton_bottom.x()), static_cast<qreal>(inner_skeleton_bottom.y()), static_cast<qreal>(p.x()), static_cast<qreal>(p.y()), QPen(QBrush(Qt::darkGreen, Qt::Dense5Pattern), 7));
-            ui->graphicsView->scene()->addLine(static_cast<qreal>(inner_skeleton_top.x()), static_cast<qreal>(inner_skeleton_top.y()), static_cast<qreal>(p.x()), static_cast<qreal>(p.y()), QPen(QBrush(Qt::darkGreen, Qt::Dense5Pattern), 7));
-
-            setCalibrationMode(NO_CALIBRATION);
-
-            PuansonChecker::getInstance()->updateContoursImage();
-        }
+        case IDEAL_IMPOSE:
+            ideal_impose_mouse_pressed = true;
+            ideal_impose_previous_point = p;
         break;
         case NO_CALIBRATION:
         default:
@@ -607,6 +559,46 @@ void MainWindow::mousePressEvent(const QPoint &p)
 void MainWindow::mouseReleaseEvent(const QPoint &p)
 {
     Q_UNUSED(p)
+
+     switch(calibration_mode)
+     {
+        case IDEAL_IMPOSE:
+            ideal_impose_mouse_pressed = false;
+        break;
+        default:
+        break;
+    }
+}
+
+void MainWindow::mouseMoveEvent(QMouseEvent *event)
+{
+    Q_UNUSED(event)
+
+    if(ideal_impose_mouse_pressed)
+    {
+        ideal_origin_point = ideal_origin_point + event->localPos().toPoint() - ideal_impose_previous_point;
+        ideal_impose_previous_point = event->localPos().toPoint();
+        drawIdealContour(ideal_origin_point, ideal_rotate_angle);
+    }
+}
+
+bool MainWindow::wheelEvent(int delta)
+{
+    bool retval = false;
+
+    switch(calibration_mode)
+    {
+       case IDEAL_IMPOSE:
+            ideal_rotate_angle += delta / 120.0 / 10.0;
+
+            drawIdealContour(ideal_origin_point, ideal_rotate_angle);
+            retval = true;
+       break;
+       default:
+       break;
+    }
+
+    return retval;
 }
 
 void MainWindow::menuSaveCurrentTriggered()
@@ -671,17 +663,17 @@ void MainWindow::moveImage(const qreal dx, const qreal dy)
     }
 }
 
-void MainWindow::keyPressEvent(QKeyEvent *event)
+bool MainWindow::windowKeyPressEvent(QKeyEvent *event)
 {
-    switch(event->key())
+    if(event->key() == Qt::Key_Escape)
     {
-        case Qt::Key_Escape:
-            if(calibration_mode != NO_CALIBRATION)
-                setCalibrationMode(NO_CALIBRATION);
-            break;
-        default:
-            break;
+        if(calibration_mode != NO_CALIBRATION)
+            setCalibrationMode(NO_CALIBRATION);
+
+        return true;
     }
+
+    return false;
 }
 
 MainWindow::MainWindow(PuansonChecker *checker) :
@@ -696,6 +688,10 @@ MainWindow::MainWindow(PuansonChecker *checker) :
     angle_actions[2] = ui->angle_3_action;
     angle_actions[3] = ui->angle_4_action;
     angle_actions[4] = ui->angle_5_action;
+
+    ideal_origin_point = QPoint(1000, 500);
+    ideal_rotate_angle = 135.0;
+    ideal_item = NULL;
 
     connect(ui->angle_1_action, SIGNAL(triggered()), SLOT(menuAngle1ActionTriggered()));
     connect(ui->angle_2_action, SIGNAL(triggered()), SLOT(menuAngle2ActionTriggered()));
@@ -714,6 +710,7 @@ MainWindow::MainWindow(PuansonChecker *checker) :
     connect(ui->set_etalon_reference_points_action, SIGNAL(triggered()), SLOT(menuSetEtalonReferencePointsActionTriggered()));
     connect(ui->set_current_reference_points_action, SIGNAL(triggered()), SLOT(menuSetCurrentReferencePointsActionTriggered()));
     connect(ui->set_skeleton_inner_points_action, SIGNAL(triggered()), SLOT(menuSetSkeletonInnerPointsActionTriggered()));
+    connect(ui->impose_ideal_contour_to_etalon_action, SIGNAL(triggered()), SLOT(menuImposeIdealContourToEtalonActionTriggered()));
     connect(ui->save_current_action, SIGNAL(triggered()), SLOT(menuSaveCurrentTriggered()));
     connect(ui->save_result_action, SIGNAL(triggered()), SLOT(menuSaveResultTriggered()));
     connect(ui->exit_action, SIGNAL(triggered()), SLOT(menuExitActionTriggered()));

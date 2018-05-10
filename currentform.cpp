@@ -96,7 +96,7 @@ void CurrentFormGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEve
 
 void CurrentFormGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
 {
-    if(mouseEvent->buttons() & Qt::LeftButton)
+    if(mouseEvent->button() == Qt::LeftButton)
     {
         if(window->getCalibrationMode() != NO_CALIBRATION)
         {
@@ -127,43 +127,51 @@ void CurrentFormGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEv
 
 void CurrentFormGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
 {
-    if(window->getCalibrationMode() == NO_CALIBRATION)
+    if(mouseEvent->button() == Qt::LeftButton)
     {
-        switch(window->getImageMoveMode())
+        if(window->getCalibrationMode() == NO_CALIBRATION)
         {
-            case IMAGE_MOVE_EDITING:
+            switch(window->getImageMoveMode())
             {
-                int x = mouseEvent->screenPos().x();
-                int y = mouseEvent->screenPos().y();
-                int dx = x - previousX;
-                int dy = y - previousY;
+                case IMAGE_MOVE_EDITING:
+                {
+                    int x = mouseEvent->screenPos().x();
+                    int y = mouseEvent->screenPos().y();
+                    int dx = x - previousX;
+                    int dy = y - previousY;
 
-                PuansonChecker::getInstance()->shiftCurrentImage(dx, dy);
-                PuansonChecker::getInstance()->drawCurrentImage();
-                PuansonChecker::getInstance()->drawContoursImage();
+                    PuansonChecker::getInstance()->shiftCurrentImage(dx, dy);
+                    PuansonChecker::getInstance()->drawCurrentImage();
+                    PuansonChecker::getInstance()->drawContoursImage();
 
-                window->setLabel2Text("");
-                window->setImageCursor(Qt::OpenHandCursor);
+                    window->setLabel2Text("");
+                    window->setImageCursor(Qt::OpenHandCursor);
+                }
+                break;
+                case IMAGE_MOVE_VIEWING:
+                default:
+                    PuansonChecker::getInstance()->setIgnoreScrollMoveImage(false);
+                    window->setImageCursor(Qt::ArrowCursor);
+                break;
             }
-            break;
-            case IMAGE_MOVE_VIEWING:
-            default:
-                PuansonChecker::getInstance()->setIgnoreScrollMoveImage(false);
-                window->setImageCursor(Qt::ArrowCursor);
-            break;
-        }
 
-        left_button_down = false;
-        previousX = 0;
-        previousY = 0;
+            left_button_down = false;
+            previousX = 0;
+            previousY = 0;
+        }
+        else
+            window->mouseReleaseEvent(mouseEvent->pos().toPoint());
     }
-    else
-        window->mouseReleaseEvent(mouseEvent->pos().toPoint());
 }
 
 void CurrentFormGraphicsScene::wheelEvent(QGraphicsSceneWheelEvent *event)
 {
-    double rotate_angle = event->delta()/ 120.0 * 0.01;
+    int delta = event->delta();
+
+    if(event->buttons() & Qt::RightButton)
+        delta *= 10;
+
+    double rotate_angle = delta / 120.0 * 0.01;
 
     PuansonChecker::getInstance()->rotateCurrentImage(rotate_angle);
     PuansonChecker::getInstance()->drawCurrentImage();
@@ -296,7 +304,7 @@ void CurrentForm::setLabel2Text(const QString &text)
     ui->label_2->setText(text);
 }
 
-void CurrentForm::keyPressEvent(QKeyEvent *event)
+bool CurrentForm::windowKeyPressEvent(QKeyEvent *event)
 {
     if(image_move_mode == IMAGE_MOVE_EDITING)
     {
@@ -320,13 +328,19 @@ void CurrentForm::keyPressEvent(QKeyEvent *event)
 
         checker->drawCurrentImage();
         checker->drawContoursImage();
+
+        return true;
     }
     else if(calibration_mode != NO_CALIBRATION && event->key() == Qt::Key_Escape)
     {
         removeReferencePoints();
         drawReferencePoints();
         setCalibrationMode(NO_CALIBRATION);
+
+        return true;
     }
+
+    return false;
 }
 
 /*void CurrentForm::calculateContourOnRotationCheckBoxStateChanged(int state)

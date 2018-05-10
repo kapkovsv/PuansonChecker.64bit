@@ -1,13 +1,12 @@
 #include "generalsettings.h"
-
 #include <QtXml>
 
 GeneralSettings::GeneralSettings(const QString &config_file)
 {
     xml_configuration_file = config_file;
 
-    memset(externalTolerancePxArray, 0, sizeof(externalTolerancePxArray));
-    memset(internalTolerancePxArray, 0, sizeof(internalTolerancePxArray));
+    memset(externalToleranceMkmArray, 0, sizeof(externalToleranceMkmArray));
+    memset(internalToleranceMkmArray, 0, sizeof(internalToleranceMkmArray));
     memset(referencePointDistancesMkmArray, 0, sizeof(referencePointDistancesMkmArray));
 
     loadSettingsFromConfigFile();
@@ -51,12 +50,12 @@ bool GeneralSettings::loadSettingsFromConfigFile()
                         if (xml.name() == "internal_tolerance")
                         {
                             if(xml.attributes().hasAttribute("value"))
-                                internalTolerancePxArray[angle-1] = xml.attributes().value("value").toString().toUShort();
+                                internalToleranceMkmArray[angle-1] = xml.attributes().value("value").toString().toUShort();
                         }
                         else if (xml.name() == "external_tolerance")
                         {
                             if(xml.attributes().hasAttribute("value"))
-                                externalTolerancePxArray[angle-1] = xml.attributes().value("value").toString().toUShort();
+                                externalToleranceMkmArray[angle-1] = xml.attributes().value("value").toString().toUShort();
                         }
                         else if (xml.name() == "reference_points_distance_mkm")
                         {
@@ -95,11 +94,11 @@ bool GeneralSettings::saveSettingsToConfigFile()
         stream.writeAttribute("angle", QString::number(angle));
 
         stream.writeStartElement("internal_tolerance");
-        stream.writeAttribute("value", QString::number(internalTolerancePxArray[angle-1]));
+        stream.writeAttribute("value", QString::number(internalToleranceMkmArray[angle-1]));
         stream.writeEndElement(); // internal_tolerance
 
         stream.writeStartElement("external_tolerance");
-        stream.writeAttribute("value", QString::number(externalTolerancePxArray[angle-1]));
+        stream.writeAttribute("value", QString::number(externalToleranceMkmArray[angle-1]));
         stream.writeEndElement(); // external_tolerance
 
         stream.writeStartElement("reference_points_distance_mkm");
@@ -113,18 +112,20 @@ bool GeneralSettings::saveSettingsToConfigFile()
     stream.writeEndDocument();
 
     config_file.close();
+
+    return true;
 }
 
 void GeneralSettings::setToleranceFields(const quint16 ext_tolerance_px_array[], const quint16 int_tolerance_px_array[])
 {
-    memcpy(externalTolerancePxArray, ext_tolerance_px_array, sizeof(quint16) * NUMBER_OF_ANGLES);
-    memcpy(internalTolerancePxArray, int_tolerance_px_array, sizeof(quint16) * NUMBER_OF_ANGLES);
+    memcpy(externalToleranceMkmArray, ext_tolerance_px_array, sizeof(quint16) * NUMBER_OF_ANGLES);
+    memcpy(internalToleranceMkmArray, int_tolerance_px_array, sizeof(quint16) * NUMBER_OF_ANGLES);
 }
 
 void GeneralSettings::getToleranceFields(quint16 ext_tolerance_px_array[], quint16 int_tolerance_px_array[])
 {
-    memcpy(ext_tolerance_px_array, externalTolerancePxArray, sizeof(quint16) * NUMBER_OF_ANGLES);
-    memcpy(int_tolerance_px_array, internalTolerancePxArray, sizeof(quint16) * NUMBER_OF_ANGLES);
+    memcpy(ext_tolerance_px_array, externalToleranceMkmArray, sizeof(quint16) * NUMBER_OF_ANGLES);
+    memcpy(int_tolerance_px_array, internalToleranceMkmArray, sizeof(quint16) * NUMBER_OF_ANGLES);
 }
 
 void GeneralSettings::setReferencePointDistancesMkm(const quint32 distance_array[])

@@ -24,6 +24,16 @@ public:
 
     virtual void mousePressEvent(const QPoint &p){ Q_UNUSED(p); }
     virtual void mouseReleaseEvent(const QPoint &p){ Q_UNUSED(p); }
+    virtual void mouseMoveEvent(QMouseEvent *event){ Q_UNUSED(event); }
+
+    virtual bool wheelEvent(int delta){ Q_UNUSED(delta); return false; }
+
+    virtual bool windowKeyPressEvent(QKeyEvent *event)
+    {
+        Q_UNUSED(event);
+
+        return false;
+    }
 
     inline void shiftImageCoords(const qreal dx, const qreal dy)
     {
@@ -66,6 +76,7 @@ public slots:
     void mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent);
     void mousePressEvent(QGraphicsSceneMouseEvent *event);
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
+    void wheelEvent(QGraphicsSceneWheelEvent *wheelEvent);
 };
 
 class ImageGraphicsView : public QGraphicsView
@@ -99,16 +110,29 @@ class ImageGraphicsView : public QGraphicsView
         void wheelEvent(QWheelEvent *e)
         {
             ImageGraphicsView *graphics_view = (dynamic_cast<ImageGraphicsView *>(parent()->parent()));
+            ImageWindow *window = dynamic_cast<ImageWindow *>(graphics_view->parent());
+            bool window_event_processed = false;
 
-            if(graphics_view)
-                graphics_view->mouse_wheel_or_key_pressed_flag = true;
+            if(window == NULL)
+                window = dynamic_cast<ImageWindow *>(graphics_view->parent()->parent());
 
-            QScrollBar::wheelEvent(e);
+            if(window)
+                window_event_processed = window->wheelEvent(e->delta());
+
+            if(!window_event_processed)
+            {
+                if(graphics_view)
+                    graphics_view->mouse_wheel_or_key_pressed_flag = true;
+
+                QScrollBar::wheelEvent(e);
+            }
         }
 
         void keyPressEvent(QKeyEvent *ev)
         {
             ImageGraphicsView *graphics_view = (dynamic_cast<ImageGraphicsView *>(parent()->parent()));
+
+            graphics_view->scene();
 
             if(graphics_view)
                 graphics_view->mouse_wheel_or_key_pressed_flag = true;
@@ -146,17 +170,29 @@ public:
 
     void keyPressEvent(QKeyEvent *event)
     {
-        if(
-            event->key() == Qt::Key_Up ||
-            event->key() == Qt::Key_Down ||
-            event->key() == Qt::Key_Right ||
-            event->key() == Qt::Key_Left ||
-            event->key() == Qt::Key_PageUp ||
-            event->key() == Qt::Key_PageDown
-        )
-            mouse_wheel_or_key_pressed_flag = true;
+        ImageWindow *window = dynamic_cast<ImageWindow *>(parent());
+        bool window_key_press_event_processed = false;
 
-        QGraphicsView::keyPressEvent(event);
+        if(window == NULL)
+            window = dynamic_cast<ImageWindow *>(parent()->parent());
+
+        if(window)
+            window_key_press_event_processed = window->windowKeyPressEvent(event);
+
+        if(!window_key_press_event_processed)
+        {
+            if(
+                event->key() == Qt::Key_Up ||
+                event->key() == Qt::Key_Down ||
+                event->key() == Qt::Key_Right ||
+                event->key() == Qt::Key_Left ||
+                event->key() == Qt::Key_PageUp ||
+                event->key() == Qt::Key_PageDown
+            )
+                mouse_wheel_or_key_pressed_flag = true;
+
+            QGraphicsView::keyPressEvent(event);
+        }
     }
 
     void scrollContentsBy(int dx, int dy)

@@ -23,8 +23,9 @@ private:
 
     void removeReferenceAndInnerSkeletonPoints();
     void drawReferencePoints();
-    void drawInnerSkeletonPoints();
+    void drawReferencePointsAndIdealContour();
     void drawReferenceAndInnerSkeletonPoints();
+    void drawIdealContour(const QPointF &point_of_origin, double rotation_angle);
 public:
     explicit MainWindow(PuansonChecker *checker);
     ~MainWindow();
@@ -34,10 +35,14 @@ public:
     void setWindowStatus(const QString &status);
     void setCalibrationMode(CalibrationMode_e mode);
 
+    void mouseDoubleClickEvent(QMouseEvent *event);
+
     void mousePressEvent(const QPoint &p);
     void mouseReleaseEvent(const QPoint &p);
+    void mouseMoveEvent(QMouseEvent *event);
+    bool wheelEvent(int delta);
 
-    void keyPressEvent(QKeyEvent *event);
+    bool windowKeyPressEvent(QKeyEvent *event);
 
     void loadImageFinished(const ImageType_e image_type, quint8 etalon_angle);
 
@@ -61,6 +66,7 @@ public slots:
     void menuSetEtalonReferencePointsActionTriggered();
     void menuSetCurrentReferencePointsActionTriggered();
     void menuSetSkeletonInnerPointsActionTriggered();
+    void menuImposeIdealContourToEtalonActionTriggered();
     void menuSaveCurrentTriggered();
     void menuSaveResultTriggered();
     void menuExitActionTriggered();
@@ -75,10 +81,11 @@ private:
     QPoint reference_point1;
     QPoint reference_point2;
 
-    QPoint inner_skeleton_top;
-    QPoint inner_skeleton_right;
-    QPoint inner_skeleton_bottom;
-    QPoint inner_skeleton_left;
+    bool ideal_impose_mouse_pressed;
+    QPoint ideal_impose_previous_point;
+    QPoint ideal_origin_point;
+    double ideal_rotate_angle;
+    QGraphicsPathItem *ideal_item;
 };
 
 #endif // MAINWINDOW_H

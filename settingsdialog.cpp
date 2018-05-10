@@ -93,18 +93,22 @@ SettingsDialog::SettingsDialog(PuansonChecker *checker) :
 
     for(quint8 angle = 1; angle <= NUMBER_OF_ANGLES; angle++)
     {
-        if(!PuansonChecker::getInstance()->getEtalon(angle).isInnerSkelenonPointsAreSet())
+        if(!PuansonChecker::getInstance()->getEtalon(angle).isIdealContourSet())
         {
             status_str[angle-1] = "Не задан";
         }
         else
         {
-            PuansonChecker::getInstance()->getEtalon(angle).getInnerSkeleton(etalon_top, etalon_right, etalon_bottom, etalon_left);
+            QVector<QLine> idealLines;
+            QVector<QPoint> innerIdealLines;
+            QVector<QPoint> outerIdealLines;
 
-            status_str[angle-1] = "(" + QString::number(etalon_top.x()) + ", " + QString::number(etalon_top.y()) + ")" +
-                            ", (" + QString::number(etalon_right.x()) + ", " + QString::number(etalon_right.y()) + ")" +
-                            ", (" + QString::number(etalon_bottom.x()) + ", " + QString::number(etalon_bottom.y()) + ")" +
-                            ", (" + QString::number(etalon_left.x()) + ", " + QString::number(etalon_left.y()) + ")";
+            QPointF point_of_origin;
+            qreal rotation_angle;
+
+            PuansonChecker::getInstance()->getEtalon(angle).getIdealContour(idealLines,  innerIdealLines, outerIdealLines, point_of_origin, rotation_angle);
+
+            status_str[angle-1] = "Начало координат: (" + QString::number(point_of_origin.x()) + ", " + QString::number(point_of_origin.y()) + "); Поворот: " + QString::number(rotation_angle) + QChar(176);
         }
     }
 
@@ -143,27 +147,27 @@ void SettingsDialog::SettingsDialogAccepted()
     quint16 ext_tolerance_array[NUMBER_OF_ANGLES];
     quint16 int_tolerance_array[NUMBER_OF_ANGLES];
 
-    ext_tolerance_array[0] = ui->angle1ComboBox->currentIndex() == TOLERANCE_UNITS_PX ? ui->angle1ExtSpinBox->value() :
-                                                     static_cast<int>(ui->angle1ExtSpinBox->value() / PuansonChecker::getInstance()->getEtalon(1).getCalibrationRatio());
-    ext_tolerance_array[1] = ui->angle2ComboBox->currentIndex() == TOLERANCE_UNITS_PX ? ui->angle2ExtSpinBox->value() :
-                                                     static_cast<int>(ui->angle2ExtSpinBox->value() / PuansonChecker::getInstance()->getEtalon(2).getCalibrationRatio());
-    ext_tolerance_array[2] = ui->angle3ComboBox->currentIndex() == TOLERANCE_UNITS_PX ? ui->angle3ExtSpinBox->value() :
-                                                     static_cast<int>(ui->angle3ExtSpinBox->value() / PuansonChecker::getInstance()->getEtalon(3).getCalibrationRatio());
-    ext_tolerance_array[3] = ui->angle4ComboBox->currentIndex() == TOLERANCE_UNITS_PX ? ui->angle4ExtSpinBox->value() :
-                                                     static_cast<int>(ui->angle4ExtSpinBox->value() / PuansonChecker::getInstance()->getEtalon(4).getCalibrationRatio());
-    ext_tolerance_array[4] = ui->angle5ComboBox->currentIndex() == TOLERANCE_UNITS_PX ? ui->angle5ExtSpinBox->value() :
-                                                     static_cast<int>(ui->angle5ExtSpinBox->value() / PuansonChecker::getInstance()->getEtalon(5).getCalibrationRatio());
+    ext_tolerance_array[0] = ui->angle1ComboBox->currentIndex() == TOLERANCE_UNITS_MKM ? static_cast<int>(ui->angle1ExtSpinBox->value() * PuansonChecker::getInstance()->getEtalon(1).getCalibrationRatio()) :
+                                                     ui->angle1ExtSpinBox->value();
+    ext_tolerance_array[1] = ui->angle2ComboBox->currentIndex() == TOLERANCE_UNITS_MKM ? static_cast<int>(ui->angle2ExtSpinBox->value() * PuansonChecker::getInstance()->getEtalon(2).getCalibrationRatio()) :
+                                                     ui->angle2ExtSpinBox->value();
+    ext_tolerance_array[2] = ui->angle3ComboBox->currentIndex() == TOLERANCE_UNITS_MKM ? static_cast<int>(ui->angle3ExtSpinBox->value() * PuansonChecker::getInstance()->getEtalon(3).getCalibrationRatio()) :
+                                                     ui->angle3ExtSpinBox->value();
+    ext_tolerance_array[3] = ui->angle4ComboBox->currentIndex() == TOLERANCE_UNITS_MKM ? static_cast<int>(ui->angle4ExtSpinBox->value() * PuansonChecker::getInstance()->getEtalon(4).getCalibrationRatio()) :
+                                                     ui->angle4ExtSpinBox->value();
+    ext_tolerance_array[4] = ui->angle5ComboBox->currentIndex() == TOLERANCE_UNITS_MKM ? static_cast<int>(ui->angle5ExtSpinBox->value() * PuansonChecker::getInstance()->getEtalon(5).getCalibrationRatio()) :
+                                                     ui->angle5ExtSpinBox->value();
 
-    int_tolerance_array[0] = ui->angle1ComboBox->currentIndex() == TOLERANCE_UNITS_PX ? ui->angle1IntSpinBox->value() :
-                                                     static_cast<int>(ui->angle1IntSpinBox->value() / PuansonChecker::getInstance()->getEtalon(1).getCalibrationRatio());
-    int_tolerance_array[1] = ui->angle2ComboBox->currentIndex() == TOLERANCE_UNITS_PX ? ui->angle2IntSpinBox->value() :
-                                                     static_cast<int>(ui->angle2IntSpinBox->value() / PuansonChecker::getInstance()->getEtalon(2).getCalibrationRatio());
-    int_tolerance_array[2] = ui->angle3ComboBox->currentIndex() == TOLERANCE_UNITS_PX ? ui->angle3IntSpinBox->value() :
-                                                     static_cast<int>(ui->angle3IntSpinBox->value() / PuansonChecker::getInstance()->getEtalon(3).getCalibrationRatio());
-    int_tolerance_array[3] = ui->angle4ComboBox->currentIndex() == TOLERANCE_UNITS_PX ? ui->angle4IntSpinBox->value() :
-                                                     static_cast<int>(ui->angle4IntSpinBox->value() / PuansonChecker::getInstance()->getEtalon(4).getCalibrationRatio());
-    int_tolerance_array[4] = ui->angle5ComboBox->currentIndex() == TOLERANCE_UNITS_PX ? ui->angle5IntSpinBox->value() :
-                                                     static_cast<int>(ui->angle5IntSpinBox->value() / PuansonChecker::getInstance()->getEtalon(5).getCalibrationRatio());
+    int_tolerance_array[0] = ui->angle1ComboBox->currentIndex() == TOLERANCE_UNITS_MKM ? static_cast<int>(ui->angle1IntSpinBox->value() * PuansonChecker::getInstance()->getEtalon(1).getCalibrationRatio()) :
+                                                     ui->angle1IntSpinBox->value();
+    int_tolerance_array[1] = ui->angle2ComboBox->currentIndex() == TOLERANCE_UNITS_MKM ? static_cast<int>(ui->angle2IntSpinBox->value() * PuansonChecker::getInstance()->getEtalon(2).getCalibrationRatio()):
+                                                     ui->angle2IntSpinBox->value();
+    int_tolerance_array[2] = ui->angle3ComboBox->currentIndex() == TOLERANCE_UNITS_MKM ? static_cast<int>(ui->angle3IntSpinBox->value() * PuansonChecker::getInstance()->getEtalon(3).getCalibrationRatio()) :
+                                                     ui->angle3IntSpinBox->value();
+    int_tolerance_array[3] = ui->angle4ComboBox->currentIndex() == TOLERANCE_UNITS_MKM ? static_cast<int>(ui->angle4IntSpinBox->value() * PuansonChecker::getInstance()->getEtalon(4).getCalibrationRatio()) :
+                                                     ui->angle4IntSpinBox->value();
+    int_tolerance_array[4] = ui->angle5ComboBox->currentIndex() == TOLERANCE_UNITS_MKM ? static_cast<int>(ui->angle5IntSpinBox->value() * PuansonChecker::getInstance()->getEtalon(5).getCalibrationRatio()) :
+                                                     ui->angle5IntSpinBox->value();
 
     PuansonChecker::getInstance()->getGeneralSettings()->setToleranceFields(ext_tolerance_array, int_tolerance_array);
 

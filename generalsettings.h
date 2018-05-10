@@ -7,8 +7,8 @@ class GeneralSettings
 {
     QString xml_configuration_file;
 
-    quint16 externalTolerancePxArray[NUMBER_OF_ANGLES];
-    quint16 internalTolerancePxArray[NUMBER_OF_ANGLES];
+    quint16 externalToleranceMkmArray[NUMBER_OF_ANGLES];
+    quint16 internalToleranceMkmArray[NUMBER_OF_ANGLES];
 
     quint32 referencePointDistancesMkmArray[NUMBER_OF_ANGLES];
 

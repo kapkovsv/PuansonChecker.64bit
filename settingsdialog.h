@@ -6,8 +6,8 @@
 
 enum ToleranceUnits_e
 {
-    TOLERANCE_UNITS_PX = 0,
-    TOLERANCE_UNITS_MKM = 1
+    TOLERANCE_UNITS_MKM = 0,
+    TOLERANCE_UNITS_PX = 1
 };
 
 namespace Ui {

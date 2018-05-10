@@ -503,13 +503,13 @@ bool PhotoCamera::AcquireImage()
 
 bool PhotoCamera::CaptureAndAcquireImage()
 {
-   /* if(CaptureImage() != true)
+    if(CaptureImage() != true)
         return false;
 
     // Настроено сохранение фотоснимков в SDRAM, поэтому после совершения снимков необходимо загружать их на ПК,
     //                                      в противном случае SDRAM будет занята и сделать снимок будет нельзя
     if(AcquireImage() != true)
-        return false;*/
+        return false;
 
     return true;
 }

@@ -48,7 +48,7 @@
        <cursorShape>WhatsThisCursor</cursorShape>
       </property>
       <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;В данном окне осуществляется работа с изображением эталонной детали. &lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Имеется возможность задать реперные точки и точки внутреннего остова(необходимы для получения контуров допуска +/-) изображения эталонной детали - с помощью соответсвующих пунктов в меню &amp;quot;Настройки&amp;quot;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;В данном окне осуществляется работа с изображением эталонной детали. &lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Перед началом работы необходимо загрузить изображение эталонной детали, задать реперные точки и наложить идеальный контур с помощью соответсвующих пунктов в меню &amp;quot;Настройки&amp;quot;. Всё это необходимо для получения контуров допуска +/-. &lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;При врещении колёсика мыши при наложении идеального контура происходит повотот изображения на 1/10 градуса. Если во время вращения нажата правая кнопка мыши, происходит вращение на угол в 10 раз больший, если клавиша Shift - на угол в 100 раз больший, если Ctrl - в 10 раз меньший. После того, как идеальный контур совмещён, его нужно зафиксировать двойным щелчком.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="text">
        <string>?</string>
@@ -99,6 +99,9 @@
      <string>Меню</string>
     </property>
     <widget class="QMenu" name="angle_menu">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="title">
       <string>Ракурс</string>
      </property>
@@ -134,6 +137,7 @@
      <addaction name="set_etalon_reference_points_action"/>
      <addaction name="set_current_reference_points_action"/>
      <addaction name="set_skeleton_inner_points_action"/>
+     <addaction name="impose_ideal_contour_to_etalon_action"/>
     </widget>
     <addaction name="load_menu"/>
     <addaction name="angle_menu"/>
@@ -197,16 +201,25 @@
    </property>
   </action>
   <action name="load_etalon_2_action">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Эталон ракурса 2</string>
    </property>
   </action>
   <action name="load_etalon_3_action">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Эталон ракурса 3</string>
    </property>
   </action>
   <action name="load_etalon_4_action">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Эталон ракурса 4</string>
    </property>
@@ -263,6 +276,9 @@
    </property>
   </action>
   <action name="load_etalon_5_action">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Эталон ракурса 5</string>
    </property>
@@ -273,8 +289,16 @@
    </property>
   </action>
   <action name="set_skeleton_inner_points_action">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Задать точки внутреннего остова для эталона</string>
+   </property>
+  </action>
+  <action name="impose_ideal_contour_to_etalon_action">
+   <property name="text">
+    <string>Наложить идеальный контур на эталон</string>
    </property>
   </action>
  </widget>

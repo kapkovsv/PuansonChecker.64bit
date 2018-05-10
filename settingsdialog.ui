@@ -158,12 +158,12 @@
     </property>
     <item>
      <property name="text">
-      <string>px</string>
+      <string>мкм</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>мкм</string>
+      <string>px</string>
      </property>
     </item>
    </widget>
@@ -223,12 +223,12 @@
     </property>
     <item>
      <property name="text">
-      <string>px</string>
+      <string>мкм</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>мкм</string>
+      <string>px</string>
      </property>
     </item>
    </widget>
@@ -243,12 +243,12 @@
     </property>
     <item>
      <property name="text">
-      <string>px</string>
+      <string>мкм</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>мкм</string>
+      <string>px</string>
      </property>
     </item>
    </widget>
@@ -295,12 +295,12 @@
     </property>
     <item>
      <property name="text">
-      <string>px</string>
+      <string>мкм</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>мкм</string>
+      <string>px</string>
      </property>
     </item>
    </widget>
@@ -404,12 +404,12 @@
     </property>
     <item>
      <property name="text">
-      <string>px</string>
+      <string>мкм</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>мкм</string>
+      <string>px</string>
      </property>
     </item>
    </widget>

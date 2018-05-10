@@ -40,9 +40,7 @@ int PuansonChecker::loadImage(ImageType_e image_type, const QString &path, Puans
         return -1;
 
     int check = RawProcessor.dcraw_process();
-
     raw_image_ptr = RawProcessor.dcraw_make_mem_image(&check);
-
     loaded_image = cv::Mat(cv::Size(raw_image_ptr->width, raw_image_ptr->height), CV_8UC3, raw_image_ptr->data, cv::Mat::AUTO_STEP);
     cvtColor(loaded_image, loaded_image, 4);
 
@@ -74,17 +72,17 @@ PuansonChecker::PuansonChecker(const QApplication *app)
     etalon_angle = 1;
     loading_etalon_angle = 0;
 
-    quint16 ext_tolerance_px_array[NUMBER_OF_ANGLES];
-    quint16 int_tolerance_px_array[NUMBER_OF_ANGLES];
+    quint16 ext_tolerance_mkm_array[NUMBER_OF_ANGLES];
+    quint16 int_tolerance_mkm_array[NUMBER_OF_ANGLES];
 
     quint32 reference_points_distance_array[NUMBER_OF_ANGLES];
 
-    general_settings->getToleranceFields(ext_tolerance_px_array, int_tolerance_px_array);
+    general_settings->getToleranceFields(ext_tolerance_mkm_array, int_tolerance_mkm_array);
     general_settings->getReferencePointDistancesMkm(reference_points_distance_array);
 
     for(int angle = 1; angle <= NUMBER_OF_ANGLES; angle++)
     {
-        getEtalon(angle).setToleranceFields(ext_tolerance_px_array[angle - 1], int_tolerance_px_array[angle - 1]);
+        getEtalon(angle).setToleranceFields(ext_tolerance_mkm_array[angle - 1], int_tolerance_mkm_array[angle - 1]);
         getEtalon(angle).setReferencePointDistanceMkm(reference_points_distance_array[angle - 1]);
     }
 
@@ -117,12 +115,20 @@ PuansonChecker::~PuansonChecker()
 
 void PuansonChecker::updateContoursImage()
 {
+    PuansonImage &current_image_ref = getCurrent();
+
     if(!etalon_contour.empty())
     {
+       if(etalon_puanson_image[etalon_angle - 1].isIdealContourSet())
+            current_image_ref.copyIdealContour(etalon_puanson_image[etalon_angle - 1]);
+
        etalon_contour.release();
        etalon_contour = getContour(etalon_puanson_image[etalon_angle - 1]);
 
-       if(!getCurrent().getImageContour().empty())
+       if(!current_image_ref.isEmpty())
+            current_image_ref.setImageContour(getContour(current_image_ref));
+
+       if(!current_image_ref.getImageContour().empty())
             drawContoursImage();
     }
 }
@@ -137,9 +143,7 @@ void PuansonChecker::showSettingsDialog()
     {
        case QDialog::Accepted:
             main_window->setWindowStatus("Применение настроек ...");
-
             updateContoursImage();
-
             main_window->setWindowStatus("");
            break;
        case QDialog::Rejected:
@@ -173,6 +177,9 @@ void PuansonChecker::loadCurrentImage(const QString &path)
 
         if(PuansonChecker::loadImage(CURRENT_IMAGE, path, current_image) == 0)
         {
+            if(etalon_puanson_image[etalon_angle - 1].isIdealContourSet())
+                current_image.copyIdealContour(etalon_puanson_image[etalon_angle-1]);
+
             current_image.setImageContour(getContour(current_image));
             current_image.setToleranceFields(0, 0);
         }
@@ -197,14 +204,14 @@ bool PuansonChecker::loadEtalonImage(const quint8 angle, const QString &path)
 
         if(PuansonChecker::loadImage(ETALON_IMAGE, path, *etalon_puanson_image_ptr) == 0)
         {
-            quint16 ext_tolerance_px_array[NUMBER_OF_ANGLES];
-            quint16 int_tolerance_px_array[NUMBER_OF_ANGLES];
+            quint16 ext_tolerance_mkm_array[NUMBER_OF_ANGLES];
+            quint16 int_tolerance_mkm_array[NUMBER_OF_ANGLES];
             quint32 reference_points_distance_array[NUMBER_OF_ANGLES];
 
-            general_settings->getToleranceFields(ext_tolerance_px_array, int_tolerance_px_array);
+            general_settings->getToleranceFields(ext_tolerance_mkm_array, int_tolerance_mkm_array);
             general_settings->getReferencePointDistancesMkm(reference_points_distance_array);
 
-            etalon_puanson_image_ptr->setToleranceFields(ext_tolerance_px_array[loading_etalon_angle - 1], int_tolerance_px_array[loading_etalon_angle - 1]);
+            etalon_puanson_image_ptr->setToleranceFields(ext_tolerance_mkm_array[loading_etalon_angle - 1], int_tolerance_mkm_array[loading_etalon_angle - 1]);
             etalon_puanson_image_ptr->setReferencePointDistanceMkm(reference_points_distance_array[loading_etalon_angle - 1]);
 
             etalon_contour = getContour(*etalon_puanson_image_ptr);
@@ -233,9 +240,7 @@ bool PuansonChecker::getCurrentImage(QImage &img)
     if(getCurrent().getImage().empty())
         return false;
 
-    img = QImage((const unsigned char*)(getCurrent().getImage().data),
-                  getCurrent().getImage().cols, getCurrent().getImage().rows,
-                  getCurrent().getImage().step, QImage::Format_RGB888).rgbSwapped();
+    getCurrent().getQImage(img);
 
     return true;
 }
@@ -272,7 +277,7 @@ bool PuansonChecker::getEtalonContour(QImage &img)
 
     img = QImage((const unsigned char*)(etalon_contour.data),
                   etalon_contour.cols, etalon_contour.rows,
-                  etalon_contour.step, QImage::Format_RGB888).rgbSwapped();
+                  etalon_contour.step, QImage::Format_Grayscale8);//.rgbSwapped();
 
     return true;
 }
@@ -316,7 +321,7 @@ void PuansonChecker::drawCurrentImage()
 {
     QImage img;
 
-    this->current_image_window->setLabel2Text("Файл " + getCurrent().getFilename());
+    current_image_window->setLabel2Text("Файл " + getCurrent().getFilename());
 
     getCurrentImage(img);
     current_image_window->drawImage(img);
@@ -353,14 +358,18 @@ void PuansonChecker::shootAndLoadCurrentImage()
     load_image_future = QtConcurrent::run([&, path]() {
         main_window->setWindowStatus("Фотосъёмка текущей детали ...");
         camera->CaptureAndAcquireImage();
+
         main_window->setWindowStatus("Загрузка изображения текущей детали ...");
         PuansonImage &current_image = getCurrent();
+
         current_image.release();
+
         if(PuansonChecker::loadImage(CURRENT_IMAGE, path, current_image) == 0)
         {
             current_image.setToleranceFields(0, 0);
             current_image.setImageContour(getContour(current_image));
         }
+
         return current_image.getImageType();
     });
 
@@ -392,56 +401,13 @@ cv::Mat PuansonChecker::getContour(PuansonImage &puanson_image)
 class ParallelDrawContours : public ParallelLoopBody
 {
 public:
-    static int point_distance(const Point &pt1, const Point &pt2)
-    {
-        return static_cast<int>(qSqrt((pt1.x - pt2.x)*(pt1.x - pt2.x) + (pt1.y - pt2.y)*(pt1.y - pt2.y)));
-    }
-
-    static bool shiftContour(const Point &inner_point, const Point &orig_point, Point &new_point, int N_x, int N_y, bool outer_dir = true)
-    {
-        if(outer_dir)
-        {
-            new_point.x = orig_point.x + N_x;
-            new_point.y = orig_point.y + N_y;
-
-            if(point_distance(inner_point, orig_point) > point_distance(inner_point, new_point))
-            {
-                new_point.x = orig_point.x - N_x;
-                new_point.y = orig_point.y - N_y;
-
-                return true;
-            }
-
-            return false;
-        }
-        else
-        {
-            new_point.x = orig_point.x - N_x;
-            new_point.y = orig_point.y - N_y;
-
-            if(point_distance(inner_point, orig_point) < point_distance(inner_point, new_point))
-            {
-                new_point.x = orig_point.x + N_x;
-                new_point.y = orig_point.y + N_y;
-
-                return true;
-            }
-
-            return false;
-        }
-    }
-
-    ParallelDrawContours(ImageType_e type, Mat &image_contour, const vector<vector<Point> > &contours_vector, const quint16 contours_per_thread,
-                     const vector<Vec4i> &hierarchy, const bool draw_etalon_contour_flag, const quint32 ext_tolerance, quint32 int_tolerance,
-                     const QPoint &etalon_top, const QPoint &etalon_right, const QPoint &etalon_bottom, const QPoint &etalon_left)
-                : image_type(type), image_contour_ref(image_contour),
+    ParallelDrawContours(PuansonImage &puanson_image, Mat &image_contour, const vector<vector<Point> > &contours_vector, const quint16 contours_per_thread,
+                     const vector<Vec4i> &hierarchy, const bool draw_etalon_contour_flag, const quint32 ext_tolerance, quint32 int_tolerance)
+                : p_puanson_image(&puanson_image), image_type(puanson_image.getImageType()), image_contour_ref(image_contour),
                   detail_contours(contours_vector), contours_per_thread(contours_per_thread),
                   contours_hierarchy(hierarchy), draw_etalon_contour_flag(draw_etalon_contour_flag),
-                  external_tolerance(ext_tolerance), internal_tolerance(int_tolerance),
-                  _top(etalon_top.x(), etalon_top.y()), _right(etalon_right.x(), etalon_right.y()),
-                  _bottom(etalon_bottom.x(), etalon_bottom.y()), _left(etalon_left.x(), etalon_left.y())
-    {
-    }
+                  external_tolerance(ext_tolerance), internal_tolerance(int_tolerance)
+    { }
 
     virtual void operator()(const Range& range) const
     {
@@ -455,7 +421,7 @@ public:
         {
             case ETALON_IMAGE:
                 detail_contour_color = Scalar( 255, 255, 255 );
-                thickness = 3;
+                thickness = 1;
                 break;
             case CURRENT_IMAGE:
             default:
@@ -464,77 +430,13 @@ public:
                 break;
         }
 
-        // Координаты нормального вектора
-        int N_x = 0;
-        int N_y = 0;
-
         vector<vector<Point> > outer_contours = detail_contours;
         vector<vector<Point> > inner_contours = detail_contours;
 
-#if 0
-        // Поиск самой вехней, нижней, правой и левой точек
-        Point _top(0, 10000);
-        Point _left(10000, 0);
-        Point _right(0, 0);
-        Point _bottom(0, 0);
-
-        for( size_t i = 0; i < detail_contours.size(); i++ )
-        {
-            for(auto it = detail_contours[i].begin(); it != detail_contours[i].end(); it++)
-            {
-                if(it->x < _left.x)
-                    _left = *it;
-
-                if(it->x > _right.x)
-                    _right = *it;
-
-                if(it->y < _top.y)
-                    _top = *it;
-
-                if(it->y > _bottom.y)
-                    _bottom = *it;
-            }
-        }
-
-        _left.x += 200;
-        _right.x -= 200;
-        _top.y += 400;
-        _bottom.y -= 300;
-
-        if(_left.y < _top.y)
-            _left.y += 200;
-        else if(_left.y > _bottom.y)
-            _left.y -= 200;
-
-        if(_right.y < _top.y)
-            _right.y += 200;
-        else if(_right.y > _bottom.y)
-            _right.y -= 200;
-
-        if(_top.x < _left.x)
-        {
-            _top.x += 200;
-        }
-        else if(_top.x > _right.x)
-            _top.x -= 200;
-
-        if(_bottom.x < _left.x)
-            _bottom.x += 200;
-        else if(_bottom.x > _right.x)
-            _bottom.x -= 200;
-        //////////////////////////////////////
-#endif // 0
         // Внутренняя точка
-        Point inner_point;
-
-        int _x1, _y1;
-        int _x2, _y2;
-        int __x2, __y2;
-        int _x3, _y3;
-
         int j; // Индекс
 
-        Point inner_line_pt1, inner_line_pt2;
+        QLine last_skeleton_line;
 
         for(int i = range.start; i < range.end; i++)
         {
@@ -543,326 +445,59 @@ public:
                 j = i * contours_per_thread + l;
 
                 // Рассчитывать контура допуска только тогда, когда заданы точки остова
-                if(image_type == ETALON_IMAGE && !((_top == _right) && (_bottom == _left) && (_top == _bottom)))
+                if(p_puanson_image->isIdealContourSet()/*(image_type == ETALON_IMAGE && p_puanson_image->isIdealContourSet()) || image_type == CURRENT_IMAGE*/)
                 {
-                    // Получение границы внутреннего допуска
-                    _x1 = 0, _y1 = 0;
-                    _x2 = 0, _y2 = 0;
-                    __x2 = 0, __y2 = 0;
-                    _x3 = 0, _y3 = 0;
+                    QPoint internal_normal_vector;
+                    QPoint external_normal_vector;
 
-                    for(auto it = inner_contours[j].begin(); it != inner_contours[j].end(); it++)
+                    bool near_ideal_line = p_puanson_image->findNearestIdealLineNormalVector(QPoint(detail_contours[j].begin()->x, detail_contours[j].begin()->y), last_skeleton_line, internal_normal_vector, external_normal_vector);
+
+                    if((p_puanson_image->isIdealContourSet() && near_ideal_line)/* || image_type == CURRENT_IMAGE*/)
                     {
-                        if(abs(it->y - _bottom.y) < abs(it->y - _top.y))
-                            inner_line_pt1 = _bottom;
-                        else
-                            inner_line_pt1 = _top;
+                        if(image_type == ETALON_IMAGE)
+                        {
+                            for(auto it = inner_contours[j].begin(); it != inner_contours[j].end(); it++)
+                                *it += Point(internal_normal_vector.x(), internal_normal_vector.y());
 
-                        if(it->x > inner_line_pt1.x)
-                            inner_line_pt2 = _right;
-                        else
-                            inner_line_pt2 = _left;
-
-                        if(it->x < _left.x)
-                        {
-                            inner_point = _left;
-                        }
-                        else if(it->x > _right.x)
-                        {
-                            inner_point = _right;
-                        }
-                        else
-                        {
-                            inner_point.x = it->x;
-                            inner_point.y = (inner_point.x - inner_line_pt1.x)*(inner_line_pt2.y - inner_line_pt1.y)/(inner_line_pt2.x - inner_line_pt1.x) + inner_line_pt1.y;
+                            for(auto it = outer_contours[j].begin(); it != outer_contours[j].end(); it++)
+                                *it += Point(external_normal_vector.x(), external_normal_vector.y());
                         }
 
-                        //circle(image_contour_ref, inner_point, 15, Scalar(120, 150, 50));
-
-                        if(it + 1 == inner_contours[j].end())  // Последняя точка
+                        // Рисование контуров
+                        // Вывод контура детали
+                        if((image_type == ETALON_IMAGE &&  draw_etalon_contour_flag) || image_type == CURRENT_IMAGE)
                         {
-                            if(it != inner_contours[j].begin())
+                            /*if(j % 10 == 0)
                             {
-                                it->x = _x2;
-                                it->y = _y2;
-                            }
-                            else
-                            {
-                                ParallelDrawContours::shiftContour(inner_point, *it, *it, N_x, N_y, false);
-                            }
+                                Point seedPoint(detail_contours[j].begin()->x + 10, detail_contours[j].begin()->y + 20);
+                                char buf[32] = "";
+                                sprintf(buf, "%d", j);
+                                String text(buf);
+                                putText(image_contour_ref, text, seedPoint, FONT_HERSHEY_PLAIN, 0.7, Scalar(255, 0, 255));
+                            }*/
 
-                            continue;
+                            drawContours( image_contour_ref, detail_contours, j, detail_contour_color, thickness, LINE_AA, contours_hierarchy, 0, Point(0, 0) );
                         }
 
-                        // Вычисление нормального отрезка
-                        int dx = it->y - (it+1)->y;
-                        int dy = (it+1)->x - it->x;
-
-                        double mod = qSqrt(static_cast<double>(dx * dx + dy * dy));
-
-                        N_x = (int)(dx / mod * internal_tolerance); // Координаты нормального
-                        N_y = (int)(dy / mod * internal_tolerance); // вектора
-                        // Конец вычисления нормального отрезка
-
-                        // Работа с текущим значением it
-                        if(it == inner_contours[j].begin())
+                        // Выводить контура допуска только тогда, когда заданы точки остова
+                        if(image_type == ETALON_IMAGE/* && p_puanson_image->isIdealContourSet()*/)
                         {
-                            Point new_point;
-
-                            ParallelDrawContours::shiftContour(inner_point, *it, new_point, N_x, N_y, false);
-
-                            _x1 = new_point.x;
-                            _y1 = new_point.y;
+                            //line(image_contour_ref, *detail_contours[j].begin(), *inner_contours[j].begin(), Scalar(255, 0, 0));
+                            // Вывод контура внутреннего допуска
+                            drawContours( image_contour_ref, inner_contours, j, inner_contour_color, 1, LINE_AA, contours_hierarchy, 0, Point(0, 0) );
+                            //line(image_contour_ref, *detail_contours[j].begin(), *outer_contours[j].begin(), Scalar(0, 255, 0));
+                            // Вывод контура внешнего допуска
+                            drawContours( image_contour_ref, outer_contours, j, outer_contour_color, 1, LINE_AA, contours_hierarchy, 0, Point(0, 0) );
                         }
-                        else
-                        {
-                            Point new_point;
-
-                            ParallelDrawContours::shiftContour(inner_point, *it, new_point, N_x, N_y, false);
-
-                            __x2 = new_point.x;
-                            __y2 = new_point.y;
-                        }
-                        // -----------------------------
-
-                        // Работа со значением it + 1
-                        if(it + 1 != inner_contours[j].end())
-                        {
-                            if(it == inner_contours[j].begin())
-                            {
-                                Point new_point;
-
-                                ParallelDrawContours::shiftContour(inner_point, *(it + 1), new_point, N_x, N_y, false);
-
-                                _x2 = new_point.x;
-                                _y2 = new_point.y;
-                            }
-                            else
-                            {
-                                Point new_point;
-
-                                ParallelDrawContours::shiftContour(inner_point, *(it + 1), new_point, N_x, N_y, false);
-
-                                _x3 = new_point.x;
-                                _y3 = new_point.y;
-                            }
-                        }
-                        // -------------------------
-
-                        // Установка нового значения (*it)
-                        if(it == inner_contours[j].begin())         // Первая точка
-                        {
-                            it->x = _x1;
-                            it->y = _y1;
-                        }
-                        else if(it + 1 == inner_contours[j].end())  // Последняя точка
-                        {
-                            it->x = __x2;
-                            it->y = __y2;
-                        }
-                        else                                        // Пересечение перенесённых отрезков
-                        {
-                            double znam = (__y2*(_x2 - _x1) + _y3*(_x1 - _x2) + _y2*(_x3 - __x2) + _y1*(__x2 - _x3));
-
-                            if(znam == 0.0 || isnan(znam))
-                            {
-                                it->x = __x2;
-                                it->y = __y2;
-                            }
-                            else
-                            {
-                                it->x = (_x2*_y1*(__x2 - _x3) + _x1*_y2*(_x3 - __x2) + __x2*_y3*(_x1 - _x2) + _x3*__y2*(_x2 - _x1))/znam;
-                                if(_x2 - _x1 == 0)
-                                    it->y = __y2;
-                                else
-                                    it->y = (_x1*_y2 - _x2*_y1 - it->x*(_y2 - _y1)) / (_x1 - _x2);
-                            }
-                        }
-                        // -------------------------------
-
-                        // Сдвиг _x1, _x2
-                        if(it != inner_contours[j].begin())
-                        {
-                            _x1 = __x2;
-                            _y1 = __y2;
-
-                            _x2 = _x3;
-                            _y2 = _y3;
-                        }
-                        // --------------
-                    }
-                    /////////////////////////////////////
-
-                    // Получение границы внешнего допуска
-                    _x1 = 0, _y1 = 0;
-                    _x2 = 0, _y2 = 0;
-                    __x2 = 0, __y2 = 0;
-                    _x3 = 0, _y3 = 0;
-
-                    for(auto it = outer_contours[j].begin(); it != outer_contours[j].end(); it++)
-                    {
-                        if(abs(it->y - _bottom.y) < abs(it->y - _top.y))
-                            inner_line_pt1 = _bottom;
-                        else
-                            inner_line_pt1 = _top;
-
-                        if(it->x > inner_line_pt1.x)
-                            inner_line_pt2 = _right;
-                        else
-                            inner_line_pt2 = _left;
-
-                        if(it->x < _left.x)
-                        {
-                            inner_point = _left;
-                        }
-                        else if(it->x > _right.x)
-                        {
-                            inner_point = _right;
-                        }
-                        else
-                        {
-                            inner_point.x = it->x;
-                            inner_point.y = (inner_point.x - inner_line_pt1.x)*(inner_line_pt2.y - inner_line_pt1.y)/(inner_line_pt2.x - inner_line_pt1.x) + inner_line_pt1.y;
-                        }
-
-                        //circle(image_contour_ref, inner_point, 5, Scalar(120, 150, 50));
-
-                        if(it + 1 == outer_contours[j].end())  // Последняя точка
-                        {
-                            if(it != outer_contours[j].begin())
-                            {
-                                it->x = _x2;
-                                it->y = _y2;
-                            }
-                            else
-                            {
-                                ParallelDrawContours::shiftContour(inner_point, *it, *it, N_x, N_y, true);
-                            }
-
-                            continue;
-                        }
-
-                        // Вычисление нормального отрезка
-                        int dx = it->y - (it+1)->y;
-                        int dy = (it+1)->x - it->x;
-
-                        double mod = qSqrt(static_cast<double>(dx * dx + dy * dy));
-
-                        N_x = (int)(dx / mod * external_tolerance); // Координаты нормального
-                        N_y = (int)(dy / mod * external_tolerance); // вектора
-                        // Конец вычисления нормального отрезка
-
-                        // Работа с текущим значением it
-                        if(it == outer_contours[j].begin())
-                        {
-                            Point new_point;
-
-                            ParallelDrawContours::shiftContour(inner_point, *it, new_point, N_x, N_y, true);
-
-                            _x1 = new_point.x;
-                            _y1 = new_point.y;
-                        }
-                        else
-                        {
-                            Point new_point;
-
-                            ParallelDrawContours::shiftContour(inner_point, *it, new_point, N_x, N_y, true);
-
-                            __x2 = new_point.x;
-                            __y2 = new_point.y;
-                        }
-                        // -----------------------------
-
-                        // Работа со значением it + 1
-                        if(it + 1 != outer_contours[j].end())
-                        {
-                            if(it == outer_contours[j].begin())
-                            {
-                                Point new_point;
-
-                                ParallelDrawContours::shiftContour(inner_point, *(it + 1), new_point, N_x, N_y, true);
-
-                                _x2 = new_point.x;
-                                _y2 = new_point.y;
-                            }
-                            else
-                            {
-                                Point new_point;
-
-                                ParallelDrawContours::shiftContour(inner_point, *(it + 1), new_point, N_x, N_y, true);
-
-                                _x3 = new_point.x;
-                                _y3 = new_point.y;
-                            }
-                        }
-                        // -------------------------
-
-                        // Установка нового значения (*it)
-                        if(it == outer_contours[j].begin())         // Первая точка
-                        {
-                            it->x = _x1;
-                            it->y = _y1;
-                        }
-                        else if(it + 1 == outer_contours[j].end())  // Последняя точка
-                        {
-                            it->x = __x2;
-                            it->y = __y2;
-                        }
-                        else                                        // Пересечение перенесённых отрезков
-                        {
-                            double znam = (__y2*(_x2 - _x1) + _y3*(_x1 - _x2) + _y2*(_x3 - __x2) + _y1*(__x2 - _x3));
-
-                            if(znam == 0.0 || isnan(znam))
-                            {
-                                it->x = __x2;
-                                it->y = __y2;
-                            }
-                            else
-                            {
-                                it->x = (_x2*_y1*(__x2 - _x3) + _x1*_y2*(_x3 - __x2) + __x2*_y3*(_x1 - _x2) + _x3*__y2*(_x2 - _x1))/znam;
-                                if(_x2 - _x1 == 0)
-                                    it->y = __y2;
-                                else
-                                    it->y = (_x1*_y2 - _x2*_y1 - it->x*(_y2 - _y1)) / (_x1 - _x2);
-                            }
-                        }
-                        // -------------------------------
-
-                        // Сдвиг _x1, _x2
-                        if(it != outer_contours[j].begin())
-                        {
-                            _x1 = __x2;
-                            _y1 = __y2;
-
-                            _x2 = _x3;
-                            _y2 = _y3;
-                        }
-                        // --------------
-                    }
-                    /////////////////////////////////////
-                }
-
-                // Рисование контуров
-                {
-                    // Вывод контура детали
-                    if((image_type == ETALON_IMAGE && draw_etalon_contour_flag) || image_type == CURRENT_IMAGE)
-                        drawContours( image_contour_ref, detail_contours, j, detail_contour_color, thickness, LINE_AA, contours_hierarchy, 0, Point(0, 0) );
-
-                    // Выводить контура допуска только тогда, когда заданы точки остова
-                    if(image_type == ETALON_IMAGE && !((_top == _right) && (_bottom == _left) && (_top == _bottom)))
-                    {
-                        // Вывод контура внутреннего допуска
-                        drawContours( image_contour_ref, inner_contours, j, inner_contour_color, 1, LINE_AA, contours_hierarchy, 0, Point(0, 0) );
-                        // Вывод контура внешнего допуска
-                        drawContours( image_contour_ref, outer_contours, j, outer_contour_color, 1, LINE_AA, contours_hierarchy, 0, Point(0, 0) );
+                        /////////////////////
                     }
                 }
-                /////////////////////
             }
         }
     }
 
 private:
+    PuansonImage *p_puanson_image;
     ImageType_e image_type;
     Mat &image_contour_ref;
     vector<vector<Point>> detail_contours;
@@ -877,11 +512,25 @@ private:
     Point _bottom;
     Point _left;
 
+    // Нормальные вектора
+    // Внутренний допуск
+    Point top_right_n_int;
+    Point right_bottom_n_int;
+    Point bottom_left_n_int;
+    Point left_top_n_int;
+    // Внешний допуск
+    Point top_right_n_ext;
+    Point right_bottom_n_ext;
+    Point bottom_left_n_ext;
+    Point left_top_n_ext;
 };
 
-    Mat gray_image = Mat(puanson_image.getImage().rows, puanson_image.getImage().cols, CV_8UC1);
+    Mat gray_image = Mat(puanson_image.getImage().size(), CV_8UC1);
     Mat image_contour(Mat::zeros(puanson_image.getImage().size(), CV_8UC3));
     Mat bin1;
+
+    if(puanson_image.isEmpty())
+        return Mat();
 
     // Kernel matrix for filter
     /*Mat kernel_matrix = (Mat_<float>(3,3) <<
@@ -889,17 +538,52 @@ private:
         -0.1f, 2.0f, -0.1f,
         -0.1f, -0.1f, -0.1f);*/
 
-    Rect region_of_interest;
+    //Rect region_of_interest;
     Mat gray_roi;
 
     cvtColor(puanson_image.getImage(), gray_image, COLOR_RGB2GRAY);
 
     //filter2D(gray_image, gray_image, gray_image.depth(), kernel_matrix, cvPoint(-1,-1));
-    region_of_interest = Rect(0, HORIZONTAL_FIELD_PX, gray_image.cols, gray_image.rows - HORIZONTAL_FIELD_PX*2);
+    //region_of_interest = Rect(0, HORIZONTAL_FIELD_PX, gray_image.cols, gray_image.rows - HORIZONTAL_FIELD_PX*2);
     gray_roi = gray_image;//gray_image(region_of_interest);
 
+    // Убираем лишние детали в верхнем правом и нижнем левом углах
+    Point poly_points[4];
+
+    // Левый нижний угол
+    poly_points[0] = Point(0, gray_image.rows * 0.3);
+    poly_points[1] = Point(gray_image.cols * 0.5, gray_image.rows);
+    poly_points[2] = Point(0, gray_image.rows);
+
+    fillConvexPoly(gray_roi, poly_points, 3, Scalar(gray_image.at<uchar>(poly_points[0])));
+
+    /*line(gray_roi, poly_points[0], poly_points[1], Scalar(0));
+    line(gray_roi, poly_points[1], poly_points[2], Scalar(0));
+    line(gray_roi, poly_points[2], poly_points[0], Scalar(0));*/
+    //////////////////////
+
+    // Правый верхний угол
+    poly_points[0] = Point(gray_image.cols * 0.7, 0);
+    poly_points[1] = Point(gray_image.cols, gray_image.rows * 0.3);
+    poly_points[2] = Point(gray_image.cols, 0);
+
+    fillConvexPoly(gray_roi, poly_points, 3, Scalar(gray_image.at<uchar>(poly_points[0])));
+
+   /*line(gray_roi, poly_points[0], poly_points[1], Scalar(0));
+    line(gray_roi, poly_points[1], poly_points[2], Scalar(0));
+    line(gray_roi, poly_points[2], poly_points[0], Scalar(0));*/
+    //////////////////////
+
+    /*poly_points[0] = _top;
+    poly_points[1] = _right;
+    poly_points[2] = _bottom;
+    poly_points[3] = _left;
+
+    fillConvexPoly(gray_roi, poly_points, 4, Scalar(gray_image.at<uchar>(poly_points[0])));*/
+    //////////////////////
+
     // Поиск бликов
-    if(true)
+    if(/*true*/false)
     {
         bool detail_area_flag = false;
         int number_of_detected_glares = 0;
@@ -942,7 +626,7 @@ private:
         }
     }
 
-    threshold( gray_roi, gray_roi, TRUNC_THRES, 0, THRESH_TRUNC );
+   // threshold( gray_roi, gray_roi, TRUNC_THRES, 0, THRESH_TRUNC );
     //////////////////////////
 
     //blur( gray_roi, gray_roi, Size(3,3) );
@@ -958,7 +642,7 @@ private:
     for( size_t k = 0; k < detail_contours0.size(); k++ )
         approxPolyDP(Mat(detail_contours0[k]), detail_contours[k], 3, true);
 
-    Scalar inner_line_color(229, 43, 80);
+    //Scalar inner_line_color(229, 43, 80);
 
 #if !defined(PARALLEL_CONTOUR_COMPUTING)
     Scalar detail_contour_color;
@@ -1361,47 +1045,46 @@ private:
         /////////////////////
     }
 #else // PARALLEL_CONTOUR_COMPUTING
-    const quint16 contours_per_thread = 10; // Количество контуров, обрабатываемых одним потоком
+    if(puanson_image.isIdealContourSet())
+    {
+        const quint16 contours_per_thread = 10; // Количество контуров, обрабатываемых одним потоком
 
-    qDebug() << "this " << this << "before parallel_for_ " << QTime::currentTime();
+        qDebug() << "this " << this << "before parallel_for_ " << QTime::currentTime();
 
-    QPoint inner_skeleton_top, inner_skeleton_right, inner_skeleton_bottom, inner_skeleton_left;
-    puanson_image.getInnerSkeleton(inner_skeleton_top, inner_skeleton_right, inner_skeleton_bottom, inner_skeleton_left);
+        quint16 ext_tolerance_px, int_tolerance_px;
 
-    quint16 ext_tolerance_px, int_tolerance_px;
+        puanson_image.getToleranceFields(ext_tolerance_px, int_tolerance_px);
 
-    puanson_image.getToleranceFields(ext_tolerance_px, int_tolerance_px);
-
-    parallel_for_(Range(0, detail_contours.size() / contours_per_thread),
-                  ParallelDrawContours(puanson_image.getImageType(), image_contour, detail_contours, contours_per_thread, contours_hierarchy,
-                                       draw_etalon_contour_flag, ext_tolerance_px, int_tolerance_px,
-                                       inner_skeleton_top, inner_skeleton_right, inner_skeleton_bottom, inner_skeleton_left));
-    /*for(int j = 0; j < detail_contours.size(); j++)
-        drawContours( image_contour, detail_contours, j, color, thickness, 8, contours_hierarchy, 0, Point() );*/
+        parallel_for_(Range(0, detail_contours.size() / contours_per_thread),
+                      ParallelDrawContours(puanson_image, image_contour, detail_contours, contours_per_thread, contours_hierarchy,
+                                           draw_etalon_contour_flag, ext_tolerance_px, int_tolerance_px));
+        /*for(int j = 0; j < detail_contours.size(); j++)
+            drawContours( image_contour, detail_contours, j, color, thickness, 8, contours_hierarchy, 0, Point() );*/
+    }
 qDebug() << "this " << this << "after parallel_for_ " << QTime::currentTime();
 #endif // PARALLEL_CONTOUR_COMPUTING
 
     // Рисование внутренних линий детали
-    if(true)
+    if(false)
     {
-        cv::Point _top, _right, _bottom, _left;
+        /*cv::Point _top, _right, _bottom, _left;
 
         _top = cv::Point(inner_skeleton_top.x(), inner_skeleton_top.y());
         _right = cv::Point(inner_skeleton_right.x(), inner_skeleton_right.y());
         _bottom = cv::Point(inner_skeleton_bottom.x(), inner_skeleton_bottom.y());
-        _left = cv::Point(inner_skeleton_left.x(), inner_skeleton_left.y());
+        _left = cv::Point(inner_skeleton_left.x(), inner_skeleton_left.y());*/
 
-        line(image_contour, _top, _right, inner_line_color, 3, LINE_AA);
+        /*line(image_contour, _top, _right, inner_line_color, 3, LINE_AA);
         line(image_contour, _right, _bottom, inner_line_color, 3, LINE_AA);
         line(image_contour, _bottom, _left, inner_line_color, 3, LINE_AA);
-        line(image_contour, _left, _top, inner_line_color, 3, LINE_AA);
+        line(image_contour, _left, _top, inner_line_color, 3, LINE_AA);*/
     }
     //////////////////////////////
 
     bin1.release();
     gray_image.release();
     gray_roi.release();
-
+    //image_contour.release();
     return image_contour;
 }
 
@@ -1487,8 +1170,8 @@ void PuansonChecker::drawContoursImage()
 #endif // DRAW_LINES_BETWEEN_REFERENCE_POINS
     }
     ////////////////////////
-
     contours_window->drawImage(img);
+    //contours_window->drawIdealContour(getEtalon(getEtalonAngle()).getIdealContourPath());
 }
 
 void PuansonChecker::shiftCurrentImage(const qreal dx, const qreal dy)
@@ -1544,7 +1227,7 @@ void PuansonChecker::rotateCurrentImage(const double angle)
         QPoint current_reference_point1;
         QPoint current_reference_point2;
 
-        double angle_in_degrees = angle*(180.0/M_PI);
+        double angle_in_degrees = qRadiansToDegrees(angle);
 
         getCurrent().getReferencePoints(current_reference_point1, current_reference_point2);
 
@@ -1627,7 +1310,7 @@ bool PuansonChecker::combineImagesByReferencePoints()
         QMessageBox msgBox;
         msgBox.setText(combine_transformation_message);
         msgBox.setModal(false);
-        msgBox.exec();
+        msgBox.show();
 
         return true;
     }

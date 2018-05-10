@@ -36,6 +36,12 @@ void ContoursForm::setImageCursor(const QCursor &cursor)
     ui->graphicsView->setCursor(cursor);
 }
 
+void ContoursForm::drawIdealContour(const QPainterPath &ideal_path)
+{
+    ui->graphicsView->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform | QPainter::HighQualityAntialiasing);
+    ui->graphicsView->scene()->addPath(ideal_path, QPen(Qt::yellow, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+}
+
 void ContoursForm::drawImage(const QImage &img)
 {
     if(!scene->items().isEmpty())

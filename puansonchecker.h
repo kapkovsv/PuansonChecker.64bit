@@ -51,7 +51,9 @@ enum CalibrationMode_e
     INNER_POINT_TOP = 10,
     INNER_POINT_RIGHT = 11,
     INNER_POINT_BOTTOM = 12,
-    INNER_POINT_LEFT = 13
+    INNER_POINT_LEFT = 13,
+    // Идеальный контур
+    IDEAL_IMPOSE = 14
 };
 
 class PuansonChecker: public QObject
@@ -95,11 +97,6 @@ public:
     bool getEtalonImage(const quint8 angle, QImage &img);
     bool getEtalonContour(QImage &img);
 
-    inline bool isInnerSkelenonPointsAreSet(const quint8 angle)
-    {
-        return etalon_puanson_image[angle-1].isInnerSkelenonPointsAreSet();
-    }
-
     inline bool setEtalonAngle(const quint8 angle)
     {
         if(angle > NUMBER_OF_ANGLES)
@@ -107,8 +104,8 @@ public:
 
         etalon_angle = angle;
 
-        if(isInnerSkelenonPointsAreSet(angle))
-            getContour(etalon_puanson_image[etalon_angle - 1]);
+//        if(areInnerSkelenonPointsSet(angle))
+//            getContour(etalon_puanson_image[etalon_angle - 1]);
 
         return true;
     }

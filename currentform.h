@@ -67,7 +67,7 @@ public:
     void mousePressEvent(const QPoint &p);
     void mouseReleaseEvent(const QPoint &p);
 
-    void keyPressEvent(QKeyEvent *event);
+    bool windowKeyPressEvent(QKeyEvent *event);
 
     void setCalibrationMode(CalibrationMode_e mode);
 

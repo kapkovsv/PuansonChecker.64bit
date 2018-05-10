@@ -5,6 +5,7 @@
 #include <QString>
 #include <QPoint>
 #include <QImage>
+#include <QtMath>
 
 #include <QDebug>
 
@@ -24,6 +25,44 @@ enum ImageType_e
 
 class PuansonImage
 {
+    class IdealContourArc
+    {
+    public:
+        IdealContourArc():
+        center(QPointF(0.0, 0.0)), start_point(QPointF(0.0, 0.0)), r(0.0), phi(0.0)
+        { }
+
+        IdealContourArc(const QPointF &_center, const QPointF &_start_point, const qreal _R, const qreal _phi):
+        center(_center), start_point(_start_point), r(_R), phi(_phi)
+        { }
+
+        QPointF &Center()
+        {
+            return center;
+        }
+
+        QPointF &StartPoint()
+        {
+            return start_point;
+        }
+
+        qreal &R()
+        {
+            return r;
+        }
+
+        qreal &Phi()
+        {
+            return phi;
+        }
+
+    private:
+        QPointF center; // Центр окружности дуги
+        QPointF start_point; // Точка начала дуги
+        qreal r; // Радиус дуги
+        qreal phi; // Образующий угол дуги
+    };
+
     Mat image;
     libraw_processed_image_t *raw_image;
     quint16 *p_raw_image_reference_counter;
@@ -42,14 +81,21 @@ class PuansonImage
     qreal calibration_ratio;                // D_mkm / D_px
 
     // Tolerance fields in px
-    quint16 externalTolerancePx;
-    quint16 internalTolerancePx;
+    quint16 externalToleranceMkm;
+    quint16 internalToleranceMkm;
 
-    // Inner skeleton
-    QPoint inner_skeleton_top;
-    QPoint inner_skeleton_left;
-    QPoint inner_skeleton_right;
-    QPoint inner_skeleton_bottom;
+    // Ideal contour
+    QPointF point_of_origin;
+    qreal rotation_angle;
+
+    QVector<QLine> idealSkeletonLines;
+    QVector<IdealContourArc> idealSkeletonArcs;
+    QVector<QPoint> innerIdealSkeletonNormalVectors;
+    QVector<QPoint> outerIdealSkeletonNormalVectors;
+
+    QPainterPath idealContourPath;
+
+    bool isIdealContourSetFlag;
 
     void calculateCalibrationRatio()
     {
@@ -58,6 +104,15 @@ class PuansonImage
         else
             calibration_ratio = static_cast<qreal>(reference_point_distance_mkm) / static_cast<qreal>(reference_point_distance_px);
     }
+
+    quint32 calculateDistance(const QPoint &p1, const QPoint &p2)
+    {
+        QPoint distance_vector_px = p1 - p2;
+
+        return qSqrt(distance_vector_px.x()*distance_vector_px.x() + distance_vector_px.y()*distance_vector_px.y());
+    }
+
+    void getArc(const qreal R, const QPointF &point1, const QPointF &point2, const QPointF &point3, QPointF &_point1, QPointF &_point2, QPointF &point0, qreal &phi, qreal &alpha);
 
 public:
     PuansonImage(const ImageType_e _image_type, const Mat &_image, const libraw_processed_image_t *_raw_image, const QString &_filename);
@@ -71,10 +126,45 @@ public:
         return empty;
     }
 
+    inline void copyIdealContour(const PuansonImage &img)
+    {
+        idealSkeletonLines = img.idealSkeletonLines;
+        innerIdealSkeletonNormalVectors = img.innerIdealSkeletonNormalVectors;
+        outerIdealSkeletonNormalVectors = img.outerIdealSkeletonNormalVectors;
+
+        idealSkeletonArcs = img.idealSkeletonArcs;
+
+        idealContourPath = img.idealContourPath;
+
+        isIdealContourSetFlag = true;
+    }
+
+    inline void getIdealContour(QVector<QLine> &idealLines, QVector<QPoint> &innerNormalVectors, QVector<QPoint> &outerNormalVectors, QPointF &_point_of_origin, qreal &_rotation_angle)
+    {
+        idealLines = idealSkeletonLines;
+        innerNormalVectors = innerIdealSkeletonNormalVectors;
+        outerNormalVectors = outerIdealSkeletonNormalVectors;
+
+        _point_of_origin = point_of_origin;
+        _rotation_angle = rotation_angle;
+    }
+
+    inline QPainterPath& getIdealContourPath()
+    {
+        return idealContourPath;
+    }
+
     inline ImageType_e getImageType()
     {
         return image_type;
     }
+
+    QPainterPath drawIdealContour(const QRect &r, const QPointF &_point_of_origin, qreal _rotation_angle, qreal _scale = 1.0);
+
+    static int pointDistanceToLine(const QPoint &pt, const QLine &line);
+    void addIdealSkeletonLine(const QPoint &p1, const QPoint &p2, int normal_vecror_x_sign);
+    void addIdealSkeletonArc(const QPointF &center, const QPointF &start_point, const qreal R, const qreal phi);
+    bool findNearestIdealLineNormalVector(const QPoint &pt, QLine &last_line, QPoint &internalToleranceNormalVector, QPoint &externalToleranceNormalVector);
 
     bool getQImage(QImage &img);
 
@@ -103,11 +193,6 @@ public:
     inline Mat& getImageContour()
     {
         return image_contour;
-    }
-
-    inline bool isInnerSkelenonPointsAreSet()
-    {
-        return !((inner_skeleton_top == inner_skeleton_right) && (inner_skeleton_bottom == inner_skeleton_left) && (inner_skeleton_top == inner_skeleton_bottom));
     }
 
     inline bool isReferencePointsAreSet()
@@ -145,32 +230,26 @@ public:
         return calibration_ratio;
     }
 
-    inline void setToleranceFields(const quint16 ext_tolerance_px, const quint16 int_tolerance_px)
+    inline void setToleranceFields(const quint16 ext_tolerance_mkm, const quint16 int_tolerance_mkm)
     {
-        externalTolerancePx = ext_tolerance_px;
-        internalTolerancePx = int_tolerance_px;
+        externalToleranceMkm = ext_tolerance_mkm;
+        internalToleranceMkm = int_tolerance_mkm;
     }
 
-    inline void getToleranceFields(quint16 &ext_tolerance_px, quint16 &int_tolerance_px)
+    inline void getToleranceFields(quint16 &ext_tolerance_mkm, quint16 &int_tolerance_mkm)
     {        
-        ext_tolerance_px = externalTolerancePx;
-        int_tolerance_px = internalTolerancePx;
+        ext_tolerance_mkm = externalToleranceMkm;
+        int_tolerance_mkm = internalToleranceMkm;
     }
 
-    inline void setInnerSkeleton(const QPoint &top, const QPoint &right, const QPoint &bottom, const QPoint &left)
+    inline bool isIdealContourSet()
     {
-        inner_skeleton_top = top;
-        inner_skeleton_right = right;
-        inner_skeleton_bottom = bottom;
-        inner_skeleton_left = left;
+        return isIdealContourSetFlag;
     }
 
-    inline void getInnerSkeleton(QPoint &top, QPoint &right, QPoint &bottom, QPoint &left)
+    inline void setIdealContourSetFlag(bool value)
     {
-        top = inner_skeleton_top;
-        right = inner_skeleton_right;
-        bottom = inner_skeleton_bottom;
-        left = inner_skeleton_left;
+        isIdealContourSetFlag = value;
     }
 };
 

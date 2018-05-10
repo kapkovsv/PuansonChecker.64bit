@@ -19,6 +19,7 @@ public:
     ~ContoursForm();
 
     void moveImage(const qreal dx, const qreal dy);
+    void drawIdealContour(const QPainterPath &ideal_path);
     void drawImage(const QImage &img);
     void setImageCursor(const QCursor &cursor);
 
