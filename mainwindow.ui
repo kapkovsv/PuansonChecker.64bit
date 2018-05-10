@@ -129,7 +129,7 @@
      <addaction name="goto_current_window_action"/>
      <addaction name="goto_counturs_window_action"/>
     </widget>
-    <widget class="QMenu" name="settings_menu_2">
+    <widget class="QMenu" name="settings_menu">
      <property name="title">
       <string>Настройки</string>
      </property>
@@ -139,10 +139,18 @@
      <addaction name="set_skeleton_inner_points_action"/>
      <addaction name="impose_ideal_contour_to_etalon_action"/>
     </widget>
+    <widget class="QMenu" name="shoot_and_load_menu">
+     <property name="title">
+      <string>Сделать фотографию и загрузить</string>
+     </property>
+     <addaction name="shoot_and_load_etalon_action"/>
+     <addaction name="shoot_and_load_current_action"/>
+    </widget>
     <addaction name="load_menu"/>
+    <addaction name="shoot_and_load_menu"/>
     <addaction name="angle_menu"/>
     <addaction name="goto_menu"/>
-    <addaction name="settings_menu_2"/>
+    <addaction name="settings_menu"/>
     <addaction name="save_current_action"/>
     <addaction name="save_result_action"/>
     <addaction name="separator"/>
@@ -299,6 +307,16 @@
   <action name="impose_ideal_contour_to_etalon_action">
    <property name="text">
     <string>Наложить идеальный контур на эталон</string>
+   </property>
+  </action>
+  <action name="shoot_and_load_etalon_action">
+   <property name="text">
+    <string>Эталона</string>
+   </property>
+  </action>
+  <action name="shoot_and_load_current_action">
+   <property name="text">
+    <string>Текущей детали</string>
    </property>
   </action>
  </widget>

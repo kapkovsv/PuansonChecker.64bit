@@ -11,7 +11,7 @@ ULONG	g_ulCameraType = 0;	// CameraType
 
 HINSTANCE	g_hInstModule = NULL;
 
-char g_szCapturedImageFileName[] = CAPTURED_CURRENT_IMAGE_FILENAME;
+char g_szCapturedImageFileName[255] = CAPTURED_CURRENT_IMAGE_FILENAME;
 
 bool PhotoCamera::SelectSource( LPRefObj pRefObj, ULONG *pulSrcID )
 {
@@ -501,8 +501,10 @@ bool PhotoCamera::AcquireImage()
     return true;
 }
 
-bool PhotoCamera::CaptureAndAcquireImage()
+bool PhotoCamera::CaptureAndAcquireImage(const char *captured_file_name)
 {
+    strcpy(g_szCapturedImageFileName, captured_file_name);
+
     if(CaptureImage() != true)
         return false;
 

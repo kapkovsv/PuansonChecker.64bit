@@ -20,7 +20,7 @@ public:
     bool Connect();
     bool Disconnect();
 
-    bool CaptureAndAcquireImage();
+    bool CaptureAndAcquireImage(const char *captured_file_name);
 
     inline QString getCameraModel()
     {

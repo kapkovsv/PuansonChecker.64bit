@@ -29,6 +29,7 @@
 #define CONFIGURATION_FILE "puanson_checker_config.xml"
 
 #define CAPTURED_CURRENT_IMAGE_FILENAME "CapturedCurrentImage.nef"
+#define CAPTURED_ETALON_IMAGE_FILENAME "CapturedEtalonImage.nef"
 
 #define DEFAULT_CANNY_THRES_1 20
 #define DEFAULT_CANNY_THRES_2 30
@@ -120,6 +121,7 @@ public:
     void loadCurrentImage(const QString &path);
 
     void shootAndLoadCurrentImage();
+    void shootAndLoadEtalonImage();
 
     void shiftCurrentImage(const qreal dx, const qreal dy);
     void rotateCurrentImage(const double angle);

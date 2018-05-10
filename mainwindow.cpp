@@ -12,9 +12,12 @@ void MainWindow::loadImageFinished(const ImageType_e image_type, const quint8 et
 {
     if(image_type == ETALON_IMAGE && etalon_angle >= 1 && etalon_angle <= NUMBER_OF_ANGLES)
     {
+        if(!ui->shoot_and_load_etalon_action->isEnabled())
+            ui->shoot_and_load_etalon_action->setEnabled(true);
+
         angle_actions[etalon_angle-1]->setEnabled(true);
 
-        if(scene->items().isEmpty() || etalon_angle == this->etalon_angle )
+        if( scene->items().isEmpty() || etalon_angle == this->etalon_angle )
         {
             QImage img;
 
@@ -50,6 +53,9 @@ void MainWindow::loadImageFinished(const ImageType_e image_type, const quint8 et
     }
     else if(image_type == CURRENT_IMAGE)
     {
+        if(!ui->shoot_and_load_current_action->isEnabled())
+            ui->shoot_and_load_current_action->setEnabled(true);
+
         PuansonChecker::getInstance()->drawCurrentImage();
         //PuansonChecker::getInstance()->drawCurrentContour();
 
@@ -118,6 +124,18 @@ void MainWindow::menuLoadEtalon5ActionTriggered()
         return;
 
     PuansonChecker::getInstance()->loadEtalonImage(5, file_to_open);
+}
+
+void MainWindow::menuShootAndLoadEtalonActionTriggered()
+{
+    ui->shoot_and_load_etalon_action->setEnabled(false);
+    checker->shootAndLoadEtalonImage();
+}
+
+void MainWindow::menuShootAndLoadCurrentActionTriggered()
+{
+    ui->shoot_and_load_current_action->setEnabled(false);
+    checker->shootAndLoadCurrentImage();
 }
 
 void MainWindow::menuLoadCurrentActionTriggered()
@@ -376,9 +394,9 @@ void MainWindow::menuSetSkeletonInnerPointsActionTriggered()
     innerSkeletonPointsSetting();
 }
 
-void MainWindow::drawIdealContour(const QPointF &point_of_origin, qreal rotation_angle)
+void MainWindow::drawIdealContour()
 {
-    QPainterPath ideal_path = PuansonChecker::getInstance()->getEtalon(etalon_angle).drawIdealContour(QRect(0, 0, ui->graphicsView->scene()->width(), ui->graphicsView->scene()->height()), const_cast<QPointF &>(point_of_origin), rotation_angle);
+    QPainterPath ideal_path = PuansonChecker::getInstance()->getEtalon(etalon_angle).drawIdealContour(QRect(0, 0, ui->graphicsView->scene()->width(), ui->graphicsView->scene()->height()), QPointF(ideal_origin_point), ideal_rotate_angle);
 
     ui->graphicsView->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform | QPainter::HighQualityAntialiasing);
     if(ui->graphicsView->scene() != NULL && ideal_item && ideal_item->scene() == ui->graphicsView->scene())
@@ -390,7 +408,7 @@ void MainWindow::menuImposeIdealContourToEtalonActionTriggered()
 {
     if(PuansonChecker::getInstance()->getEtalon(PuansonChecker::getInstance()->getEtalonAngle()).isReferencePointsAreSet())
     {
-        drawIdealContour(ideal_origin_point, ideal_rotate_angle);
+        drawIdealContour();
         setCalibrationMode(IDEAL_IMPOSE);
     }
     else
@@ -440,7 +458,7 @@ void MainWindow::drawReferencePointsAndIdealContour()
     drawReferencePoints();
 
     if(PuansonChecker::getInstance()->getEtalon(etalon_angle).isIdealContourSet())
-        drawIdealContour(ideal_origin_point, ideal_rotate_angle);
+        drawIdealContour();
 }
 
 void MainWindow::setCalibrationMode(CalibrationMode_e mode)
@@ -453,7 +471,7 @@ void MainWindow::setCalibrationMode(CalibrationMode_e mode)
             removeReferenceAndInnerSkeletonPoints();
 
             if(PuansonChecker::getInstance()->getEtalon(etalon_angle).isIdealContourSet())
-                drawIdealContour(ideal_origin_point, ideal_rotate_angle);
+                drawIdealContour();
 
             ui->label_2->setText("Калибровка. Укажите реперную точку 1.");
             setImageCursor(Qt::CrossCursor);
@@ -578,7 +596,7 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event)
     {
         ideal_origin_point = ideal_origin_point + event->localPos().toPoint() - ideal_impose_previous_point;
         ideal_impose_previous_point = event->localPos().toPoint();
-        drawIdealContour(ideal_origin_point, ideal_rotate_angle);
+        drawIdealContour();
     }
 }
 
@@ -591,7 +609,7 @@ bool MainWindow::wheelEvent(int delta)
        case IDEAL_IMPOSE:
             ideal_rotate_angle += delta / 120.0 / 10.0;
 
-            drawIdealContour(ideal_origin_point, ideal_rotate_angle);
+            drawIdealContour();
             retval = true;
        break;
        default:
@@ -703,6 +721,10 @@ MainWindow::MainWindow(PuansonChecker *checker) :
     connect(ui->load_etalon_3_action, SIGNAL(triggered()), SLOT(menuLoadEtalon3ActionTriggered()));
     connect(ui->load_etalon_4_action, SIGNAL(triggered()), SLOT(menuLoadEtalon4ActionTriggered()));
     connect(ui->load_etalon_5_action, SIGNAL(triggered()), SLOT(menuLoadEtalon5ActionTriggered()));
+
+    connect(ui->shoot_and_load_etalon_action, SIGNAL(triggered()), SLOT(menuShootAndLoadEtalonActionTriggered()));
+    connect(ui->shoot_and_load_current_action, SIGNAL(triggered()), SLOT(menuShootAndLoadCurrentActionTriggered()));
+
     connect(ui->load_current_action, SIGNAL(triggered()), SLOT(menuLoadCurrentActionTriggered()));
     connect(ui->goto_current_window_action, SIGNAL(triggered()), SLOT(menuGotoCurrentWindowTriggered()));
     connect(ui->goto_counturs_window_action, SIGNAL(triggered()), SLOT(menuGotoContoursWindowTriggered()));

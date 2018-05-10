@@ -143,6 +143,7 @@ void PuansonChecker::showSettingsDialog()
     {
        case QDialog::Accepted:
             main_window->setWindowStatus("Применение настроек ...");
+            main_window->drawIdealContour();  //  Нужно для пересчёта нормальных отрезков
             updateContoursImage();
             main_window->setWindowStatus("");
            break;
@@ -355,22 +356,64 @@ void PuansonChecker::shootAndLoadCurrentImage()
 {
     QString path = QDir::currentPath() + "/" + CAPTURED_CURRENT_IMAGE_FILENAME;
 
-    load_image_future = QtConcurrent::run([&, path]() {
-        main_window->setWindowStatus("Фотосъёмка текущей детали ...");
-        camera->CaptureAndAcquireImage();
+    main_window->setWindowStatus("Фотосъёмка и загрузка изображения текущей детали ...");
 
-        main_window->setWindowStatus("Загрузка изображения текущей детали ...");
+    load_image_future = QtConcurrent::run([&, path]() {
+        //main_window->setWindowStatus("Фотосъёмка текущей детали ...");
+        camera->CaptureAndAcquireImage(CAPTURED_CURRENT_IMAGE_FILENAME);
+
+        //main_window->setWindowStatus("Загрузка изображения текущей детали ...");
         PuansonImage &current_image = getCurrent();
 
         current_image.release();
 
         if(PuansonChecker::loadImage(CURRENT_IMAGE, path, current_image) == 0)
         {
+            if(etalon_puanson_image[etalon_angle - 1].isIdealContourSet())
+                current_image.copyIdealContour(etalon_puanson_image[etalon_angle-1]);
+
             current_image.setToleranceFields(0, 0);
             current_image.setImageContour(getContour(current_image));
         }
 
         return current_image.getImageType();
+    });
+
+    load_image_watcher.setFuture(load_image_future);
+}
+
+void PuansonChecker::shootAndLoadEtalonImage()
+{
+    QString path = QDir::currentPath() + "/" + CAPTURED_ETALON_IMAGE_FILENAME;
+
+    loading_etalon_angle = etalon_angle;
+    etalon_puanson_image_ptr = &etalon_puanson_image[loading_etalon_angle - 1];
+
+    main_window->setWindowStatus("Фотосъёмка и загрузка изображения эталонной детали ...");
+
+    load_image_future = QtConcurrent::run([&, path]() {
+        //main_window->setWindowStatus("Фотосъёмка эталонной детали ...");
+        camera->CaptureAndAcquireImage(CAPTURED_ETALON_IMAGE_FILENAME);
+
+        //main_window->setWindowStatus("Загрузка изображения эталонной детали ...");
+        etalon_puanson_image_ptr->release();
+
+        if(PuansonChecker::loadImage(ETALON_IMAGE, path, *etalon_puanson_image_ptr) == 0)
+        {
+            quint16 ext_tolerance_mkm_array[NUMBER_OF_ANGLES];
+            quint16 int_tolerance_mkm_array[NUMBER_OF_ANGLES];
+            quint32 reference_points_distance_array[NUMBER_OF_ANGLES];
+
+            general_settings->getToleranceFields(ext_tolerance_mkm_array, int_tolerance_mkm_array);
+            general_settings->getReferencePointDistancesMkm(reference_points_distance_array);
+
+            etalon_puanson_image_ptr->setToleranceFields(ext_tolerance_mkm_array[loading_etalon_angle - 1], int_tolerance_mkm_array[loading_etalon_angle - 1]);
+            etalon_puanson_image_ptr->setReferencePointDistanceMkm(reference_points_distance_array[loading_etalon_angle - 1]);
+
+            etalon_contour = getContour(*etalon_puanson_image_ptr);
+        }
+
+        return etalon_puanson_image_ptr->getImageType();
     });
 
     load_image_watcher.setFuture(load_image_future);
@@ -452,7 +495,7 @@ public:
 
                     bool near_ideal_line = p_puanson_image->findNearestIdealLineNormalVector(QPoint(detail_contours[j].begin()->x, detail_contours[j].begin()->y), last_skeleton_line, internal_normal_vector, external_normal_vector);
 
-                    if((p_puanson_image->isIdealContourSet() && near_ideal_line)/* || image_type == CURRENT_IMAGE*/)
+                    if((/*p_puanson_image->isIdealContourSet() && */near_ideal_line)/* || image_type == CURRENT_IMAGE*/)
                     {
                         if(image_type == ETALON_IMAGE)
                         {
@@ -1045,6 +1088,7 @@ private:
         /////////////////////
     }
 #else // PARALLEL_CONTOUR_COMPUTING
+
     if(puanson_image.isIdealContourSet())
     {
         const quint16 contours_per_thread = 10; // Количество контуров, обрабатываемых одним потоком
@@ -1058,10 +1102,12 @@ private:
         parallel_for_(Range(0, detail_contours.size() / contours_per_thread),
                       ParallelDrawContours(puanson_image, image_contour, detail_contours, contours_per_thread, contours_hierarchy,
                                            draw_etalon_contour_flag, ext_tolerance_px, int_tolerance_px));
+
+        qDebug() << "this " << this << "after parallel_for_ " << QTime::currentTime();
+
         /*for(int j = 0; j < detail_contours.size(); j++)
             drawContours( image_contour, detail_contours, j, color, thickness, 8, contours_hierarchy, 0, Point() );*/
     }
-qDebug() << "this " << this << "after parallel_for_ " << QTime::currentTime();
 #endif // PARALLEL_CONTOUR_COMPUTING
 
     // Рисование внутренних линий детали

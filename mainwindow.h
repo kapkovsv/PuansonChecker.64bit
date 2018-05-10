@@ -25,7 +25,6 @@ private:
     void drawReferencePoints();
     void drawReferencePointsAndIdealContour();
     void drawReferenceAndInnerSkeletonPoints();
-    void drawIdealContour(const QPointF &point_of_origin, double rotation_angle);
 public:
     explicit MainWindow(PuansonChecker *checker);
     ~MainWindow();
@@ -44,6 +43,8 @@ public:
 
     bool windowKeyPressEvent(QKeyEvent *event);
 
+    void drawIdealContour();
+
     void loadImageFinished(const ImageType_e image_type, quint8 etalon_angle);
 
     void innerSkeletonPointsSetting();
@@ -55,6 +56,10 @@ public slots:
     void menuLoadEtalon4ActionTriggered();
     void menuLoadEtalon5ActionTriggered();
     void menuLoadCurrentActionTriggered();
+
+    void menuShootAndLoadEtalonActionTriggered();
+    void menuShootAndLoadCurrentActionTriggered();
+
     void menuAngle1ActionTriggered();
     void menuAngle2ActionTriggered();
     void menuAngle3ActionTriggered();
