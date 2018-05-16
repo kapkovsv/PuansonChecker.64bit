@@ -136,7 +136,7 @@ public:
 
         idealContourPath = img.idealContourPath;
 
-        isIdealContourSetFlag = true;
+        isIdealContourSetFlag = img.isIdealContourSetFlag;
     }
 
     inline void getIdealContour(QVector<QLine> &idealLines, QVector<QPoint> &innerNormalVectors, QVector<QPoint> &outerNormalVectors, QPointF &_point_of_origin, qreal &_rotation_angle)

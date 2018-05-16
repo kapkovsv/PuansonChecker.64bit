@@ -121,7 +121,7 @@ public:
             PuansonChecker::getInstance()->drawContoursImage();
         }
 
-        Q_UNUSED(event);
+        QGraphicsView::wheelEvent(event);
     }
 };
 

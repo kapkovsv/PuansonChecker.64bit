@@ -166,16 +166,19 @@ void CurrentFormGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouse
 
 void CurrentFormGraphicsScene::wheelEvent(QGraphicsSceneWheelEvent *event)
 {
-    int delta = event->delta();
+    if(window->getCalibrationMode() == NO_CALIBRATION && window->getImageMoveMode() == IMAGE_MOVE_EDITING)
+    {
+        int delta = event->delta();
 
-    if(event->buttons() & Qt::RightButton)
-        delta *= 10;
+        if(event->buttons() & Qt::RightButton)
+            delta *= 10;
 
-    double rotate_angle = delta / 120.0 * 0.01;
+        double rotate_angle = delta / 120.0 * 0.01;
 
-    PuansonChecker::getInstance()->rotateCurrentImage(rotate_angle);
-    PuansonChecker::getInstance()->drawCurrentImage();
-    PuansonChecker::getInstance()->drawContoursImage();
+        PuansonChecker::getInstance()->rotateCurrentImage(rotate_angle);
+        PuansonChecker::getInstance()->drawCurrentImage();
+        PuansonChecker::getInstance()->drawContoursImage();
+    }
 }
 
 void CurrentForm::setImageCursor(const QCursor &cursor)

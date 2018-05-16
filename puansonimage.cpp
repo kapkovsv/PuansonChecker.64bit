@@ -43,9 +43,7 @@ PuansonImage &PuansonImage::operator=(const PuansonImage &img)
     externalToleranceMkm = img.externalToleranceMkm;
     internalToleranceMkm = img.internalToleranceMkm;
 
-    idealSkeletonLines = img.idealSkeletonLines;
-    innerIdealSkeletonNormalVectors = img.innerIdealSkeletonNormalVectors;
-    outerIdealSkeletonNormalVectors = img.outerIdealSkeletonNormalVectors;
+    copyIdealContour(img);
 
     p_raw_image_reference_counter = img.p_raw_image_reference_counter;
     (*p_raw_image_reference_counter)++;
@@ -263,7 +261,7 @@ int PuansonImage::pointDistanceToLine(const QPoint &pt, const QLine &line)
 
 bool PuansonImage::findNearestIdealLineNormalVector(const QPoint &pt, QLine &last_line, QPoint &internalToleranceNormalVector, QPoint &externalToleranceNormalVector)
 {
-#define NEAREST_LINE_MAX_DISTANCE 20
+#define NEAREST_LINE_MAX_DISTANCE 50
 
     QLine nearest_line;
     quint16 nearest_line_distance = UINT16_MAX;
