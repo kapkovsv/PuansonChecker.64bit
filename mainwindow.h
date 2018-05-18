@@ -47,8 +47,6 @@ public:
 
     void loadImageFinished(const ImageType_e image_type, quint8 etalon_angle);
 
-    void innerSkeletonPointsSetting();
-
 public slots:
     void menuLoadEtalon1ActionTriggered();
     void menuLoadEtalon2ActionTriggered();
@@ -70,7 +68,6 @@ public slots:
     void menuSettingsActionTriggered();
     void menuSetEtalonReferencePointsActionTriggered();
     void menuSetCurrentReferencePointsActionTriggered();
-    void menuSetSkeletonInnerPointsActionTriggered();
     void menuImposeIdealContourToEtalonActionTriggered();
     void menuSaveCurrentTriggered();
     void menuSaveResultTriggered();

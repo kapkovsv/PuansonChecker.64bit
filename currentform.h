@@ -123,6 +123,11 @@ public:
 
         QGraphicsView::wheelEvent(event);
     }
+
+    void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE
+    {
+        ImageGraphicsView::keyPressEvent(event);
+    }
 };
 
 #endif // CURRENTFORM_H

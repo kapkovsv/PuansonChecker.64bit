@@ -1,6 +1,8 @@
 #include "settingsdialog.h"
 #include "ui_settingsdialog.h"
 
+#include <QMessageBox>
+
 SettingsDialog::SettingsDialog(PuansonChecker *checker) :
     QDialog(NULL),
     checker(checker),
@@ -141,27 +143,120 @@ void SettingsDialog::SettingsDialogAccepted()
     quint16 ext_tolerance_array[NUMBER_OF_ANGLES];
     quint16 int_tolerance_array[NUMBER_OF_ANGLES];
 
-    ext_tolerance_array[0] = ui->angle1ComboBox->currentIndex() != TOLERANCE_UNITS_MKM ? qRound(ui->angle1ExtSpinBox->value() / PuansonChecker::getInstance()->getEtalon(1).getCalibrationRatio()) :
-                                                     ui->angle1ExtSpinBox->value();
-    ext_tolerance_array[1] = ui->angle2ComboBox->currentIndex() != TOLERANCE_UNITS_MKM ? qRound(ui->angle2ExtSpinBox->value() / PuansonChecker::getInstance()->getEtalon(2).getCalibrationRatio()) :
-                                                     ui->angle2ExtSpinBox->value();
-    ext_tolerance_array[2] = ui->angle3ComboBox->currentIndex() != TOLERANCE_UNITS_MKM ? qRound(ui->angle3ExtSpinBox->value() / PuansonChecker::getInstance()->getEtalon(3).getCalibrationRatio()) :
-                                                     ui->angle3ExtSpinBox->value();
-    ext_tolerance_array[3] = ui->angle4ComboBox->currentIndex() != TOLERANCE_UNITS_MKM ? qRound(ui->angle4ExtSpinBox->value() / PuansonChecker::getInstance()->getEtalon(4).getCalibrationRatio()) :
-                                                     ui->angle4ExtSpinBox->value();
-    ext_tolerance_array[4] = ui->angle5ComboBox->currentIndex() != TOLERANCE_UNITS_MKM ? qRound(ui->angle5ExtSpinBox->value() / PuansonChecker::getInstance()->getEtalon(5).getCalibrationRatio()) :
-                                                     ui->angle5ExtSpinBox->value();
+    bool fail_accept = false;
 
-    int_tolerance_array[0] = ui->angle1ComboBox->currentIndex() != TOLERANCE_UNITS_MKM ? qRound(ui->angle1IntSpinBox->value() / PuansonChecker::getInstance()->getEtalon(1).getCalibrationRatio()) :
-                                                     ui->angle1IntSpinBox->value();
-    int_tolerance_array[1] = ui->angle2ComboBox->currentIndex() != TOLERANCE_UNITS_MKM ? qRound(ui->angle2IntSpinBox->value() / PuansonChecker::getInstance()->getEtalon(2).getCalibrationRatio()):
-                                                     ui->angle2IntSpinBox->value();
-    int_tolerance_array[2] = ui->angle3ComboBox->currentIndex() != TOLERANCE_UNITS_MKM ? qRound(ui->angle3IntSpinBox->value() / PuansonChecker::getInstance()->getEtalon(3).getCalibrationRatio()) :
-                                                     ui->angle3IntSpinBox->value();
-    int_tolerance_array[3] = ui->angle4ComboBox->currentIndex() != TOLERANCE_UNITS_MKM ? qRound(ui->angle4IntSpinBox->value() / PuansonChecker::getInstance()->getEtalon(4).getCalibrationRatio()) :
-                                                     ui->angle4IntSpinBox->value();
-    int_tolerance_array[4] = ui->angle5ComboBox->currentIndex() != TOLERANCE_UNITS_MKM ? qRound(ui->angle5IntSpinBox->value() / PuansonChecker::getInstance()->getEtalon(5).getCalibrationRatio()) :
-                                                     ui->angle5IntSpinBox->value();
+    if(ui->angle1ComboBox->currentIndex() == TOLERANCE_UNITS_PX)
+    {
+        if(PuansonChecker::getInstance()->getEtalon(1).getCalibrationRatio() == 0.0)
+        {
+            QMessageBox msgBox;
+            msgBox.setText("Не задано соотношение px / мкм для ракурса 1!");
+            msgBox.exec();
+
+            fail_accept = true;
+        }
+        else
+        {
+            int_tolerance_array[0] = qRound(ui->angle1IntSpinBox->value() * PuansonChecker::getInstance()->getEtalon(1).getCalibrationRatio());
+            ext_tolerance_array[0] = qRound(ui->angle1ExtSpinBox->value() * PuansonChecker::getInstance()->getEtalon(1).getCalibrationRatio());
+        }
+    }
+    else // ui->angle1ComboBox->currentIndex() == TOLERANCE_UNITS_MKM
+    {
+        int_tolerance_array[0] = ui->angle1IntSpinBox->value();
+        ext_tolerance_array[0] = ui->angle1ExtSpinBox->value();
+    }
+
+    if(ui->angle2ComboBox->currentIndex() == TOLERANCE_UNITS_PX)
+    {
+        if(PuansonChecker::getInstance()->getEtalon(2).getCalibrationRatio() == 0.0)
+        {
+            QMessageBox msgBox;
+            msgBox.setText("Не задано соотношение px / мкм для ракурса 2!");
+            msgBox.exec();
+
+            fail_accept = true;
+        }
+        else
+        {
+            int_tolerance_array[1] = qRound(ui->angle2IntSpinBox->value() * PuansonChecker::getInstance()->getEtalon(2).getCalibrationRatio());
+            ext_tolerance_array[1] = qRound(ui->angle2ExtSpinBox->value() * PuansonChecker::getInstance()->getEtalon(2).getCalibrationRatio());
+        }
+    }
+    else // ui->angle2ComboBox->currentIndex() == TOLERANCE_UNITS_MKM
+    {
+        int_tolerance_array[1] = ui->angle2IntSpinBox->value();
+        ext_tolerance_array[1] = ui->angle2ExtSpinBox->value();
+    }
+
+    if(ui->angle3ComboBox->currentIndex() == TOLERANCE_UNITS_PX)
+    {
+        if(PuansonChecker::getInstance()->getEtalon(3).getCalibrationRatio() == 0.0)
+        {
+            QMessageBox msgBox;
+            msgBox.setText("Не задано соотношение px / мкм для ракурса 3!");
+            msgBox.exec();
+
+            fail_accept = true;
+        }
+        else
+        {
+            int_tolerance_array[2] = qRound(ui->angle3IntSpinBox->value() * PuansonChecker::getInstance()->getEtalon(3).getCalibrationRatio());
+            ext_tolerance_array[2] = qRound(ui->angle3ExtSpinBox->value() * PuansonChecker::getInstance()->getEtalon(3).getCalibrationRatio());
+        }
+    }
+    else // ui->angle3ComboBox->currentIndex() == TOLERANCE_UNITS_MKM
+    {
+        int_tolerance_array[2] = ui->angle3IntSpinBox->value();
+        ext_tolerance_array[2] = ui->angle3ExtSpinBox->value();
+    }
+
+    if(ui->angle4ComboBox->currentIndex() == TOLERANCE_UNITS_PX)
+    {
+        if(PuansonChecker::getInstance()->getEtalon(4).getCalibrationRatio() == 0.0)
+        {
+            QMessageBox msgBox;
+            msgBox.setText("Не задано соотношение px / мкм для ракурса 4!");
+            msgBox.exec();
+
+            fail_accept = true;
+        }
+        else
+        {
+            int_tolerance_array[3] = qRound(ui->angle4IntSpinBox->value() * PuansonChecker::getInstance()->getEtalon(4).getCalibrationRatio());
+            ext_tolerance_array[3] = qRound(ui->angle4ExtSpinBox->value() * PuansonChecker::getInstance()->getEtalon(4).getCalibrationRatio());
+        }
+    }
+    else // ui->angle4ComboBox->currentIndex() == TOLERANCE_UNITS_MKM
+    {
+        int_tolerance_array[3] = ui->angle4IntSpinBox->value();
+        ext_tolerance_array[3] = ui->angle4ExtSpinBox->value();
+    }
+
+    if(ui->angle5ComboBox->currentIndex() == TOLERANCE_UNITS_PX)
+    {
+        if(PuansonChecker::getInstance()->getEtalon(5).getCalibrationRatio() == 0.0)
+        {
+            QMessageBox msgBox;
+            msgBox.setText("Не задано соотношение px / мкм для ракурса 5!");
+            msgBox.exec();
+
+            fail_accept = true;
+        }
+        else
+        {
+            int_tolerance_array[4] = qRound(ui->angle5IntSpinBox->value() * PuansonChecker::getInstance()->getEtalon(5).getCalibrationRatio());
+            ext_tolerance_array[4] = qRound(ui->angle5ExtSpinBox->value() * PuansonChecker::getInstance()->getEtalon(5).getCalibrationRatio());
+        }
+    }
+    else // ui->angle5ComboBox->currentIndex() == TOLERANCE_UNITS_MKM
+    {
+        int_tolerance_array[4] = ui->angle5IntSpinBox->value();
+        ext_tolerance_array[4] = ui->angle5ExtSpinBox->value();
+    }
+
+    if(fail_accept)
+        return;
 
     PuansonChecker::getInstance()->getGeneralSettings()->setToleranceFields(ext_tolerance_array, int_tolerance_array);
 

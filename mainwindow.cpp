@@ -47,8 +47,6 @@ void MainWindow::loadImageFinished(const ImageType_e image_type, const quint8 et
                 PuansonChecker::getInstance()->drawContoursImage();
 
             ui->label_2->setText("Файл " + PuansonChecker::getInstance()->getEtalon(etalon_angle).getFilename());
-
-            //innerSkeletonPointsSetting()
         }
     }
     else if(image_type == CURRENT_IMAGE)
@@ -384,16 +382,6 @@ void MainWindow::menuSetCurrentReferencePointsActionTriggered()
     PuansonChecker::getInstance()->activateCurrentImageWindow();
 }
 
-void MainWindow::innerSkeletonPointsSetting()
-{
-    setCalibrationMode(INNER_POINT_TOP);
-}
-
-void MainWindow::menuSetSkeletonInnerPointsActionTriggered()
-{
-    innerSkeletonPointsSetting();
-}
-
 void MainWindow::drawIdealContour()
 {
     QPainterPath ideal_path = PuansonChecker::getInstance()->getEtalon(etalon_angle).drawIdealContour(QRect(0, 0, ui->graphicsView->scene()->width(), ui->graphicsView->scene()->height()), QPointF(ideal_origin_point), ideal_rotate_angle);
@@ -401,6 +389,7 @@ void MainWindow::drawIdealContour()
     ui->graphicsView->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform | QPainter::HighQualityAntialiasing);
     if(ui->graphicsView->scene() != NULL && ideal_item && ideal_item->scene() == ui->graphicsView->scene())
         ui->graphicsView->scene()->removeItem(ideal_item);
+
     ideal_item = ui->graphicsView->scene()->addPath(ideal_path, QPen(Qt::green, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 }
 
@@ -408,6 +397,7 @@ void MainWindow::menuImposeIdealContourToEtalonActionTriggered()
 {
     if(PuansonChecker::getInstance()->getEtalon(PuansonChecker::getInstance()->getEtalonAngle()).isReferencePointsAreSet())
     {
+        setImageCursor(Qt::OpenHandCursor);
         drawIdealContour();
         setCalibrationMode(IDEAL_IMPOSE);
     }
@@ -479,22 +469,6 @@ void MainWindow::setCalibrationMode(CalibrationMode_e mode)
         case REFERENCE_POINT_2:
             ui->label_2->setText("Калибровка. Укажите реперную точку 2.");
         break;
-        case INNER_POINT_TOP:
-            removeReferenceAndInnerSkeletonPoints();
-            drawReferencePoints();
-
-            ui->label_2->setText("Укажите верхнюю внутреннюю точку.");
-            setImageCursor(Qt::CrossCursor);
-        break;
-        case INNER_POINT_RIGHT:
-            ui->label_2->setText("Укажите правую внутреннюю точку.");
-        break;
-        case INNER_POINT_BOTTOM:
-            ui->label_2->setText("Укажите нижнюю внутреннюю точку.");
-        break;
-        case INNER_POINT_LEFT:
-            ui->label_2->setText("Укажите левую внутреннюю точку.");
-        break;
         case IDEAL_IMPOSE:
             ui->label_2->setText("Совместите контур идеальной детали с границами эталона и установите его двойным щелчком левой кнопки мыши.");
             ideal_origin_point = QPoint(1000, 500);
@@ -522,6 +496,7 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *event)
             PuansonChecker::getInstance()->getEtalon(etalon_angle).setIdealContourSetFlag(true);
             setCalibrationMode(NO_CALIBRATION);
             PuansonChecker::getInstance()->updateContoursImage();
+            setImageCursor(Qt::ArrowCursor);
         }
         break;
         default:
@@ -567,6 +542,7 @@ void MainWindow::mousePressEvent(const QPoint &p)
         case IDEAL_IMPOSE:
             ideal_impose_mouse_pressed = true;
             ideal_impose_previous_point = p;
+            setImageCursor(Qt::ClosedHandCursor);
         break;
         case NO_CALIBRATION:
         default:
@@ -582,6 +558,7 @@ void MainWindow::mouseReleaseEvent(const QPoint &p)
      {
         case IDEAL_IMPOSE:
             ideal_impose_mouse_pressed = false;
+            setImageCursor(Qt::OpenHandCursor);
         break;
         default:
         break;
@@ -649,7 +626,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::setImageCursor(const QCursor &cursor)
 {
-    ui->graphicsView->setCursor(cursor);
+    ui->graphicsView->viewport()->setCursor(cursor);
 }
 
 void MainWindow::moveImage(const qreal dx, const qreal dy)
@@ -707,6 +684,8 @@ MainWindow::MainWindow(PuansonChecker *checker) :
     angle_actions[3] = ui->angle_4_action;
     angle_actions[4] = ui->angle_5_action;
 
+    etalon_angle = 1;
+
     ideal_origin_point = QPoint(1000, 500);
     ideal_rotate_angle = 135.0;
     ideal_item = NULL;
@@ -731,7 +710,6 @@ MainWindow::MainWindow(PuansonChecker *checker) :
     connect(ui->settings_action, SIGNAL(triggered()), SLOT(menuSettingsActionTriggered()));
     connect(ui->set_etalon_reference_points_action, SIGNAL(triggered()), SLOT(menuSetEtalonReferencePointsActionTriggered()));
     connect(ui->set_current_reference_points_action, SIGNAL(triggered()), SLOT(menuSetCurrentReferencePointsActionTriggered()));
-    connect(ui->set_skeleton_inner_points_action, SIGNAL(triggered()), SLOT(menuSetSkeletonInnerPointsActionTriggered()));
     connect(ui->impose_ideal_contour_to_etalon_action, SIGNAL(triggered()), SLOT(menuImposeIdealContourToEtalonActionTriggered()));
     connect(ui->save_current_action, SIGNAL(triggered()), SLOT(menuSaveCurrentTriggered()));
     connect(ui->save_result_action, SIGNAL(triggered()), SLOT(menuSaveResultTriggered()));

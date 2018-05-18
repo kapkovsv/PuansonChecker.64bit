@@ -168,7 +168,7 @@ public:
         delete horizontalScrollBar();
     }
 
-    void keyPressEvent(QKeyEvent *event)
+    void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE
     {
         ImageWindow *window = dynamic_cast<ImageWindow *>(parent());
         bool window_key_press_event_processed = false;

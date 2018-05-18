@@ -48,11 +48,6 @@ enum CalibrationMode_e
     // Реперные точки
     REFERENCE_POINT_1 = 1,
     REFERENCE_POINT_2 = 2,
-    // Точки внутреннего остова
-    INNER_POINT_TOP = 10,
-    INNER_POINT_RIGHT = 11,
-    INNER_POINT_BOTTOM = 12,
-    INNER_POINT_LEFT = 13,
     // Идеальный контур
     IDEAL_IMPOSE = 14
 };
@@ -92,7 +87,10 @@ public:
 
     PuansonImage &getEtalon(const quint8 angle)
     {
-        return etalon_puanson_image[angle-1];
+        if(angle < NUMBER_OF_ANGLES)
+            return etalon_puanson_image[angle-1];
+        else
+            return etalon_puanson_image[NUMBER_OF_ANGLES - 1];
     }
 
     bool getEtalonImage(const quint8 angle, QImage &img);

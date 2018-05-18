@@ -143,7 +143,10 @@ void PuansonChecker::showSettingsDialog()
     {
        case QDialog::Accepted:
             main_window->setWindowStatus("Применение настроек ...");
-            main_window->drawIdealContour();  //  Нужно для пересчёта нормальных отрезков
+
+            if(getEtalon(etalon_angle).isIdealContourSet())
+                main_window->drawIdealContour();  //  Нужно для пересчёта нормальных отрезков
+
             updateContoursImage();
             main_window->setWindowStatus("");
            break;

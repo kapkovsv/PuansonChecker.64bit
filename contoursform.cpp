@@ -33,7 +33,7 @@ void ContoursForm::moveImage(const qreal dx, const qreal dy)
 
 void ContoursForm::setImageCursor(const QCursor &cursor)
 {
-    ui->graphicsView->setCursor(cursor);
+    ui->graphicsView->viewport()->setCursor(cursor);
 }
 
 void ContoursForm::drawIdealContour(const QPainterPath &ideal_path)

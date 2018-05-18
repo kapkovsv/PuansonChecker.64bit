@@ -183,7 +183,7 @@ void CurrentFormGraphicsScene::wheelEvent(QGraphicsSceneWheelEvent *event)
 
 void CurrentForm::setImageCursor(const QCursor &cursor)
 {
-    ui->graphicsView->setCursor(cursor);
+    ui->graphicsView->viewport()->setCursor(cursor);
 }
 
 void CurrentForm::moveImage(const qreal dx, const qreal dy)

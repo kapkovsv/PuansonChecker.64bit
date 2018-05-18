@@ -136,7 +136,6 @@
      <addaction name="settings_action"/>
      <addaction name="set_etalon_reference_points_action"/>
      <addaction name="set_current_reference_points_action"/>
-     <addaction name="set_skeleton_inner_points_action"/>
      <addaction name="impose_ideal_contour_to_etalon_action"/>
     </widget>
     <widget class="QMenu" name="shoot_and_load_menu">
