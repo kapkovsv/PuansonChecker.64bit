@@ -16,8 +16,8 @@ class PuansonChecker;
 class ImageWindow
 {
 public:
-    explicit ImageWindow(PuansonChecker *checker);
-    ~ImageWindow();
+    explicit ImageWindow();
+    virtual ~ImageWindow();
 
     virtual void moveImage(const qreal dx, const qreal dy) = 0;
     virtual void setImageCursor(const QCursor &cursor) = 0;
@@ -47,7 +47,6 @@ public:
     }
 
 protected:
-    PuansonChecker *checker;
     QGraphicsScene *scene;
     QGraphicsView *graphicsView;
     qreal image_x, image_y;
@@ -73,10 +72,10 @@ public:
     ImageGraphicsScene(ImageWindow *owner_window);
 
 public slots:
-    void mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent);
-    void mousePressEvent(QGraphicsSceneMouseEvent *event);
-    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
-    void wheelEvent(QGraphicsSceneWheelEvent *wheelEvent);
+    void mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent) Q_DECL_OVERRIDE;
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+    void wheelEvent(QGraphicsSceneWheelEvent *wheelEvent) Q_DECL_OVERRIDE;
 };
 
 class ImageGraphicsView : public QGraphicsView
@@ -87,7 +86,7 @@ class ImageGraphicsView : public QGraphicsView
         ImageGraphicsScrollBar(QWidget *parent = Q_NULLPTR):QScrollBar(parent) { }
         ImageGraphicsScrollBar(Qt::Orientation orientation, QWidget *parent = Q_NULLPTR): QScrollBar(orientation, parent) { }
 
-        void mousePressEvent(QMouseEvent *e)
+        void mousePressEvent(QMouseEvent *e) Q_DECL_OVERRIDE
         {
             ImageGraphicsView *graphics_view = (dynamic_cast<ImageGraphicsView *>(parent()->parent()));
 
@@ -97,7 +96,7 @@ class ImageGraphicsView : public QGraphicsView
             QScrollBar::mousePressEvent(e);
         }
 
-        void mouseReleaseEvent(QMouseEvent *e)
+        void mouseReleaseEvent(QMouseEvent *e) Q_DECL_OVERRIDE
         {
             ImageGraphicsView *graphics_view = (dynamic_cast<ImageGraphicsView *>(parent()->parent()));
 
@@ -107,13 +106,13 @@ class ImageGraphicsView : public QGraphicsView
             QScrollBar::mouseReleaseEvent(e);
         }
 
-        void wheelEvent(QWheelEvent *e)
+        void wheelEvent(QWheelEvent *e) Q_DECL_OVERRIDE
         {
             ImageGraphicsView *graphics_view = (dynamic_cast<ImageGraphicsView *>(parent()->parent()));
             ImageWindow *window = dynamic_cast<ImageWindow *>(graphics_view->parent());
             bool window_event_processed = false;
 
-            if(window == NULL)
+            if(window == Q_NULLPTR)
                 window = dynamic_cast<ImageWindow *>(graphics_view->parent()->parent());
 
             if(window)
@@ -128,7 +127,7 @@ class ImageGraphicsView : public QGraphicsView
             }
         }
 
-        void keyPressEvent(QKeyEvent *ev)
+        void keyPressEvent(QKeyEvent *ev) Q_DECL_OVERRIDE
         {
             ImageGraphicsView *graphics_view = (dynamic_cast<ImageGraphicsView *>(parent()->parent()));
 
@@ -162,7 +161,7 @@ public:
         setHorizontalScrollBar(new ImageGraphicsScrollBar(this));
     }
 
-    ~ImageGraphicsView()
+    virtual ~ImageGraphicsView()
     {
         delete verticalScrollBar();
         delete horizontalScrollBar();
@@ -173,7 +172,7 @@ public:
         ImageWindow *window = dynamic_cast<ImageWindow *>(parent());
         bool window_key_press_event_processed = false;
 
-        if(window == NULL)
+        if(window == Q_NULLPTR)
             window = dynamic_cast<ImageWindow *>(parent()->parent());
 
         if(window)
@@ -195,13 +194,13 @@ public:
         }
     }
 
-    void scrollContentsBy(int dx, int dy)
+    void scrollContentsBy(int dx, int dy) Q_DECL_OVERRIDE
     {
         if(slider_pressed_flag || mouse_wheel_or_key_pressed_flag)
         {
             ImageWindow *window = dynamic_cast<ImageWindow *>(parent());
 
-            if(window == NULL)
+            if(window == Q_NULLPTR)
                 window = dynamic_cast<ImageWindow *>(parent()->parent());
 
             if(window)

@@ -15,7 +15,7 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp \
+    mainwindow.cpp \
     currentform.cpp \
     puansonchecker.cpp \
     contoursform.cpp \
@@ -62,6 +62,8 @@ LIBS += C:\Users\1\Documents\PuansonChecker.64bit\install\x64\mingw\bin\libopenc
 LIBS += C:\Users\1\Documents\PuansonChecker.64bit\install\x64\mingw\bin\libopencv_highgui330.dll
 LIBS += C:\Users\1\Documents\PuansonChecker.64bit\install\x64\mingw\bin\libopencv_imgcodecs330.dll
 LIBS += C:\Users\1\Documents\PuansonChecker.64bit\install\x64\mingw\bin\libopencv_imgproc330.dll
+LIBS += C:\Users\1\Documents\PuansonChecker.64bit\install\x64\mingw\bin\libopencv_features2d330.dll
+LIBS += C:\Users\1\Documents\PuansonChecker.64bit\install\x64\mingw\bin\libopencv_calib3d330.dll
 LIBS += -lws2_32 -lwinmm
 # -lodbc32 -lodbccp32
 

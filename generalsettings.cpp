@@ -66,6 +66,18 @@ bool GeneralSettings::loadSettingsFromConfigFile()
                     xml.readNext();
                 }
             }
+
+            if (xml.name() == "left_bottom_reference_point_etalon")
+            {
+                if(xml.attributes().hasAttribute("filepath"))
+                    left_bottom_reference_point_etalon_filename = xml.attributes().value("filepath").toString();
+            }
+
+            if (xml.name() == "right_top_reference_point_etalon")
+            {
+                if(xml.attributes().hasAttribute("filepath"))
+                    right_top_reference_point_etalon_filename = xml.attributes().value("filepath").toString();
+            }
         }
     }
 
@@ -108,6 +120,14 @@ bool GeneralSettings::saveSettingsToConfigFile()
         stream.writeEndElement(); // etalon_settings
     }
 
+    stream.writeStartElement("left_bottom_reference_point_etalon");
+    stream.writeAttribute("filepath", left_bottom_reference_point_etalon_filename);
+    stream.writeEndElement(); // left_bottom_reference_point_etalon
+
+    stream.writeStartElement("right_top_reference_point_etalon");
+    stream.writeAttribute("filepath", right_top_reference_point_etalon_filename);
+    stream.writeEndElement(); // right_top_reference_point_etalon
+    qDebug() << " left_bottom_reference_point_etalon_filename " << left_bottom_reference_point_etalon_filename << " right_top_reference_point_etalon_filename " << right_top_reference_point_etalon_filename;
     stream.writeEndElement(); // puanson_checker_settings
     stream.writeEndDocument();
 
@@ -136,4 +156,16 @@ void GeneralSettings::setReferencePointDistancesMkm(const quint32 distance_array
 void GeneralSettings::getReferencePointDistancesMkm(quint32 distance_array[])
 {
     memcpy(distance_array, referencePointDistancesMkmArray, sizeof(quint32) * NUMBER_OF_ANGLES);
+}
+
+void GeneralSettings::setReferencePointEtalonFilenames(const QString &_left_bottom_reference_point_etalon_filename, const QString &_right_top_reference_point_etalon_filename)
+{
+    left_bottom_reference_point_etalon_filename = _left_bottom_reference_point_etalon_filename;
+    right_top_reference_point_etalon_filename = _right_top_reference_point_etalon_filename;
+}
+
+void GeneralSettings::getReferencePointEtalonFilenames(QString &_left_bottom_reference_point_etalon_filename, QString &_right_top_reference_point_etalon_filename)
+{
+    _left_bottom_reference_point_etalon_filename = left_bottom_reference_point_etalon_filename;
+    _right_top_reference_point_etalon_filename = right_top_reference_point_etalon_filename;
 }

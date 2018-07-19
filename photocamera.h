@@ -38,7 +38,7 @@ signals:
     void cameraConnectionStatusChanged(bool connected);
 
 private:
-    LPRefObj pRefMod = NULL, pRefSrc = NULL, pRefItm = NULL, pRefDat = NULL;
+    LPRefObj pRefMod = Q_NULLPTR, pRefSrc = Q_NULLPTR, pRefItm = Q_NULLPTR, pRefDat = Q_NULLPTR;
     ULONG ulModID, ulSrcID;
     QString camera_model;
     bool connection_status;

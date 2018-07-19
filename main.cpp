@@ -7,12 +7,15 @@
 #include <QLocale>
 #include <QTime>
 #include <QFile>
+#include <cstdio>
 
 const QString logFilePath = "debug.log";
 bool logToFile = true;
 
 void customMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
+    using namespace std;
+
     QHash<QtMsgType, QString> msgLevelHash({{QtDebugMsg, "Debug"}, {QtInfoMsg, "Info"}, {QtWarningMsg, "Warning"}, {QtCriticalMsg, "Critical"}, {QtFatalMsg, "Fatal"}});
     QByteArray localMsg = msg.toLocal8Bit();
     QTime time = QTime::currentTime();

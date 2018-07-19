@@ -91,7 +91,7 @@
      <x>0</x>
      <y>0</y>
      <width>704</width>
-     <height>21</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="main_menu">
@@ -137,6 +137,7 @@
      <addaction name="set_etalon_reference_points_action"/>
      <addaction name="set_current_reference_points_action"/>
      <addaction name="impose_ideal_contour_to_etalon_action"/>
+     <addaction name="reference_points_auto_search_action"/>
     </widget>
     <widget class="QMenu" name="shoot_and_load_menu">
      <property name="title">
@@ -316,6 +317,11 @@
   <action name="shoot_and_load_current_action">
    <property name="text">
     <string>Текущей детали</string>
+   </property>
+  </action>
+  <action name="reference_points_auto_search_action">
+   <property name="text">
+    <string>Автоматический поиск реперных точек</string>
    </property>
   </action>
  </widget>

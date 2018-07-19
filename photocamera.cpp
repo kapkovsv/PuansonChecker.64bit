@@ -5,11 +5,11 @@
 
 using namespace std;
 
-LPMAIDEntryPointProc	g_pMAIDEntryPoint = NULL;
+LPMAIDEntryPointProc	g_pMAIDEntryPoint = Q_NULLPTR;
 UCHAR	g_bFileRemoved = false;
 ULONG	g_ulCameraType = 0;	// CameraType
 
-HINSTANCE	g_hInstModule = NULL;
+HINSTANCE	g_hInstModule = Q_NULLPTR;
 
 char g_szCapturedImageFileName[255] = CAPTURED_CURRENT_IMAGE_FILENAME;
 
@@ -18,7 +18,7 @@ bool PhotoCamera::SelectSource( LPRefObj pRefObj, ULONG *pulSrcID )
     BOOL	bRet;
     NkMAIDEnum	stEnum;
     LPNkMAIDCapInfo pCapInfo = GetCapInfo( pRefObj, kNkMAIDCapability_Children );
-    if ( pCapInfo == NULL )
+    if ( pCapInfo == Q_NULLPTR )
         return false;
 
     // check data type of the capability
@@ -29,7 +29,7 @@ bool PhotoCamera::SelectSource( LPRefObj pRefObj, ULONG *pulSrcID )
     if ( !CheckCapabilityOperation( pRefObj, kNkMAIDCapability_Children, kNkMAIDCapOperation_Get ) )
         return false;
 
-    bRet = Command_CapGet( pRefObj->pObject, kNkMAIDCapability_Children, kNkMAIDDataType_EnumPtr, (NKPARAM)&stEnum, NULL, NULL );
+    bRet = Command_CapGet( pRefObj->pObject, kNkMAIDCapability_Children, kNkMAIDDataType_EnumPtr, (NKPARAM)&stEnum, Q_NULLPTR, Q_NULLPTR );
     if( bRet == false )
         return false;
 
@@ -42,11 +42,11 @@ bool PhotoCamera::SelectSource( LPRefObj pRefObj, ULONG *pulSrcID )
 
     // allocate memory for array data
     stEnum.pData = malloc( stEnum.ulElements * stEnum.wPhysicalBytes );
-    if ( stEnum.pData == NULL )
+    if ( stEnum.pData == Q_NULLPTR )
         return false;
 
     // get array data
-    bRet = Command_CapGetArray( pRefObj->pObject, kNkMAIDCapability_Children, kNkMAIDDataType_EnumPtr, (NKPARAM)&stEnum, NULL, NULL );
+    bRet = Command_CapGetArray( pRefObj->pObject, kNkMAIDCapability_Children, kNkMAIDDataType_EnumPtr, (NKPARAM)&stEnum, Q_NULLPTR, Q_NULLPTR );
     if( bRet == false ) {
         free( stEnum.pData );
         return false;
@@ -64,7 +64,7 @@ bool PhotoCamera::SelectItem(tagRefObj* pRefObj, ULONG *pulItemID)
     NkMAIDEnum	stEnum;
 
     LPNkMAIDCapInfo pCapInfo = GetCapInfo( pRefObj, kNkMAIDCapability_Children );
-    if ( pCapInfo == NULL )
+    if ( pCapInfo == Q_NULLPTR )
         return false;
 
     // check data type of the capability
@@ -74,7 +74,7 @@ bool PhotoCamera::SelectItem(tagRefObj* pRefObj, ULONG *pulItemID)
     if ( !CheckCapabilityOperation( pRefObj, kNkMAIDCapability_Children, kNkMAIDCapOperation_Get ) )
         return false;
 
-    bRet = Command_CapGet(pRefObj->pObject, kNkMAIDCapability_Children, kNkMAIDDataType_EnumPtr, (NKPARAM)&stEnum, NULL, NULL );
+    bRet = Command_CapGet(pRefObj->pObject, kNkMAIDCapability_Children, kNkMAIDDataType_EnumPtr, (NKPARAM)&stEnum, Q_NULLPTR, Q_NULLPTR );
     if( bRet == false )
         return false;
 
@@ -90,10 +90,10 @@ bool PhotoCamera::SelectItem(tagRefObj* pRefObj, ULONG *pulItemID)
 
     // allocate memory for array data
     stEnum.pData = malloc( stEnum.ulElements * stEnum.wPhysicalBytes );
-    if ( stEnum.pData == NULL )
+    if ( stEnum.pData == Q_NULLPTR )
         return false;
     // get array data
-    bRet = Command_CapGetArray(pRefObj->pObject, kNkMAIDCapability_Children, kNkMAIDDataType_EnumPtr, (NKPARAM)&stEnum, NULL, NULL );
+    bRet = Command_CapGetArray(pRefObj->pObject, kNkMAIDCapability_Children, kNkMAIDDataType_EnumPtr, (NKPARAM)&stEnum, Q_NULLPTR, Q_NULLPTR );
     if( bRet == false ) {
         free( stEnum.pData );
         return false;
@@ -120,7 +120,7 @@ bool PhotoCamera::Connect()
         }
 
         pRefSrc = GetRefChildPtr_ID( pRefMod, ulSrcID );
-        if ( pRefSrc == NULL ) {
+        if ( pRefSrc == Q_NULLPTR ) {
             // Create Source object and RefSrc structure.
             if ( AddChild( pRefMod, ulSrcID ) == TRUE ) {
                 qDebug(qPrintable("Source object is opened.\n"));
@@ -136,24 +136,24 @@ bool PhotoCamera::Connect()
         //qDebug() << endl << endl;
 
         // Get CameraType
-        Command_CapGet( pRefSrc->pObject, kNkMAIDCapability_CameraType, kNkMAIDDataType_UnsignedPtr, (NKPARAM)&g_ulCameraType, NULL, NULL );
+        Command_CapGet( pRefSrc->pObject, kNkMAIDCapability_CameraType, kNkMAIDDataType_UnsignedPtr, (NKPARAM)&g_ulCameraType, Q_NULLPTR, Q_NULLPTR );
 
         // Get Name
         NkMAIDString name;
-        Command_CapGet(pRefSrc->pObject, kNkMAIDCapability_Name, kNkMAIDDataType_StringPtr, (NKPARAM)&name, NULL, NULL);
+        Command_CapGet(pRefSrc->pObject, kNkMAIDCapability_Name, kNkMAIDDataType_StringPtr, (NKPARAM)&name, Q_NULLPTR, Q_NULLPTR);
         camera_model = QString((const char *) name.str);
 
         // LockCamera flag
         BYTE bLockCameraFlag;
 
         // LockCamera Capability
-        bRet = Command_CapGet( pRefSrc->pObject, kNkMAIDCapability_LockCamera, kNkMAIDDataType_BooleanPtr, (NKPARAM)&bLockCameraFlag, NULL, NULL );
+        bRet = Command_CapGet( pRefSrc->pObject, kNkMAIDCapability_LockCamera, kNkMAIDDataType_BooleanPtr, (NKPARAM)&bLockCameraFlag, Q_NULLPTR, Q_NULLPTR );
 
         //qDebug() << "bRet " << bRet << " kNkMAIDCapability_LockCamera value " << (int)bLockCameraFlag << " !!!" << endl;
 
         if(bLockCameraFlag == false)
         {
-            bRet = Command_CapSet( pRefSrc->pObject, kNkMAIDCapability_LockCamera, kNkMAIDCapType_Boolean, (NKPARAM)true, NULL, NULL );
+            bRet = Command_CapSet( pRefSrc->pObject, kNkMAIDCapability_LockCamera, kNkMAIDCapType_Boolean, (NKPARAM)true, Q_NULLPTR, Q_NULLPTR );
             if ( bRet == false )
             {
                 qDebug(qPrintable( "LockCamera Set. An Error occured.\n" ));
@@ -169,14 +169,14 @@ bool PhotoCamera::Connect()
         // ShootingMode
         NkMAIDEnum	stEnum;
 
-        //bRet = Command_CapGet( pRefSrc->pObject, kNkMAIDCapability_ShootingMode, kNkMAIDDataType_EnumPtr, (NKPARAM)&stEnum, NULL, NULL );
+        //bRet = Command_CapGet( pRefSrc->pObject, kNkMAIDCapability_ShootingMode, kNkMAIDDataType_EnumPtr, (NKPARAM)&stEnum, Q_NULLPTR, Q_NULLPTR );
         //qDebug(qPrintable( "bRet " << bRet << " kNkMAIDCapability_ShootingMode value " << (int)stEnum.ulValue << " !!!" ));;
 
         //stEnum.ulType = kNkMAIDArrayType_Unsigned;
         stEnum.ulValue = eNkMAIDShootingMode_S;
 
         // send the selected number
-        bRet = Command_CapSet( pRefSrc->pObject, kNkMAIDCapability_ShootingMode, kNkMAIDDataType_EnumPtr, (NKPARAM)&stEnum, NULL, NULL );
+        bRet = Command_CapSet( pRefSrc->pObject, kNkMAIDCapability_ShootingMode, kNkMAIDDataType_EnumPtr, (NKPARAM)&stEnum, Q_NULLPTR, Q_NULLPTR );
         if ( bRet == false )
         {
             qDebug(qPrintable( "ShootingMode Set. An Error occured.\n" ));
@@ -188,7 +188,7 @@ bool PhotoCamera::Connect()
         // SaveMedia
         // Настроено сохранение фотоснимков в SDRAM, поэтому после совершения снимков необходимо загружать их на ПК,
         //                                      в противном случае SDRAM будет занята и сделать снимок будет нельзя
-        bRet = Command_CapSet( pRefSrc->pObject, kNkMAIDCapability_SaveMedia, kNkMAIDDataType_Unsigned, (NKPARAM)kNkMAIDSaveMedia_SDRAM, NULL, NULL );
+        bRet = Command_CapSet( pRefSrc->pObject, kNkMAIDCapability_SaveMedia, kNkMAIDDataType_Unsigned, (NKPARAM)kNkMAIDSaveMedia_SDRAM, Q_NULLPTR, Q_NULLPTR );
         if ( bRet == false )
         {
             qDebug(qPrintable( "SaveMedia Set. An Error occured.\n" ));
@@ -216,7 +216,7 @@ bool PhotoCamera::Disconnect()
         error_message = "Невозможно завершить работу с камерой";
         return false;
     }
-    pRefSrc = NULL;
+    pRefSrc = Q_NULLPTR;
 
     if(connection_status == true)
     {
@@ -253,7 +253,7 @@ bool PhotoCamera::NikonSDKModuleLoad()
 
     // Allocate memory for reference to Module object.
     pRefMod = (LPRefObj)malloc(sizeof(RefObj));
-    if ( pRefMod == NULL ) {
+    if ( pRefMod == Q_NULLPTR ) {
         qDebug(qPrintable( "There is not enough memory." ));
         error_message = "Недостаточно памяти для загрузки модуля Type0006";
         return false;
@@ -262,37 +262,37 @@ bool PhotoCamera::NikonSDKModuleLoad()
 
     // Allocate memory for Module object.
     pRefMod->pObject = (LPNkMAIDObject)malloc(sizeof(NkMAIDObject));
-    if ( pRefMod->pObject == NULL ) {
+    if ( pRefMod->pObject == Q_NULLPTR ) {
         qDebug(qPrintable( "There is not enough memory." ));
         error_message = "Недостаточно памяти для загрузки модуля Type0006";
-        if ( pRefMod != NULL )
+        if ( pRefMod != Q_NULLPTR )
             free( pRefMod );
         return false;
     }
 
     //	Open Module object
     pRefMod->pObject->refClient = (NKREF)pRefMod;
-    bRet = Command_Open(	NULL,					// When Module_Object will be opend, "pParentObj" is "NULL".
+    bRet = Command_Open(	Q_NULLPTR,					// When Module_Object will be opend, "pParentObj" is "NULL".
                                 pRefMod->pObject,	// Pointer to Module_Object
                                 ulModID );			// Module object ID set by Client
     if ( bRet == false ) {
         qDebug(qPrintable( "Module object can't be opened.\n" ));
         error_message = "Модуль Type0006 не может быть открыт";
-        if ( pRefMod->pObject != NULL )
+        if ( pRefMod->pObject != Q_NULLPTR )
             free( pRefMod->pObject );
-        if ( pRefMod != NULL )
+        if ( pRefMod != Q_NULLPTR )
             free( pRefMod );
         return false;
     }
 
     //	Enumerate Capabilities that the Module has.
-    bRet = EnumCapabilities( pRefMod->pObject, &(pRefMod->ulCapCount), &(pRefMod->pCapArray), NULL, NULL );
+    bRet = EnumCapabilities( pRefMod->pObject, &(pRefMod->ulCapCount), &(pRefMod->pCapArray), Q_NULLPTR, Q_NULLPTR );
     if ( bRet == false ) {
         qDebug(qPrintable( "Failed in enumeration of capabilities." ));
         error_message = "Ошибка при инициализации камеры";
-        if ( pRefMod->pObject != NULL )
+        if ( pRefMod->pObject != Q_NULLPTR )
             free( pRefMod->pObject );
-        if ( pRefMod != NULL )
+        if ( pRefMod != Q_NULLPTR )
             free( pRefMod );
         return false;
     }
@@ -302,9 +302,9 @@ bool PhotoCamera::NikonSDKModuleLoad()
     if ( bRet == false ) {
         qDebug(qPrintable( "Failed in setting a call back function." ));
         error_message = "Ошибка при инициализации камеры";
-        if ( pRefMod->pObject != NULL )
+        if ( pRefMod->pObject != Q_NULLPTR )
             free( pRefMod->pObject );
-        if ( pRefMod != NULL )
+        if ( pRefMod != Q_NULLPTR )
             free( pRefMod );
         return false;
     }
@@ -312,7 +312,7 @@ bool PhotoCamera::NikonSDKModuleLoad()
     //	Set the kNkMAIDCapability_ModuleMode.
     if( CheckCapabilityOperation( pRefMod, kNkMAIDCapability_ModuleMode, kNkMAIDCapOperation_Set )  ){
         bRet = Command_CapSet( pRefMod->pObject, kNkMAIDCapability_ModuleMode, kNkMAIDDataType_Unsigned,
-                                        (NKPARAM)kNkMAIDModuleMode_Controller, NULL, NULL);
+                                        (NKPARAM)kNkMAIDModuleMode_Controller, Q_NULLPTR, Q_NULLPTR);
         if ( bRet == false ) {
             qDebug(qPrintable( "Failed in setting kNkMAIDCapability_ModuleMode." ));
             error_message = "Ошибка при инициализации камеры";
@@ -345,13 +345,13 @@ bool PhotoCamera::NikonSDKModuleUnload()
         return false;
     }
 
-    g_hInstModule = NULL;
+    g_hInstModule = Q_NULLPTR;
 
     // Free memory blocks allocated in this function.
-    if ( pRefMod->pObject != NULL )
+    if ( pRefMod->pObject != Q_NULLPTR )
         free( pRefMod->pObject );
 
-    if ( pRefMod != NULL )
+    if ( pRefMod != Q_NULLPTR )
         free( pRefMod );
 
     nikon_sdk_module_loaded = false;
@@ -368,7 +368,7 @@ PhotoCamera::PhotoCamera()
     camera_model = "";
     connection_status = false;
 
-    pRefMod = NULL, pRefSrc = NULL, pRefItm = NULL, pRefDat = NULL;
+    pRefMod = Q_NULLPTR, pRefSrc = Q_NULLPTR, pRefItm = Q_NULLPTR, pRefDat = Q_NULLPTR;
     ulModID = 0, ulSrcID = 0;
 
     error_message = "";
@@ -438,7 +438,7 @@ bool PhotoCamera::AcquireImage()
     }
 
     pRefItm = GetRefChildPtr_ID(pRefSrc, ulItemID);
-    if (pRefItm == NULL)
+    if (pRefItm == Q_NULLPTR)
     {
         if ((success = AddChild(pRefSrc, ulItemID)) != true) {
             qDebug(qPrintable("Item object can't be opened."));
@@ -451,7 +451,7 @@ bool PhotoCamera::AcquireImage()
     if(success)
     {
         pRefDat = GetRefChildPtr_ID( pRefItm, kNkMAIDDataObjType_Image );
-        if (pRefDat == NULL)
+        if (pRefDat == Q_NULLPTR)
         {
             if ((success = AddChild(pRefItm, kNkMAIDDataObjType_Image)) != true) {
                 qDebug(qPrintable("Image object can't be opened."));
@@ -487,13 +487,13 @@ bool PhotoCamera::AcquireImage()
         bRet = RemoveChild( pRefItm, kNkMAIDDataObjType_Image );
         if(bRet == false)
         {}
-        pRefDat = NULL;
+        pRefDat = Q_NULLPTR;
 
         // Close Item
         bRet = RemoveChild( pRefSrc, ulItemID );
         if(bRet == false)
         {}
-        pRefItm = NULL;
+        pRefItm = Q_NULLPTR;
     }
 
     QThread::sleep(1);

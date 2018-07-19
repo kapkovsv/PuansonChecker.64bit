@@ -190,7 +190,7 @@ void CurrentForm::moveImage(const qreal dx, const qreal dy)
 {
     QGraphicsScene *scene = ui->graphicsView->scene();
 
-    QGraphicsPixmapItem *pixmap_item = scene == NULL ? NULL : qgraphicsitem_cast<QGraphicsPixmapItem *>(scene->items().at(scene->items().count()-1));
+    QGraphicsPixmapItem *pixmap_item = scene == Q_NULLPTR ? Q_NULLPTR : qgraphicsitem_cast<QGraphicsPixmapItem *>(scene->items().at(scene->items().count()-1));
     if(pixmap_item)
     {
         qreal new_x, new_y;
@@ -198,17 +198,17 @@ void CurrentForm::moveImage(const qreal dx, const qreal dy)
         new_x = image_x - dx;
         new_y = image_y - dy;
 
-        if(new_x <= 0)
-            new_x = 1;
-        else if(new_x >= pixmap_item->pixmap().width() - ui->graphicsView->width())
-            new_x = pixmap_item->pixmap().width() - ui->graphicsView->width();
+        if(new_x < 0)
+            new_x = 0;
+        else if(new_x > pixmap_item->pixmap().width() - ui->graphicsView->width() + 7)
+            new_x = pixmap_item->pixmap().width() - ui->graphicsView->width() + 7;
 
-        if(new_y <= 0)
-            new_y = 1;
-        else if(new_y >= pixmap_item->pixmap().height() - ui->graphicsView->height())
-            new_y = pixmap_item->pixmap().height() - ui->graphicsView->height();
+        if(new_y < 0)
+            new_y = 0;
+        else if(new_y > pixmap_item->pixmap().height() - ui->graphicsView->height() + 7)
+            new_y = pixmap_item->pixmap().height() - ui->graphicsView->height() + 7;
 
-        ui->graphicsView->centerOn(new_x + ui->graphicsView->width() / 2, new_y + ui->graphicsView->height() / 2);
+        ui->graphicsView->centerOn(new_x + ui->graphicsView->width() / 2 - 3 , new_y + ui->graphicsView->height() / 2 - 3);
 
         image_x = new_x;
         image_y = new_y;
@@ -219,6 +219,8 @@ void CurrentForm::drawImage(const QImage &img)
 {
     if(!scene->items().isEmpty())
         scene->clear();
+
+    scene->setSceneRect(0, 0, img.width(), img.height());
     scene->addPixmap(QPixmap::fromImage(img));
 
     ui->graphicsView->setScene(scene);
@@ -236,13 +238,13 @@ void CurrentForm::removeReferencePoints()
 
 void CurrentForm::drawReferencePoints()
 {
-    if(checker->getCurrent().isReferencePointsAreSet())
+    if(PuansonChecker::getInstance()->getCurrent().isReferencePointsAreSet())
     {
         QPoint reference_point1;
         QPoint reference_point2;
         QGraphicsTextItem *text_item;
 
-        checker->getCurrent().getReferencePoints(reference_point1, reference_point2);
+        PuansonChecker::getInstance()->getCurrent().getReferencePoints(reference_point1, reference_point2);
 
         ui->graphicsView->scene()->addEllipse(reference_point1.x() - GRAPHICAL_POINT_RADIUS, reference_point1.y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::red, Qt::Dense5Pattern));
         text_item = ui->graphicsView->scene()->addText("Реперная точка 1", QFont("Arial", 10, QFont::Bold));
@@ -273,7 +275,7 @@ void CurrentForm::mousePressEvent(const QPoint &p)
         case REFERENCE_POINT_2:
         {
             reference_point2 = p;
-            checker->getCurrent().setReferencePoints(reference_point1, reference_point2);
+            PuansonChecker::getInstance()->getCurrent().setReferencePoints(reference_point1, reference_point2);
 
             ui->graphicsView->scene()->addEllipse(p.x() - GRAPHICAL_POINT_RADIUS, p.y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::red, Qt::Dense5Pattern));
             QGraphicsTextItem *text_item = ui->graphicsView->scene()->addText("Реперная точка 2", QFont("Arial", 10, QFont::Bold));
@@ -307,6 +309,16 @@ void CurrentForm::setLabel2Text(const QString &text)
     ui->label_2->setText(text);
 }
 
+void CurrentForm::drawActualBorders()
+{
+    ui->graphicsView->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform | QPainter::HighQualityAntialiasing);
+
+    ui->graphicsView->scene()->addRect( qRound((ui->graphicsView->scene()->width() - ui->graphicsView->scene()->width() / 4.0) / 2.0),
+                                        qRound((ui->graphicsView->scene()->height() - ui->graphicsView->scene()->height() / 4.0) / 2.0),
+                                        qRound(ui->graphicsView->scene()->width() / 4.0) ,
+                                        qRound(ui->graphicsView->scene()->height() / 4.0), QPen(Qt::white, 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin) );
+}
+
 bool CurrentForm::windowKeyPressEvent(QKeyEvent *event)
 {
     if(image_move_mode == IMAGE_MOVE_EDITING)
@@ -314,23 +326,23 @@ bool CurrentForm::windowKeyPressEvent(QKeyEvent *event)
         switch(event->key())
         {
             case Qt::Key_Left:
-                    checker->shiftCurrentImage(-1, 0);
+                    PuansonChecker::getInstance()->shiftCurrentImage(-1, 0);
                 break;
             case Qt::Key_Up:
-                    checker->shiftCurrentImage(0, -1);
+                    PuansonChecker::getInstance()->shiftCurrentImage(0, -1);
                 break;
             case Qt::Key_Right:
-                    checker->shiftCurrentImage(1, 0);
+                    PuansonChecker::getInstance()->shiftCurrentImage(1, 0);
                 break;
             case Qt::Key_Down:
-                    checker->shiftCurrentImage(0, 1);
+                    PuansonChecker::getInstance()->shiftCurrentImage(0, 1);
                 break;
             default:
                 break;
         }
 
-        checker->drawCurrentImage();
-        checker->drawContoursImage();
+        PuansonChecker::getInstance()->drawCurrentImage();
+        PuansonChecker::getInstance()->drawContoursImage();
 
         return true;
     }
@@ -348,14 +360,14 @@ bool CurrentForm::windowKeyPressEvent(QKeyEvent *event)
 
 /*void CurrentForm::calculateContourOnRotationCheckBoxStateChanged(int state)
 {
-    checker->setCalculateContourOnRotationFlag(state == Qt::Checked);
+    PuansonChecker::getInstance()->setCalculateContourOnRotationFlag(state == Qt::Checked);
 }*/
 
 void CurrentForm::shotAndLoadButtonPressedSlot()
 {
     ui->shotAndLoadButton->setEnabled(false);
 
-    checker->shootAndLoadCurrentImage();
+    PuansonChecker::getInstance()->shootAndLoadCurrentImage();
 }
 
 void CurrentForm::setReferencePointsButtonPressedSlot()
@@ -376,7 +388,7 @@ void CurrentForm::cameraConnectionStatusChangedSlot(bool connected)
 {
     Q_UNUSED(connected);
 
-    ui->cameraStatusLabel->setText("<b>Статус камеры:</b> " + checker->getCameraStatus());
+    ui->cameraStatusLabel->setText("<b>Статус камеры:</b> " + PuansonChecker::getInstance()->getCameraStatus());
 }
 
 void CurrentForm::loadImageFinished()
@@ -401,7 +413,7 @@ void CurrentForm::setCalibrationMode(CalibrationMode_e mode)
         break;
         case NO_CALIBRATION:
         default:
-            setLabel2Text("Файл " + checker->getCurrent().getFilename());
+            setLabel2Text("Файл " + PuansonChecker::getInstance()->getCurrent().getFilename());
 
             switch(mode)
             {
@@ -418,8 +430,8 @@ void CurrentForm::setCalibrationMode(CalibrationMode_e mode)
 }
 
 CurrentForm::CurrentForm(PuansonChecker *checker) :
-    QWidget(NULL),
-    ImageWindow(checker),
+    QWidget(Q_NULLPTR),
+    ImageWindow(),
     ui(new Ui::CurrentForm),
     image_move_mode(IMAGE_MOVE_VIEWING)
 {

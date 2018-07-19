@@ -2,8 +2,7 @@
 #include <QGraphicsPixmapItem>
 #include <QScrollBar>
 
-ImageWindow::ImageWindow(PuansonChecker *checker):
-    checker(checker),
+ImageWindow::ImageWindow():
     scene(new ImageGraphicsScene(this))
 {
     image_x = 0;
@@ -18,6 +17,7 @@ ImageWindow::~ImageWindow()
 }
 
 ImageGraphicsScene::ImageGraphicsScene(ImageWindow *owner_window):
+    QGraphicsScene(),
     previousX(0), previousY(0), left_button_down(false), window(owner_window)
 {
 }

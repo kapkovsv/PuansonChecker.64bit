@@ -18,15 +18,17 @@ public:
     explicit ContoursForm(PuansonChecker *checker);
     ~ContoursForm();
 
-    void moveImage(const qreal dx, const qreal dy);
+    void moveImage(const qreal dx, const qreal dy) Q_DECL_OVERRIDE;
     void drawIdealContour(const QPainterPath &ideal_path);
+    void drawBadPoints(const QVector<QPoint> &bad_points);
+    void drawActualBorders();
     void drawImage(const QImage &img);
-    void setImageCursor(const QCursor &cursor);
+    void setImageCursor(const QCursor &cursor) Q_DECL_OVERRIDE;
 
 public slots:
     void etalonContourCheckBoxStateChanged(int state);
-    void cannyThres1SpinBoxValueChanged(int value);
-    void cannyThres2SpinBoxValueChanged(int value);
+    void cannyThres1SpinBoxValueChanged();
+    void cannyThres2SpinBoxValueChanged();
     void combineImagesByReferencePointsButtonPressed();
 
 private:

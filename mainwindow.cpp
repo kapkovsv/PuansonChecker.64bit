@@ -127,24 +127,41 @@ void MainWindow::menuLoadEtalon5ActionTriggered()
 void MainWindow::menuShootAndLoadEtalonActionTriggered()
 {
     ui->shoot_and_load_etalon_action->setEnabled(false);
-    checker->shootAndLoadEtalonImage();
+    PuansonChecker::getInstance()->shootAndLoadEtalonImage();
 }
 
 void MainWindow::menuShootAndLoadCurrentActionTriggered()
 {
+    if(!PuansonChecker::getInstance()->getEtalon(etalon_angle).isReferencePointsAreSet())
+    {
+        QMessageBox msgBox;
+        msgBox.setText("Для получения изображения текущей детали необходимо сначала задать реперные точки!");
+        msgBox.exec();
+
+        return;
+    }
+
     ui->shoot_and_load_current_action->setEnabled(false);
-    checker->shootAndLoadCurrentImage();
+    PuansonChecker::getInstance()->shootAndLoadCurrentImage();
 }
 
 void MainWindow::menuLoadCurrentActionTriggered()
 {
+    if(!PuansonChecker::getInstance()->getEtalon(etalon_angle).isReferencePointsAreSet())
+    {
+        QMessageBox msgBox;
+        msgBox.setText("Для загрузки изображения текущей детали необходимо сначала задать реперные точки!");
+        msgBox.exec();
+
+        return;
+    }
+
     QString file_to_open = QFileDialog::getOpenFileName(0, "Открыть файл изображения текущей детали", "", "*.nef *.NEF");
 
     if(file_to_open.isEmpty())
         return;
 
     ui->statusBar->showMessage("Загрузка изображения текущей детали ...");
-
     PuansonChecker::getInstance()->loadCurrentImage(file_to_open);
 }
 
@@ -326,9 +343,16 @@ void MainWindow::menuAngle5ActionTriggered()
 void MainWindow::drawImage(const QImage &img)
 {
     if(!scene->items().isEmpty())
+    {
         scene->clear();
 
+        ideal_origin_point = QPoint(1000, 500);
+        ideal_rotate_angle = 135.0;
+        ideal_item = Q_NULLPTR;
+    }
+
     scene->addPixmap(QPixmap::fromImage(img));
+    scene->setSceneRect(0, 0, img.width(), img.height());
 
     ui->graphicsView->setScene(scene);
 }
@@ -336,6 +360,40 @@ void MainWindow::drawImage(const QImage &img)
 void MainWindow::setWindowStatus(const QString &status)
 {
     ui->statusBar->showMessage(status);
+}
+
+void MainWindow::drawActualBorders()
+{
+    ui->graphicsView->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform | QPainter::HighQualityAntialiasing);
+
+    ui->graphicsView->scene()->addRect( qRound((ui->graphicsView->scene()->width() - ui->graphicsView->scene()->width() / 4.0) / 2.0),
+                                        qRound((ui->graphicsView->scene()->height() - ui->graphicsView->scene()->height() / 4.0) / 2.0),
+                                        qRound(ui->graphicsView->scene()->width() / 4.0) ,
+                                        qRound(ui->graphicsView->scene()->height() / 4.0), QPen(Qt::white, 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin) );
+
+    QVector<IdealInnerSegment> inner_segments = PuansonChecker::getInstance()->getEtalon(etalon_angle).getActualIdealInnerSegments();
+
+    for(IdealInnerSegment segment: inner_segments)
+    {
+        ui->graphicsView->scene()->addEllipse(segment.getStartPoint().x() - GRAPHICAL_POINT_RADIUS, segment.getStartPoint().y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::red, Qt::Dense5Pattern));
+        ui->graphicsView->scene()->addEllipse(segment.getEndPoint().x() - GRAPHICAL_POINT_RADIUS, segment.getEndPoint().y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::black, Qt::Dense5Pattern));
+
+        QPainterPath inner_path = segment.InnerPath();
+        ui->graphicsView->scene()->addPath(inner_path, QPen(Qt::darkRed, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+
+        {
+            QPainterPath control_path;
+            QVector<QLine> control_lines = segment.getControlLines(30);
+
+            for(const QLine &control_line : control_lines)
+            {
+                control_path.moveTo(control_line.p1());
+                control_path.lineTo(control_line.p2());
+            }
+
+            ui->graphicsView->scene()->addPath(control_path, QPen(Qt::darkGreen, 5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        }
+    }
 }
 
 void MainWindow::menuGotoCurrentWindowTriggered()
@@ -384,21 +442,30 @@ void MainWindow::menuSetCurrentReferencePointsActionTriggered()
 
 void MainWindow::drawIdealContour()
 {
-    QPainterPath ideal_path = PuansonChecker::getInstance()->getEtalon(etalon_angle).drawIdealContour(QRect(0, 0, ui->graphicsView->scene()->width(), ui->graphicsView->scene()->height()), QPointF(ideal_origin_point), ideal_rotate_angle);
-
+    QPainterPath ideal_path = PuansonChecker::getInstance()->getEtalon(etalon_angle).drawIdealContour(QRect(2, 2, ui->graphicsView->scene()->width() - 2, ui->graphicsView->scene()->height() - 2), QPointF(ideal_origin_point), ideal_rotate_angle);
     ui->graphicsView->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform | QPainter::HighQualityAntialiasing);
-    if(ui->graphicsView->scene() != NULL && ideal_item && ideal_item->scene() == ui->graphicsView->scene())
+
+    if(ui->graphicsView->scene() != Q_NULLPTR && ideal_item && ideal_item->scene() == ui->graphicsView->scene())
         ui->graphicsView->scene()->removeItem(ideal_item);
 
-    ideal_item = ui->graphicsView->scene()->addPath(ideal_path, QPen(Qt::green, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    ideal_item = ui->graphicsView->scene()->addPath(ideal_path, QPen(Qt::red, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+
+    //drawActualBorders();
 }
 
 void MainWindow::menuImposeIdealContourToEtalonActionTriggered()
 {
     if(PuansonChecker::getInstance()->getEtalon(PuansonChecker::getInstance()->getEtalonAngle()).isReferencePointsAreSet())
     {
+        ideal_origin_point = QPoint(1000, 500);
+        ideal_rotate_angle = 135.0;
+
+        removeReferencePointsAndIdealContour();
+        drawReferencePoints();
+
         setImageCursor(Qt::OpenHandCursor);
         drawIdealContour();
+
         setCalibrationMode(IDEAL_IMPOSE);
     }
     else
@@ -407,8 +474,25 @@ void MainWindow::menuImposeIdealContourToEtalonActionTriggered()
     }
 }
 
-// Удаление реперных и внутренних точек
-void MainWindow::removeReferenceAndInnerSkeletonPoints()
+void MainWindow::menuReferencePointsAutoSearchActionTriggered()
+{
+    QVector<QPointF> reference_points = PuansonChecker::getInstance()->findReferencePoints();
+    QString reference_point_caption;
+    QGraphicsTextItem *text_item;
+    quint8 reference_point_number = 1;
+
+    for(const QPointF &reference_point: reference_points)
+    {
+        ui->graphicsView->scene()->addEllipse(reference_point.x() - GRAPHICAL_POINT_RADIUS, reference_point.y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::green, Qt::Dense5Pattern));
+        reference_point_caption = "Реперная точка " + QString::number(reference_point_number++);
+        text_item = ui->graphicsView->scene()->addText(reference_point_caption, QFont("Arial", 10, QFont::Bold));
+        text_item->setDefaultTextColor(Qt::green);
+        text_item->setPos(reference_point.x() + GRAPHICAL_POINT_RADIUS + 3, reference_point.y() - GRAPHICAL_POINT_RADIUS - 3);
+    }
+}
+
+// Удаление реперных точек и идеального контура
+void MainWindow::removeReferencePointsAndIdealContour()
 {
     while(ui->graphicsView->scene()->items().size() != 1)
     {
@@ -458,7 +542,7 @@ void MainWindow::setCalibrationMode(CalibrationMode_e mode)
     switch(calibration_mode)
     {
         case REFERENCE_POINT_1:
-            removeReferenceAndInnerSkeletonPoints();
+            removeReferencePointsAndIdealContour();
 
             if(PuansonChecker::getInstance()->getEtalon(etalon_angle).isIdealContourSet())
                 drawIdealContour();
@@ -476,7 +560,6 @@ void MainWindow::setCalibrationMode(CalibrationMode_e mode)
             break;
         case NO_CALIBRATION:
         default:
-            removeReferenceAndInnerSkeletonPoints();
             drawReferencePointsAndIdealContour();
 
             ui->label_2->setText("Файл " + PuansonChecker::getInstance()->getEtalon(PuansonChecker::getInstance()->getEtalonAngle()).getFilename());
@@ -497,6 +580,8 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *event)
             setCalibrationMode(NO_CALIBRATION);
             PuansonChecker::getInstance()->updateContoursImage();
             setImageCursor(Qt::ArrowCursor);
+
+            drawActualBorders();
         }
         break;
         default:
@@ -535,6 +620,12 @@ void MainWindow::mousePressEvent(const QPoint &p)
             QMessageBox::information(this, "Информационное сообщение", "Отношение px / мкм : " + QString::number(ratio));
 
             setCalibrationMode(NO_CALIBRATION);
+
+            /*PuansonChecker::getInstance()->cropEtalonImage(etalon_angle);
+
+            QImage img;
+            PuansonChecker::getInstance()->getEtalonImage(etalon_angle, img);
+            drawImage(img);*/
 
             PuansonChecker::getInstance()->updateContoursImage();
         }
@@ -632,7 +723,7 @@ void MainWindow::setImageCursor(const QCursor &cursor)
 void MainWindow::moveImage(const qreal dx, const qreal dy)
 {
     QGraphicsScene *scene = ui->graphicsView->scene();
-    QGraphicsPixmapItem *pixmap_item = (scene == NULL) ? NULL : qgraphicsitem_cast<QGraphicsPixmapItem *>(scene->items().at(scene->items().count()-1));
+    QGraphicsPixmapItem *pixmap_item = (scene == Q_NULLPTR) ? Q_NULLPTR : qgraphicsitem_cast<QGraphicsPixmapItem *>(scene->items().at(scene->items().count()-1));
 
     if(pixmap_item)
     {
@@ -641,17 +732,17 @@ void MainWindow::moveImage(const qreal dx, const qreal dy)
         new_x = image_x - dx;
         new_y = image_y - dy;
 
-        if(new_x <= 0)
-            new_x = 1;
-        else if(new_x >= pixmap_item->pixmap().width() - ui->graphicsView->width())
-            new_x = pixmap_item->pixmap().width() - ui->graphicsView->width();
+        if(new_x < 0)
+            new_x = 0;
+        else if(new_x > pixmap_item->pixmap().width() - ui->graphicsView->width() + 7)
+            new_x = pixmap_item->pixmap().width() - ui->graphicsView->width() + 7;
 
-        if(new_y <= 0)
-            new_y = 1;
-        else if(new_y >= pixmap_item->pixmap().height() - ui->graphicsView->height())
-            new_y = pixmap_item->pixmap().height() - ui->graphicsView->height();
+        if(new_y < 0)
+            new_y = 0;
+        else if(new_y > pixmap_item->pixmap().height() - ui->graphicsView->height() + 7)
+            new_y = pixmap_item->pixmap().height() - ui->graphicsView->height() + 7;
 
-        ui->graphicsView->centerOn(new_x + ui->graphicsView->width() / 2, new_y + ui->graphicsView->height() / 2);
+        ui->graphicsView->centerOn(new_x + ui->graphicsView->width() / 2 - 3 , new_y + ui->graphicsView->height() / 2 - 3);
 
         image_x = new_x;
         image_y = new_y;
@@ -671,9 +762,9 @@ bool MainWindow::windowKeyPressEvent(QKeyEvent *event)
     return false;
 }
 
-MainWindow::MainWindow(PuansonChecker *checker) :
-    QMainWindow(NULL),
-    ImageWindow(checker),
+MainWindow::MainWindow() :
+    QMainWindow(Q_NULLPTR),
+    ImageWindow(),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
@@ -688,7 +779,7 @@ MainWindow::MainWindow(PuansonChecker *checker) :
 
     ideal_origin_point = QPoint(1000, 500);
     ideal_rotate_angle = 135.0;
-    ideal_item = NULL;
+    ideal_item = Q_NULLPTR;
 
     connect(ui->angle_1_action, SIGNAL(triggered()), SLOT(menuAngle1ActionTriggered()));
     connect(ui->angle_2_action, SIGNAL(triggered()), SLOT(menuAngle2ActionTriggered()));
@@ -711,6 +802,7 @@ MainWindow::MainWindow(PuansonChecker *checker) :
     connect(ui->set_etalon_reference_points_action, SIGNAL(triggered()), SLOT(menuSetEtalonReferencePointsActionTriggered()));
     connect(ui->set_current_reference_points_action, SIGNAL(triggered()), SLOT(menuSetCurrentReferencePointsActionTriggered()));
     connect(ui->impose_ideal_contour_to_etalon_action, SIGNAL(triggered()), SLOT(menuImposeIdealContourToEtalonActionTriggered()));
+    connect(ui->reference_points_auto_search_action, SIGNAL(triggered()), SLOT(menuReferencePointsAutoSearchActionTriggered()));
     connect(ui->save_current_action, SIGNAL(triggered()), SLOT(menuSaveCurrentTriggered()));
     connect(ui->save_result_action, SIGNAL(triggered()), SLOT(menuSaveResultTriggered()));
     connect(ui->exit_action, SIGNAL(triggered()), SLOT(menuExitActionTriggered()));

@@ -19,29 +19,31 @@ class MainWindow : public QMainWindow, public ImageWindow
 
     friend class ImageGraphicsScene;
 private:
-    void drawImage(const QImage &img);
-
-    void removeReferenceAndInnerSkeletonPoints();
+    void removeReferencePointsAndIdealContour();
     void drawReferencePoints();
     void drawReferencePointsAndIdealContour();
     void drawReferenceAndInnerSkeletonPoints();
 public:
-    explicit MainWindow(PuansonChecker *checker);
+    explicit MainWindow();
     ~MainWindow();
 
+    void drawImage(const QImage &img);
+
     void moveImage(const qreal dx, const qreal dy);
-    void setImageCursor(const QCursor &cursor);
+    void setImageCursor(const QCursor &cursor) Q_DECL_OVERRIDE;
     void setWindowStatus(const QString &status);
     void setCalibrationMode(CalibrationMode_e mode);
 
-    void mouseDoubleClickEvent(QMouseEvent *event);
+    void drawActualBorders();
 
-    void mousePressEvent(const QPoint &p);
-    void mouseReleaseEvent(const QPoint &p);
-    void mouseMoveEvent(QMouseEvent *event);
-    bool wheelEvent(int delta);
+    void mouseDoubleClickEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
 
-    bool windowKeyPressEvent(QKeyEvent *event);
+    void mousePressEvent(const QPoint &p) Q_DECL_OVERRIDE;
+    void mouseReleaseEvent(const QPoint &p) Q_DECL_OVERRIDE;
+    void mouseMoveEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
+    bool wheelEvent(int delta) Q_DECL_OVERRIDE;
+
+    bool windowKeyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 
     void drawIdealContour();
 
@@ -69,11 +71,12 @@ public slots:
     void menuSetEtalonReferencePointsActionTriggered();
     void menuSetCurrentReferencePointsActionTriggered();
     void menuImposeIdealContourToEtalonActionTriggered();
+    void menuReferencePointsAutoSearchActionTriggered();
     void menuSaveCurrentTriggered();
     void menuSaveResultTriggered();
     void menuExitActionTriggered();
 
-    void closeEvent(QCloseEvent *event);
+    void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 
 private:
     Ui::MainWindow *ui;
@@ -83,11 +86,11 @@ private:
     QPoint reference_point1;
     QPoint reference_point2;
 
-    bool ideal_impose_mouse_pressed;
+    bool ideal_impose_mouse_pressed = false;
     QPoint ideal_impose_previous_point;
     QPoint ideal_origin_point;
-    double ideal_rotate_angle;
-    QGraphicsPathItem *ideal_item;
+    double ideal_rotate_angle = 0.0;
+    QGraphicsPathItem *ideal_item = Q_NULLPTR;
 };
 
 #endif // MAINWINDOW_H

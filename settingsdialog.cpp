@@ -2,10 +2,23 @@
 #include "ui_settingsdialog.h"
 
 #include <QMessageBox>
+#include <QFileDialog>
 
-SettingsDialog::SettingsDialog(PuansonChecker *checker) :
-    QDialog(NULL),
-    checker(checker),
+ReferencePointGraphicsScene::ReferencePointGraphicsScene(SettingsDialog *owner_window):
+    QGraphicsScene(),
+    window(owner_window)
+{
+}
+
+void ReferencePointGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
+{
+    Q_UNUSED(mouseEvent)
+
+    window->referencePointGraphicsSceneClicked(this);
+}
+
+SettingsDialog::SettingsDialog() :
+    QDialog(Q_NULLPTR),
     ui(new Ui::SettingsDialog)
 {
     quint16 ext_tolerance_array[NUMBER_OF_ANGLES];
@@ -122,8 +135,109 @@ SettingsDialog::SettingsDialog(PuansonChecker *checker) :
     connect(ui->cameraDisconnectButton, SIGNAL(pressed()), SLOT(cameraDisconnectButtonPressed()));
     ////////////////////////////////////
 
+    // Эталоны реперных точек
+    QString left_bottom_reference_point_etalon_filename;
+    QString right_top_reference_point_etalon_filename;
+
+    PuansonChecker::getInstance()->getGeneralSettings()->getReferencePointEtalonFilenames(left_bottom_reference_point_etalon_filename, right_top_reference_point_etalon_filename);
+
+    loadLeftBottomReferencePointEtalonImage(left_bottom_reference_point_etalon_filename);
+    loadRightTopReferencePointEtalonImage(right_top_reference_point_etalon_filename);
+
+    connect(ui->leftBottomReferencePointPushButton, SIGNAL(pressed()), SLOT(leftBottomReferencePointButtonPressed()));
+    connect(ui->rightTopReferencePointPushButton, SIGNAL(pressed()), SLOT(rightTopReferencePointButtonPressed()));
+    ////////////////////////////////////
+
     connect(ui->settingsButtonBox, SIGNAL(accepted()), SLOT(SettingsDialogAccepted()));
     connect(ui->settingsButtonBox, SIGNAL(rejected()), SLOT(reject()));
+}
+
+void SettingsDialog::loadLeftBottomReferencePointEtalonImage(const QString &reference_point_image_filename)
+{
+    ui->leftBottomReferencePointTextEdit->setPlainText(reference_point_image_filename);
+
+    QImage image = QImage(reference_point_image_filename);
+
+    if(image.isNull())
+    {
+        image = QImage(ui->leftBottomReferencePointGraphicsView->width()-2, ui->leftBottomReferencePointGraphicsView->height()-2, QImage::Format_RGB32);
+        image.fill(Qt::gray);
+
+        QPainter painter(&image);
+        painter.setPen(Qt::yellow);
+        painter.drawLine(0, 0, image.width() - 1, image.height() - 1);
+        painter.drawLine(image.width() - 1, 0, 0, image.height() - 1);
+
+        painter.setPen(Qt::blue);
+        painter.setFont(QFont("Arial", 7));
+        painter.drawText(0, 0, image.width() - 1, image.height() - 1, Qt::AlignHCenter|Qt::AlignVCenter, tr("Не доступно"));
+    }
+
+    QPixmap pixmap = QPixmap::fromImage(image).scaled(ui->leftBottomReferencePointGraphicsView->width(), ui->leftBottomReferencePointGraphicsView->height(), Qt::KeepAspectRatio, Qt::FastTransformation);
+
+    if(ui->leftBottomReferencePointGraphicsView->scene() == Q_NULLPTR)
+    {
+        QGraphicsScene *scene = new ReferencePointGraphicsScene(this);
+
+        scene->setSceneRect(0, 0, ui->leftBottomReferencePointGraphicsView->width()-2, ui->leftBottomReferencePointGraphicsView->height()-2);
+        scene->addPixmap(pixmap);
+        ui->leftBottomReferencePointGraphicsView->setScene(scene);
+    }
+    else
+    {
+        if(!ui->leftBottomReferencePointGraphicsView->scene()->items().isEmpty())
+            ui->leftBottomReferencePointGraphicsView->scene()->clear();
+
+        ui->leftBottomReferencePointGraphicsView->scene()->addPixmap(pixmap);
+    }
+}
+
+void SettingsDialog::loadRightTopReferencePointEtalonImage(const QString &reference_point_image_filename)
+{
+    ui->rightTopReferencePointTextEdit->setPlainText(reference_point_image_filename);
+
+    QImage image = QImage(reference_point_image_filename);
+
+    if(image.isNull())
+    {
+        image = QImage(ui->rightTopReferencePointGraphicsView->width()-2, ui->rightTopReferencePointGraphicsView->height()-2, QImage::Format_RGB32);
+        image.fill(Qt::gray);
+
+        QPainter painter(&image);
+        painter.setPen(Qt::yellow);
+        painter.drawLine(0, 0, image.width() - 1, image.height() - 1);
+        painter.drawLine(image.width() - 1, 0, 0, image.height() - 1);
+
+        painter.setPen(Qt::blue);
+        painter.setFont(QFont("Arial", 7));
+        painter.drawText(0, 0, image.width() - 1, image.height() - 1, Qt::AlignHCenter|Qt::AlignVCenter, tr("Не доступно"));
+    }
+
+    QPixmap pixmap = QPixmap::fromImage(image).scaled(ui->rightTopReferencePointGraphicsView->width(), ui->rightTopReferencePointGraphicsView->height(), Qt::KeepAspectRatio, Qt::FastTransformation);
+
+    if(ui->rightTopReferencePointGraphicsView->scene() == Q_NULLPTR)
+    {
+        QGraphicsScene *scene = new ReferencePointGraphicsScene(this);
+
+        scene->setSceneRect(0, 0, ui->rightTopReferencePointGraphicsView->width()-2, ui->rightTopReferencePointGraphicsView->height()-2);
+        scene->addPixmap(pixmap);
+        ui->rightTopReferencePointGraphicsView->setScene(scene);
+    }
+    else
+    {
+        if(!ui->rightTopReferencePointGraphicsView->scene()->items().isEmpty())
+            ui->rightTopReferencePointGraphicsView->scene()->clear();
+
+        ui->rightTopReferencePointGraphicsView->scene()->addPixmap(pixmap);
+    }
+}
+
+void SettingsDialog::referencePointGraphicsSceneClicked(ReferencePointGraphicsScene *clicked_scene)
+{
+    if(clicked_scene == ui->leftBottomReferencePointGraphicsView->scene())
+        leftBottomReferencePointButtonPressed();
+    else
+        rightTopReferencePointButtonPressed();
 }
 
 void SettingsDialog::cameraConnectButtonPressed()
@@ -136,6 +250,26 @@ void SettingsDialog::cameraDisconnectButtonPressed()
 {
     PuansonChecker::getInstance()->disconnectFromCamera();
     ui->cameraConnectionStatusLabel->setText( "<b>Статус:</b>   " + PuansonChecker::getInstance()->getCameraStatus());
+}
+
+void SettingsDialog::leftBottomReferencePointButtonPressed()
+{
+    QString file_to_open = QFileDialog::getOpenFileName(0, "Открыть файл эталона левой нижней реперной точки", "", "*.jpg *.JPG *.png *.PNG");
+
+    if(file_to_open.isEmpty())
+        return;
+
+    loadLeftBottomReferencePointEtalonImage(file_to_open);
+}
+
+void SettingsDialog::rightTopReferencePointButtonPressed()
+{
+    QString file_to_open = QFileDialog::getOpenFileName(0, "Открыть файл эталона правой верхней реперной точки", "", "*.jpg *.JPG *.png *.PNG");
+
+    if(file_to_open.isEmpty())
+        return;
+
+    loadRightTopReferencePointEtalonImage(file_to_open);
 }
 
 void SettingsDialog::SettingsDialogAccepted()
@@ -274,7 +408,13 @@ void SettingsDialog::SettingsDialogAccepted()
     PuansonChecker::getInstance()->getGeneralSettings()->setReferencePointDistancesMkm(distances_array);
 
     for(quint8 angle = 1; angle <= NUMBER_OF_ANGLES; angle++)
-        PuansonChecker::getInstance()->getEtalon(angle).setReferencePointDistanceMkm(distances_array[angle-1]);
+        PuansonChecker::getInstance()->getEtalon(angle).setReferencePointDistanceMkm(distances_array[angle-1]);  
+
+    QString left_bottom_reference_point_etalon_filename = ui->leftBottomReferencePointTextEdit->toPlainText();
+    QString right_top_reference_point_etalon_filename = ui->rightTopReferencePointTextEdit->toPlainText();
+
+    PuansonChecker::getInstance()->getGeneralSettings()->setReferencePointEtalonFilenames(left_bottom_reference_point_etalon_filename, right_top_reference_point_etalon_filename);
+    PuansonChecker::getInstance()->loadEtalonReferencePointImages(left_bottom_reference_point_etalon_filename, right_top_reference_point_etalon_filename);
 
     PuansonChecker::getInstance()->getGeneralSettings()->saveSettingsToConfigFile();
 
@@ -283,5 +423,8 @@ void SettingsDialog::SettingsDialogAccepted()
 
 SettingsDialog::~SettingsDialog()
 {
+    delete ui->leftBottomReferencePointGraphicsView->scene();
+    delete ui->rightTopReferencePointGraphicsView->scene();
+
     delete ui;
 }

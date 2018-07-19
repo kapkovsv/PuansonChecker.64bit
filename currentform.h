@@ -37,11 +37,11 @@ class CurrentFormGraphicsScene : public QGraphicsScene
 public:
     CurrentFormGraphicsScene(CurrentForm *owner_window);
 
-    void contextMenuEvent(QGraphicsSceneContextMenuEvent *contextMenuEvent);
-    void mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent);
-    void mousePressEvent(QGraphicsSceneMouseEvent *event);
-    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
-    void wheelEvent(QGraphicsSceneWheelEvent *event);
+    void contextMenuEvent(QGraphicsSceneContextMenuEvent *contextMenuEvent) Q_DECL_OVERRIDE;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent) Q_DECL_OVERRIDE;
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+    void wheelEvent(QGraphicsSceneWheelEvent *event) Q_DECL_OVERRIDE;
 
 public slots:
     void sceneContextMenuTriggeredSlot(QAction *action);
@@ -55,19 +55,21 @@ public:
     explicit CurrentForm(PuansonChecker *checker);
     ~CurrentForm();
 
-    void moveImage(const qreal dx, const qreal dy);
+    void moveImage(const qreal dx, const qreal dy) Q_DECL_OVERRIDE;
     void drawImage(const QImage &img);
     void removeReferencePoints();
     void drawReferencePoints();
-    void setImageCursor(const QCursor &cursor);
+    void setImageCursor(const QCursor &cursor) Q_DECL_OVERRIDE;
     void loadImageFinished();
 
     void setLabel2Text(const QString &text);
 
-    void mousePressEvent(const QPoint &p);
-    void mouseReleaseEvent(const QPoint &p);
+    void drawActualBorders();
 
-    bool windowKeyPressEvent(QKeyEvent *event);
+    void mousePressEvent(const QPoint &p) Q_DECL_OVERRIDE;
+    void mouseReleaseEvent(const QPoint &p) Q_DECL_OVERRIDE;
+
+    bool windowKeyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 
     void setCalibrationMode(CalibrationMode_e mode);
 
@@ -105,7 +107,7 @@ public:
     CurrentImageGraphicsView(QGraphicsScene *scene, QWidget *parent = Q_NULLPTR):ImageGraphicsView(scene, parent) { }
     ~CurrentImageGraphicsView(){ }
 
-    void wheelEvent(QWheelEvent *event)
+    void wheelEvent(QWheelEvent *event) Q_DECL_OVERRIDE
     {
         CurrentForm *window = dynamic_cast<CurrentForm *>(this->parent());
 
