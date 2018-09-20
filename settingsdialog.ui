@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>591</width>
-    <height>662</height>
+    <height>554</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>623</y>
+     <y>510</y>
      <width>551</width>
      <height>32</height>
     </rect>
@@ -491,7 +491,7 @@
      <x>10</x>
      <y>213</y>
      <width>571</width>
-     <height>400</height>
+     <height>280</height>
     </rect>
    </property>
    <property name="title">
@@ -574,7 +574,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Ракурс 1</string>
+     <string>Ракурс 2</string>
     </property>
    </widget>
    <widget class="QSpinBox" name="angle2DistanceSpinBox">
@@ -676,7 +676,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Ракурс 1</string>
+     <string>Ракурс 3</string>
     </property>
    </widget>
    <widget class="QSpinBox" name="angle3DistanceSpinBox">
@@ -708,7 +708,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Ракурс 1</string>
+     <string>Ракурс 4</string>
     </property>
    </widget>
    <widget class="QSpinBox" name="angle4DistanceSpinBox">
@@ -829,7 +829,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Ракурс 1</string>
+     <string>Ракурс 5</string>
     </property>
    </widget>
    <widget class="QLabel" name="distanceLabel">
@@ -1118,136 +1118,109 @@
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QLabel" name="leftBottomReferencePointEtalonLabel">
+   <widget class="QSpinBox" name="angle6DistanceSpinBox">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>242</y>
-      <width>371</width>
-      <height>21</height>
+      <x>78</x>
+      <y>246</y>
+      <width>73</width>
+      <height>22</height>
      </rect>
     </property>
-    <property name="font">
-     <font>
-      <pointsize>10</pointsize>
-     </font>
+    <property name="minimum">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <number>200000</number>
+    </property>
+    <property name="value">
+     <number>100000</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="angle6SkeletonPointsStatusLabel">
+    <property name="geometry">
+     <rect>
+      <x>400</x>
+      <y>246</y>
+      <width>157</width>
+      <height>31</height>
+     </rect>
     </property>
     <property name="text">
-     <string>Эталон левой нижней реперной точки</string>
+     <string/>
     </property>
-    <property name="scaledContents">
-     <bool>false</bool>
+    <property name="alignment">
+     <set>Qt::AlignHCenter|Qt::AlignTop</set>
     </property>
     <property name="wordWrap">
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QTextEdit" name="leftBottomReferencePointTextEdit">
+   <widget class="QLabel" name="angle6CalibLabel">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>271</y>
-      <width>381</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="lineWrapMode">
-     <enum>QTextEdit::NoWrap</enum>
-    </property>
-    <property name="readOnly">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="leftBottomReferencePointPushButton">
-    <property name="geometry">
-     <rect>
-      <x>410</x>
-      <y>280</y>
-      <width>71</width>
-      <height>26</height>
+      <x>18</x>
+      <y>246</y>
+      <width>51</width>
+      <height>16</height>
      </rect>
     </property>
     <property name="text">
-     <string>Выбрать</string>
+     <string>Ракурс 6</string>
     </property>
    </widget>
-   <widget class="QTextEdit" name="rightTopReferencePointTextEdit">
+   <widget class="QLabel" name="angle6ReferencePointsStatusLabel">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>347</y>
-      <width>381</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="lineWrapMode">
-     <enum>QTextEdit::NoWrap</enum>
-    </property>
-    <property name="readOnly">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="rightTopReferencePointPushButton">
-    <property name="geometry">
-     <rect>
-      <x>410</x>
-      <y>357</y>
-      <width>71</width>
-      <height>26</height>
+      <x>312</x>
+      <y>246</y>
+      <width>76</width>
+      <height>31</height>
      </rect>
     </property>
     <property name="text">
-     <string>Выбрать</string>
+     <string/>
     </property>
-   </widget>
-   <widget class="QLabel" name="rightTopReferencePointEtalonLabel">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>322</y>
-      <width>371</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>10</pointsize>
-     </font>
-    </property>
-    <property name="text">
-     <string>Эталон правой верхней реперной точки</string>
-    </property>
-    <property name="scaledContents">
-     <bool>false</bool>
+    <property name="alignment">
+     <set>Qt::AlignHCenter|Qt::AlignTop</set>
     </property>
     <property name="wordWrap">
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QGraphicsView" name="leftBottomReferencePointGraphicsView">
+   <widget class="QLabel" name="angle6DistanceMkmLabel">
     <property name="geometry">
      <rect>
-      <x>490</x>
-      <y>240</y>
-      <width>71</width>
-      <height>71</height>
+      <x>165</x>
+      <y>246</y>
+      <width>27</width>
+      <height>16</height>
      </rect>
     </property>
-    <property name="cursor" stdset="0">
-     <cursorShape>PointingHandCursor</cursorShape>
+    <property name="text">
+     <string>мкм</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
     </property>
    </widget>
-   <widget class="QGraphicsView" name="rightTopReferencePointGraphicsView">
+   <widget class="QLabel" name="angle6CalibrationRatioStatusLabel">
     <property name="geometry">
      <rect>
-      <x>490</x>
-      <y>320</y>
-      <width>71</width>
-      <height>71</height>
+      <x>202</x>
+      <y>246</y>
+      <width>101</width>
+      <height>31</height>
      </rect>
     </property>
-    <property name="cursor" stdset="0">
-     <cursorShape>PointingHandCursor</cursorShape>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignHCenter|Qt::AlignTop</set>
+    </property>
+    <property name="wordWrap">
+     <bool>true</bool>
     </property>
    </widget>
   </widget>

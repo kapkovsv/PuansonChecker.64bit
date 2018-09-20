@@ -24,13 +24,14 @@ public:
 
     virtual void mousePressEvent(const QPoint &p){ Q_UNUSED(p); }
     virtual void mouseReleaseEvent(const QPoint &p){ Q_UNUSED(p); }
-    virtual void mouseMoveEvent(QMouseEvent *event){ Q_UNUSED(event); }
+    virtual void mouseMoveEvent(QMouseEvent *event){ Q_UNUSED(event) }
+    virtual void mouseDoubleClickEvent(const QPoint &p){ Q_UNUSED(p); }
 
-    virtual bool wheelEvent(int delta){ Q_UNUSED(delta); return false; }
+    virtual bool wheelEvent(bool control_modifier, int delta){ Q_UNUSED(control_modifier) Q_UNUSED(delta) return false; }
 
     virtual bool windowKeyPressEvent(QKeyEvent *event)
     {
-        Q_UNUSED(event);
+        Q_UNUSED(event)
 
         return false;
     }
@@ -41,7 +42,7 @@ public:
         image_y -= dy;
     }
 
-    inline CalibrationMode_e getCalibrationMode()
+    inline CalibrationMode_e getCalibrationMode() const
     {
         return calibration_mode;
     }
@@ -64,7 +65,7 @@ class ImageGraphicsScene : public QGraphicsScene
     int previousX;
     int previousY;
 
-    bool left_button_down;
+    bool mouse_button_down;
 
     ImageWindow *window;
 
@@ -75,6 +76,7 @@ public slots:
     void mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent) Q_DECL_OVERRIDE;
     void mousePressEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) Q_DECL_OVERRIDE;
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *mouseEvent) Q_DECL_OVERRIDE;
     void wheelEvent(QGraphicsSceneWheelEvent *wheelEvent) Q_DECL_OVERRIDE;
 };
 
@@ -116,7 +118,7 @@ class ImageGraphicsView : public QGraphicsView
                 window = dynamic_cast<ImageWindow *>(graphics_view->parent()->parent());
 
             if(window)
-                window_event_processed = window->wheelEvent(e->delta());
+                window_event_processed = window->wheelEvent(e->modifiers() & Qt::ControlModifier, e->delta());
 
             if(!window_event_processed)
             {

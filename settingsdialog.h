@@ -2,15 +2,10 @@
 #define SETTINGSEDIALOG_H
 
 #include <QDialog>
+#include "types.h"
 #include "puansonchecker.h"
 
 #include <QGraphicsScene>
-
-enum ToleranceUnits_e
-{
-    TOLERANCE_UNITS_MKM = 0,
-    TOLERANCE_UNITS_PX = 1
-};
 
 namespace Ui {
 class SettingsDialog;
@@ -45,15 +40,10 @@ public:
 public slots:
     void cameraConnectButtonPressed();
     void cameraDisconnectButtonPressed();
-    void rightTopReferencePointButtonPressed();
-    void leftBottomReferencePointButtonPressed();
     void SettingsDialogAccepted();
 
 private:
     Ui::SettingsDialog *ui;
-
-    void loadLeftBottomReferencePointEtalonImage(const QString &reference_point_image_filename);
-    void loadRightTopReferencePointEtalonImage(const QString &reference_point_image_filename);
 };
 
 #endif // SETTINGSEDIALOG_H

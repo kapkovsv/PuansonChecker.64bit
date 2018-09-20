@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CurrentResearchResultAndProtocolDialog</class>
+ <widget class="QDialog" name="CurrentResearchResultAndProtocolDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>631</width>
+    <height>590</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Исследование завершено</string>
+  </property>
+  <widget class="QLabel" name="reseultLabel">
+   <property name="geometry">
+    <rect>
+     <x>9</x>
+     <y>9</y>
+     <width>611</width>
+     <height>50</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;Результат исследования: &lt;br/&gt;&lt;span style=&quot; font-size:12pt; color:#55aa00;&quot;&gt;Текущая деталь соответсвует требованиям&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="currentDetailProtocolGroupBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>259</y>
+     <width>301</width>
+     <height>281</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Протокол измерений текущей детали</string>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="QLabel" name="currentDetailProtocolLabel">
+      <property name="text">
+       <string/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+      </property>
+      <property name="textInteractionFlags">
+       <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QPushButton" name="okButton">
+   <property name="geometry">
+    <rect>
+     <x>510</x>
+     <y>553</y>
+     <width>101</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>OK</string>
+   </property>
+  </widget>
+  <widget class="QGraphicsView" name="idealPuansonAndDimensionsGraphicsView">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>89</y>
+     <width>611</width>
+     <height>161</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="idealDetailProtocolGroupBox">
+   <property name="geometry">
+    <rect>
+     <x>320</x>
+     <y>259</y>
+     <width>301</width>
+     <height>281</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Размеры идеальной детали</string>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <item>
+     <widget class="QLabel" name="idealDetailProtocolLabel">
+      <property name="text">
+       <string/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+      </property>
+      <property name="textInteractionFlags">
+       <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QLabel" name="idealPuansonAndDimensionsLabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>68</y>
+     <width>611</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Идеальный пуансон и задаваемые размеры</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

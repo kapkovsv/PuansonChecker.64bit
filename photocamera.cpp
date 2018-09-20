@@ -5,14 +5,18 @@
 
 using namespace std;
 
+#if defined(Q_OS_WIN)
 LPMAIDEntryPointProc	g_pMAIDEntryPoint = Q_NULLPTR;
 UCHAR	g_bFileRemoved = false;
 ULONG	g_ulCameraType = 0;	// CameraType
-
 HINSTANCE	g_hInstModule = Q_NULLPTR;
+#else
+typedef unsigned char BOOL;
+#endif // defined(Q_OS_WIN)
 
 char g_szCapturedImageFileName[255] = CAPTURED_CURRENT_IMAGE_FILENAME;
 
+#if defined(Q_OS_WIN)
 bool PhotoCamera::SelectSource( LPRefObj pRefObj, ULONG *pulSrcID )
 {
     BOOL	bRet;
@@ -103,9 +107,11 @@ bool PhotoCamera::SelectItem(tagRefObj* pRefObj, ULONG *pulItemID)
     free( stEnum.pData );
     return true;
 }
+#endif // defined(Q_OS_WIN)
 
 bool PhotoCamera::Connect()
 {
+#if defined(Q_OS_WIN)
     BOOL bRet = true;
 
     if(connection_status == false)
@@ -204,10 +210,14 @@ bool PhotoCamera::Connect()
     }
 
     return true;
+#else
+    return false;
+#endif // defined(Q_OS_WIN)
 }
 
 bool PhotoCamera::Disconnect()
 {
+#if defined(Q_OS_WIN)
     BOOL	bRet;
 
     // Close Source_Object
@@ -227,10 +237,14 @@ bool PhotoCamera::Disconnect()
     }
 
     return true;
+#else
+    return false;
+#endif // defined(Q_OS_WIN)
 }
 
 bool PhotoCamera::NikonSDKModuleLoad()
 {
+#if defined(Q_OS_WIN)
     char	ModulePath[MAX_PATH];
     BOOL	bRet;
 
@@ -321,12 +335,14 @@ bool PhotoCamera::NikonSDKModuleLoad()
     }
 
     nikon_sdk_module_loaded = true;
+#endif // defined(Q_OS_WIN)
 
     return true;
 }
 
 bool PhotoCamera::NikonSDKModuleUnload()
 {
+#if defined(Q_OS_WIN)
     BOOL	bRet;
 
     // Close Module_Object
@@ -353,6 +369,7 @@ bool PhotoCamera::NikonSDKModuleUnload()
 
     if ( pRefMod != Q_NULLPTR )
         free( pRefMod );
+#endif // defined(Q_OS_WIN)
 
     nikon_sdk_module_loaded = false;
 
@@ -368,8 +385,10 @@ PhotoCamera::PhotoCamera()
     camera_model = "";
     connection_status = false;
 
+#if defined(Q_OS_WIN)
     pRefMod = Q_NULLPTR, pRefSrc = Q_NULLPTR, pRefItm = Q_NULLPTR, pRefDat = Q_NULLPTR;
     ulModID = 0, ulSrcID = 0;
+#endif // defined(Q_OS_WIN)
 
     error_message = "";
 
@@ -399,6 +418,7 @@ PhotoCamera::~PhotoCamera()
 
 bool PhotoCamera::CaptureImage()
 {
+#if defined(Q_OS_WIN)
     BOOL	bRet;
 
     // Capture
@@ -421,10 +441,14 @@ bool PhotoCamera::CaptureImage()
     // -------
 
     return true;
+#else
+    return false;
+#endif // defined(Q_OS_WIN)
 }
 
 bool PhotoCamera::AcquireImage()
 {
+#if defined(Q_OS_WIN)
     bool success = true;
     ULONG ulItemID;
 
@@ -499,10 +523,14 @@ bool PhotoCamera::AcquireImage()
     QThread::sleep(1);
 
     return true;
+#else
+    return false;
+#endif // defined(Q_OS_WIN)
 }
 
 bool PhotoCamera::CaptureAndAcquireImage(const char *captured_file_name)
 {
+#if defined(Q_OS_WIN)
     strcpy(g_szCapturedImageFileName, captured_file_name);
 
     if(CaptureImage() != true)
@@ -514,9 +542,14 @@ bool PhotoCamera::CaptureAndAcquireImage(const char *captured_file_name)
         return false;
 
     return true;
+#else
+    Q_UNUSED(captured_file_name)
+
+    return false;
+#endif // defined(Q_OS_WIN)
 }
 
-QString PhotoCamera::getCameraStatus()
+QString PhotoCamera::getCameraStatus() const
 {
     QString status;
 

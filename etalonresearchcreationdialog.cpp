@@ -1,0 +1,158 @@
+#include "etalonresearchcreationdialog.h"
+#include "ui_etalonresearchcreationdialog.h"
+
+#include "puansonchecker.h"
+#include <QFileDialog>
+#include <QGraphicsView>
+#include <QGraphicsTextItem>
+#include <QMessageBox>
+#include <QDebug>
+
+EtalonResearchCreationDialog::EtalonResearchCreationDialog(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::EtalonResearchCreationDialog)
+{
+    ui->setupUi(this);
+
+    connect(ui->puansonModelComboBox, SIGNAL(currentIndexChanged(const QString &)), SLOT(puansonModelComboBoxIndexChanged(const QString &)));
+    connect(ui->chooseSaveFolderPathPushButton, SIGNAL(pressed()), SLOT(chooseSaveFolderPathPushButtonPressed()));
+
+    connect(ui->buttonBox, SIGNAL(accepted()), SLOT(etalonResearchCreationDialogAccepted()));
+    connect(ui->buttonBox, SIGNAL(rejected()), SLOT(reject()));
+
+    ui->puansonModelComboBox->setStyleSheet("QListView::item {                              \
+                                            border-bottom: 5px solid white; margin:3px; }  \
+                                            QListView::item:selected {                     \
+                                            border-bottom: 5px solid black; margin:3px;    \
+                                            color: black;                                  \
+                                           }");
+
+    ui->creationDateTimeEdit->setDateTime(QDateTime::currentDateTime());
+
+    PuansonModel current_etalon_model = PuansonChecker::getInstance()->getEtalon().getDetailPuansonModel();
+    ui->puansonModelComboBox->setCurrentText(QString::number(static_cast<int>(current_etalon_model)));
+
+    quint32 diameter_1_dimension, diameter_2_dimension, diameter_3_dimension, diameter_4_dimension, diameter_5_dimension, diameter_6_dimension, diameter_7_dimension, diameter_8_dimension, diameter_9_dimension, groove_width_dimension, groove_depth_dimension;
+    quint32 needle_rounding_radius, skirt_rounding_radius, skirt_bottom_rounding_radius;
+
+    PuansonChecker::getInstance()->getEtalon().getDetailDimensions(diameter_1_dimension, diameter_2_dimension, diameter_3_dimension, diameter_4_dimension, diameter_5_dimension, diameter_6_dimension, diameter_7_dimension, diameter_8_dimension, diameter_9_dimension, groove_width_dimension, groove_depth_dimension, needle_rounding_radius, skirt_rounding_radius, skirt_bottom_rounding_radius);
+
+    ui->dimensionDiameter1SpinBox->setValue(diameter_1_dimension);
+    ui->dimensionDiameter2SpinBox->setValue(diameter_2_dimension);
+    ui->dimensionDiameter3SpinBox->setValue(diameter_3_dimension);
+    ui->dimensionDiameter4SpinBox->setValue(diameter_4_dimension);
+    ui->dimensionDiameter5SpinBox->setValue(diameter_5_dimension);
+    ui->dimensionDiameter6SpinBox->setValue(diameter_6_dimension);
+    ui->dimensionDiameter7SpinBox->setValue(diameter_7_dimension);
+    ui->dimensionDiameter8SpinBox->setValue(diameter_8_dimension);
+    ui->dimensionDiameter9SpinBox->setValue(diameter_9_dimension);
+    ui->dimensionGrooveWidthSpinBox->setValue(groove_width_dimension);
+    ui->dimensionGrooveDepthSpinBox->setValue(groove_depth_dimension);
+
+    updateIdealPuansonAndDimensionsGraphicsView(current_etalon_model);
+}
+
+EtalonResearchCreationDialog::~EtalonResearchCreationDialog()
+{
+    delete ui;
+}
+
+void EtalonResearchCreationDialog::updateIdealPuansonAndDimensionsGraphicsView(const PuansonModel puanson_model)
+{
+    QPainterPath idealContourPath, idealContourMeasurementsPath;
+    PuansonImage::drawIdealContour(static_cast<PuansonModel>(static_cast<PuansonModel>(puanson_model)), QRect(2, 2, ui->idealPuansonAndDimensionsGraphicsView->width() - 2, ui->idealPuansonAndDimensionsGraphicsView->height() - 2), QPoint(ui->idealPuansonAndDimensionsGraphicsView->width() / 2, ui->idealPuansonAndDimensionsGraphicsView->height() / 2), -90, true, 0.025, PuansonImage::default_calibration_ratio, idealContourPath, idealContourMeasurementsPath);
+
+    scene.clear();
+    scene.setSceneRect(0, 0, ui->idealPuansonAndDimensionsGraphicsView->width() - 2, ui->idealPuansonAndDimensionsGraphicsView->height() - 2);
+    QPixmap gray_pixmap(ui->idealPuansonAndDimensionsGraphicsView->width() - 2, ui->idealPuansonAndDimensionsGraphicsView->height() - 2);
+    gray_pixmap.fill(Qt::lightGray);
+
+    scene.addPixmap(gray_pixmap);
+
+    if(ui->idealPuansonAndDimensionsGraphicsView->scene() == Q_NULLPTR)
+    {
+        ui->idealPuansonAndDimensionsGraphicsView->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform | QPainter::HighQualityAntialiasing);
+        ui->idealPuansonAndDimensionsGraphicsView->setScene(&scene);
+    }
+
+    /*ui->idealPuansonAndDimensionsGraphicsView->scene()->addRect(100, 50, 100, 100, QPen(Qt::darkGray, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    QGraphicsTextItem *textItem = ui->idealPuansonAndDimensionsGraphicsView->scene()->addText("Ракурс", QFont("Noto Sans", 5, QFont::Bold));
+    textItem->setDefaultTextColor(Qt::darkGray);
+    textItem->setPos(100, 30);*/
+    ui->idealPuansonAndDimensionsGraphicsView->scene()->addPath(idealContourPath, QPen(Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    ui->idealPuansonAndDimensionsGraphicsView->scene()->addPath(idealContourMeasurementsPath, QPen(Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+}
+
+void EtalonResearchCreationDialog::etalonResearchCreationDialogAccepted()
+{
+    QString etalon_research_folder_path = ui->saveFolderPathLineEdit->text();
+
+    if(etalon_research_folder_path.isEmpty())
+    {
+        QMessageBox::information(this, "Внимание!", "Не указан путь с папкой для сохранения");
+        ui->saveFolderPathLineEdit->setFocus();
+        return;
+    }
+
+    PuansonModel puanson_model = static_cast<PuansonModel>(ui->puansonModelComboBox->currentText().toInt());
+    QDateTime creation_date_time = ui->creationDateTimeEdit->dateTime();
+    quint32 diameter_1_dimension = ui->dimensionDiameter1SpinBox->value();
+    quint32 diameter_2_dimension = ui->dimensionDiameter2SpinBox->value();
+    quint32 diameter_3_dimension = ui->dimensionDiameter3SpinBox->value();
+    quint32 diameter_4_dimension = ui->dimensionDiameter4SpinBox->value();
+    quint32 diameter_5_dimension = ui->dimensionDiameter5SpinBox->value();
+    quint32 diameter_6_dimension = ui->dimensionDiameter6SpinBox->value();
+    quint32 diameter_7_dimension = ui->dimensionDiameter7SpinBox->value();
+    quint32 diameter_8_dimension = ui->dimensionDiameter8SpinBox->value();
+    quint32 diameter_9_dimension = ui->dimensionDiameter9SpinBox->value();
+
+    quint32 groove_width_dimension = ui->dimensionGrooveWidthSpinBox->value();
+    quint32 groove_depth_dimension = ui->dimensionGrooveDepthSpinBox->value();
+
+    quint32 needle_rounding_radius = ui->dimensionRadius1SpinBox->value();
+    quint32 skirt_rounding_radius = ui->dimensionRadius2SpinBox->value();
+    quint32 skirt_bottom_rounding_radius = ui->dimensionRadius3SpinBox->value();
+
+    PuansonChecker::getInstance()->setEtalonResearchSettings(etalon_research_folder_path, puanson_model, creation_date_time, NUMBER_OF_ETALON_ANGLES);
+    PuansonChecker::getInstance()->getEtalon().setDetailDimensions(diameter_1_dimension, diameter_2_dimension, diameter_3_dimension, diameter_4_dimension, diameter_5_dimension, diameter_6_dimension, diameter_7_dimension, diameter_8_dimension, diameter_9_dimension, groove_width_dimension, groove_depth_dimension, needle_rounding_radius, skirt_rounding_radius, skirt_bottom_rounding_radius);
+
+    accept();
+}
+
+void EtalonResearchCreationDialog::puansonModelComboBoxIndexChanged(const QString &text)
+{
+    quint32 diameter_1_dimension, diameter_2_dimension, diameter_3_dimension, diameter_4_dimension, diameter_5_dimension, diameter_6_dimension, diameter_7_dimension, diameter_8_dimension, diameter_9_dimension, groove_width_dimension, groove_depth_dimension;
+    quint32 needle_rounding_radius, skirt_rounding_radius, skirt_bottom_rounding_radius;
+
+    PuansonChecker::getInstance()->getEtalon().setEtalonResearchPuansonModel(static_cast<PuansonModel>(text.toInt()));
+    PuansonChecker::getInstance()->getEtalon().getDetailDimensions(diameter_1_dimension, diameter_2_dimension, diameter_3_dimension, diameter_4_dimension, diameter_5_dimension, diameter_6_dimension, diameter_7_dimension, diameter_8_dimension, diameter_9_dimension, groove_width_dimension, groove_depth_dimension, needle_rounding_radius, skirt_rounding_radius, skirt_bottom_rounding_radius);
+
+    ui->dimensionDiameter1SpinBox->setValue(diameter_1_dimension);
+    ui->dimensionDiameter2SpinBox->setValue(diameter_2_dimension);
+    ui->dimensionDiameter3SpinBox->setValue(diameter_3_dimension);
+    ui->dimensionDiameter4SpinBox->setValue(diameter_4_dimension);
+    ui->dimensionDiameter5SpinBox->setValue(diameter_5_dimension);
+    ui->dimensionDiameter6SpinBox->setValue(diameter_6_dimension);
+    ui->dimensionDiameter7SpinBox->setValue(diameter_7_dimension);
+    ui->dimensionDiameter8SpinBox->setValue(diameter_8_dimension);
+    ui->dimensionDiameter9SpinBox->setValue(diameter_9_dimension);
+
+    ui->dimensionGrooveWidthSpinBox->setValue(groove_width_dimension);
+    ui->dimensionGrooveDepthSpinBox->setValue(groove_depth_dimension);
+
+    ui->dimensionRadius1SpinBox->setValue(needle_rounding_radius);
+    ui->dimensionRadius2SpinBox->setValue(skirt_rounding_radius);
+    ui->dimensionRadius3SpinBox->setValue(skirt_bottom_rounding_radius);
+
+    updateIdealPuansonAndDimensionsGraphicsView(static_cast<PuansonModel>(text.toInt()));
+}
+
+void EtalonResearchCreationDialog::chooseSaveFolderPathPushButtonPressed()
+{
+    QString etalon_research_folder_path = QFileDialog::getExistingDirectory(Q_NULLPTR, "Выберете папку для сохранения исследования эталона", "", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+    if(etalon_research_folder_path.isEmpty())
+        return;
+
+    ui->saveFolderPathLineEdit->setText(etalon_research_folder_path);
+}

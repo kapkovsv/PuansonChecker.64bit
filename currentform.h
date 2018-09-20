@@ -1,6 +1,7 @@
 #ifndef CURRENTFORM_H
 #define CURRENTFORM_H
 
+#include "types.h"
 #include "imagewindow.h"
 #include <QWidget>
 #include <QGraphicsView>
@@ -13,12 +14,6 @@ class PuansonChecker;
 namespace Ui {
 class CurrentForm;
 }
-
-enum ImageMoveMode_e
-{
-    IMAGE_MOVE_VIEWING = 0,
-    IMAGE_MOVE_EDITING
-};
 
 Q_DECLARE_METATYPE(ImageMoveMode_e)
 
@@ -59,6 +54,7 @@ public:
     void drawImage(const QImage &img);
     void removeReferencePoints();
     void drawReferencePoints();
+    void drawReferencePointAutoSearchArea(const ReferencePointType_e reference_point_type, const QRect &search_area);
     void setImageCursor(const QCursor &cursor) Q_DECL_OVERRIDE;
     void loadImageFinished();
 
@@ -78,7 +74,7 @@ public:
         image_move_mode = mode;
     }
 
-    inline ImageMoveMode_e getImageMoveMode()
+    inline ImageMoveMode_e getImageMoveMode() const
     {
         return image_move_mode;
     }
@@ -86,7 +82,8 @@ public:
 public slots:
 //    void calculateContourOnRotationCheckBoxStateChanged(int state);
     void shotAndLoadButtonPressedSlot();
-    void setReferencePointsButtonPressedSlot();
+    void setReferencePointsManuallyButtonPressedSlot();
+    void setReferencePointsAutomaticButtonPressedSlot();
     void cameraConnectionStatusChangedSlot(bool connected);
 
 private:
@@ -95,6 +92,11 @@ private:
 
     QPoint reference_point1;
     QPoint reference_point2;
+
+    QGraphicsRectItem *reference_point_1_auto_search_area_ideal_item = Q_NULLPTR;
+    QGraphicsRectItem *reference_point_2_auto_search_area_ideal_item = Q_NULLPTR;
+
+    QGraphicsPixmapItem *pixmap_item = Q_NULLPTR;
 };
 
 class CurrentImageGraphicsView : public ImageGraphicsView

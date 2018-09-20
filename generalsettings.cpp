@@ -45,7 +45,7 @@ bool GeneralSettings::loadSettingsFromConfigFile()
 
                 while (!(xml.tokenType() == QXmlStreamReader::EndElement && xml.name() == "etalon_settings"))
                 {
-                    if (angle >= 1 && angle <= NUMBER_OF_ANGLES && xml.tokenType() == QXmlStreamReader::StartElement)
+                    if (angle >= 1 && angle <= PUANSON_IMAGE_MAX_ANGLE && xml.tokenType() == QXmlStreamReader::StartElement)
                     {
                         if (xml.name() == "internal_tolerance")
                         {
@@ -60,23 +60,13 @@ bool GeneralSettings::loadSettingsFromConfigFile()
                         else if (xml.name() == "reference_points_distance_mkm")
                         {
                             if(xml.attributes().hasAttribute("value"))
+                            {
                                 referencePointDistancesMkmArray[angle-1] = xml.attributes().value("value").toString().toUInt();
+                            }
                         }
                     }
                     xml.readNext();
                 }
-            }
-
-            if (xml.name() == "left_bottom_reference_point_etalon")
-            {
-                if(xml.attributes().hasAttribute("filepath"))
-                    left_bottom_reference_point_etalon_filename = xml.attributes().value("filepath").toString();
-            }
-
-            if (xml.name() == "right_top_reference_point_etalon")
-            {
-                if(xml.attributes().hasAttribute("filepath"))
-                    right_top_reference_point_etalon_filename = xml.attributes().value("filepath").toString();
             }
         }
     }
@@ -100,7 +90,7 @@ bool GeneralSettings::saveSettingsToConfigFile()
     stream.writeStartDocument();
     stream.writeStartElement("puanson_checker_settings");
 
-    for(quint8 angle = 1; angle <= NUMBER_OF_ANGLES; angle++)
+    for(quint8 angle = 1; angle <= PUANSON_IMAGE_MAX_ANGLE; angle++)
     {
         stream.writeStartElement("etalon_settings");
         stream.writeAttribute("angle", QString::number(angle));
@@ -120,14 +110,6 @@ bool GeneralSettings::saveSettingsToConfigFile()
         stream.writeEndElement(); // etalon_settings
     }
 
-    stream.writeStartElement("left_bottom_reference_point_etalon");
-    stream.writeAttribute("filepath", left_bottom_reference_point_etalon_filename);
-    stream.writeEndElement(); // left_bottom_reference_point_etalon
-
-    stream.writeStartElement("right_top_reference_point_etalon");
-    stream.writeAttribute("filepath", right_top_reference_point_etalon_filename);
-    stream.writeEndElement(); // right_top_reference_point_etalon
-    qDebug() << " left_bottom_reference_point_etalon_filename " << left_bottom_reference_point_etalon_filename << " right_top_reference_point_etalon_filename " << right_top_reference_point_etalon_filename;
     stream.writeEndElement(); // puanson_checker_settings
     stream.writeEndDocument();
 
@@ -138,34 +120,22 @@ bool GeneralSettings::saveSettingsToConfigFile()
 
 void GeneralSettings::setToleranceFields(const quint16 ext_tolerance_px_array[], const quint16 int_tolerance_px_array[])
 {
-    memcpy(externalToleranceMkmArray, ext_tolerance_px_array, sizeof(quint16) * NUMBER_OF_ANGLES);
-    memcpy(internalToleranceMkmArray, int_tolerance_px_array, sizeof(quint16) * NUMBER_OF_ANGLES);
+    memcpy(externalToleranceMkmArray, ext_tolerance_px_array, sizeof(quint16) * PUANSON_IMAGE_MAX_ANGLE);
+    memcpy(internalToleranceMkmArray, int_tolerance_px_array, sizeof(quint16) * PUANSON_IMAGE_MAX_ANGLE);
 }
 
-void GeneralSettings::getToleranceFields(quint16 ext_tolerance_px_array[], quint16 int_tolerance_px_array[])
+void GeneralSettings::getToleranceFields(quint16 ext_tolerance_px_array[], quint16 int_tolerance_px_array[]) const
 {
-    memcpy(ext_tolerance_px_array, externalToleranceMkmArray, sizeof(quint16) * NUMBER_OF_ANGLES);
-    memcpy(int_tolerance_px_array, internalToleranceMkmArray, sizeof(quint16) * NUMBER_OF_ANGLES);
+    memcpy(ext_tolerance_px_array, externalToleranceMkmArray, sizeof(quint16) * PUANSON_IMAGE_MAX_ANGLE);
+    memcpy(int_tolerance_px_array, internalToleranceMkmArray, sizeof(quint16) * PUANSON_IMAGE_MAX_ANGLE);
 }
 
 void GeneralSettings::setReferencePointDistancesMkm(const quint32 distance_array[])
 {
-    memcpy(referencePointDistancesMkmArray, distance_array, sizeof(quint32) * NUMBER_OF_ANGLES);
+    memcpy(referencePointDistancesMkmArray, distance_array, sizeof(quint32) * PUANSON_IMAGE_MAX_ANGLE);
 }
 
-void GeneralSettings::getReferencePointDistancesMkm(quint32 distance_array[])
+void GeneralSettings::getReferencePointDistancesMkm(quint32 distance_array[]) const
 {
-    memcpy(distance_array, referencePointDistancesMkmArray, sizeof(quint32) * NUMBER_OF_ANGLES);
-}
-
-void GeneralSettings::setReferencePointEtalonFilenames(const QString &_left_bottom_reference_point_etalon_filename, const QString &_right_top_reference_point_etalon_filename)
-{
-    left_bottom_reference_point_etalon_filename = _left_bottom_reference_point_etalon_filename;
-    right_top_reference_point_etalon_filename = _right_top_reference_point_etalon_filename;
-}
-
-void GeneralSettings::getReferencePointEtalonFilenames(QString &_left_bottom_reference_point_etalon_filename, QString &_right_top_reference_point_etalon_filename)
-{
-    _left_bottom_reference_point_etalon_filename = left_bottom_reference_point_etalon_filename;
-    _right_top_reference_point_etalon_filename = right_top_reference_point_etalon_filename;
+    memcpy(distance_array, referencePointDistancesMkmArray, sizeof(quint32) * PUANSON_IMAGE_MAX_ANGLE);
 }

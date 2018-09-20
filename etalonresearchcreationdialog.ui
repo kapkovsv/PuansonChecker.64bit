@@ -1,0 +1,784 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>EtalonResearchCreationDialog</class>
+ <widget class="QDialog" name="EtalonResearchCreationDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>651</width>
+    <height>687</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Создание исследования эталонной детали</string>
+  </property>
+  <widget class="QGroupBox" name="detailDimensionsGroupBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>81</y>
+     <width>631</width>
+     <height>551</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Параметры эталонной детали</string>
+   </property>
+   <widget class="QGraphicsView" name="idealPuansonAndDimensionsGraphicsView">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>50</y>
+      <width>611</width>
+      <height>161</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="idealPuansonAndDimensionsLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>30</y>
+      <width>291</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Идеальный пуансон и задаваемые размеры</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter1Label">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>230</y>
+      <width>131</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Размер диаметра d1</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="dimensionDiameter1SpinBox">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>225</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="maximum">
+     <number>100000</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter1MkmLabel">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>230</y>
+      <width>31</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>мкм</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter2Label">
+    <property name="geometry">
+     <rect>
+      <x>330</x>
+      <y>230</y>
+      <width>131</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Размер диаметра d2</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter2MkmLabel">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>230</y>
+      <width>31</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>мкм</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="dimensionDiameter2SpinBox">
+    <property name="geometry">
+     <rect>
+      <x>470</x>
+      <y>225</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="maximum">
+     <number>100000</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="dimensionDiameter4SpinBox">
+    <property name="geometry">
+     <rect>
+      <x>470</x>
+      <y>265</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="maximum">
+     <number>100000</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter3Label">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>270</y>
+      <width>131</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Размер диаметра d3</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter4Label">
+    <property name="geometry">
+     <rect>
+      <x>330</x>
+      <y>270</y>
+      <width>131</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Размер диаметра d4</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter4MkmLabel">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>270</y>
+      <width>31</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>мкм</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter3MkmLabel">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>270</y>
+      <width>31</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>мкм</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="dimensionDiameter3SpinBox">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>265</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="maximum">
+     <number>100000</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="dimensionDiameter6SpinBox">
+    <property name="geometry">
+     <rect>
+      <x>470</x>
+      <y>305</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="maximum">
+     <number>100000</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter5Label">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>310</y>
+      <width>131</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Размер диаметра d5</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter6Label">
+    <property name="geometry">
+     <rect>
+      <x>330</x>
+      <y>310</y>
+      <width>131</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Размер диаметра d6</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter6MkmLabel">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>310</y>
+      <width>31</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>мкм</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter35MkmLabel">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>310</y>
+      <width>31</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>мкм</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="dimensionDiameter5SpinBox">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>305</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="maximum">
+     <number>100000</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="dimensionDiameter8SpinBox">
+    <property name="geometry">
+     <rect>
+      <x>470</x>
+      <y>345</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="maximum">
+     <number>100000</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter7Label">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>350</y>
+      <width>131</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Размер диаметра d7</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter8Label">
+    <property name="geometry">
+     <rect>
+      <x>330</x>
+      <y>350</y>
+      <width>131</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Размер диаметра d8</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter8MkmLabel">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>350</y>
+      <width>31</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>мкм</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter7MkmLabel">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>350</y>
+      <width>31</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>мкм</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="dimensionDiameter7SpinBox">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>345</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="maximum">
+     <number>100000</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter9Label">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>390</y>
+      <width>131</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Размер диаметра d9</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionDiameter9MkmLabel">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>390</y>
+      <width>31</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>мкм</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="dimensionDiameter9SpinBox">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>385</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="maximum">
+     <number>100000</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="dimensionGrooveWidthSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>509</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="maximum">
+     <number>100000</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionGrooveDepthMkmLabel">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>514</y>
+      <width>31</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>мкм</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="dimensionGrooveDepthSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>470</x>
+      <y>509</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="maximum">
+     <number>100000</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionGrooveWidthLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>514</y>
+      <width>131</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Ширина паза</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionGrooveWidthMkmLabel">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>514</y>
+      <width>31</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>мкм</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionGrooveDepthLabel">
+    <property name="geometry">
+     <rect>
+      <x>330</x>
+      <y>514</y>
+      <width>131</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Глубина паза</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="dimensionRadius1SpinBox">
+    <property name="geometry">
+     <rect>
+      <x>170</x>
+      <y>430</y>
+      <width>81</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+    <property name="maximum">
+     <number>100000</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionRadius1MkmLabel">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>435</y>
+      <width>31</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>мкм</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionRadius1Label">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>435</y>
+      <width>141</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Радиус скругления R1</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionRadius2MkmLabel">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>435</y>
+      <width>31</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>мкм</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionRadius2Label">
+    <property name="geometry">
+     <rect>
+      <x>330</x>
+      <y>435</y>
+      <width>141</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Радиус скругления R2</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="dimensionRadius2SpinBox">
+    <property name="geometry">
+     <rect>
+      <x>480</x>
+      <y>430</y>
+      <width>81</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+    <property name="maximum">
+     <number>100000</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionRadius3Label">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>470</y>
+      <width>141</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Радиус скругления R3</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="dimensionRadius3SpinBox">
+    <property name="geometry">
+     <rect>
+      <x>170</x>
+      <y>465</y>
+      <width>81</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+    <property name="maximum">
+     <number>100000</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="dimensionRadius3MkmLabel">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>470</y>
+      <width>31</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>мкм</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QDialogButtonBox" name="buttonBox">
+   <property name="geometry">
+    <rect>
+     <x>467</x>
+     <y>647</y>
+     <width>166</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="standardButtons">
+    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="puansonModelComboBox">
+   <property name="geometry">
+    <rect>
+     <x>180</x>
+     <y>47</y>
+     <width>71</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="layoutDirection">
+    <enum>Qt::RightToLeft</enum>
+   </property>
+   <property name="currentText">
+    <string>658</string>
+   </property>
+   <item>
+    <property name="text">
+     <string>658</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>660</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>661</string>
+    </property>
+   </item>
+  </widget>
+  <widget class="QLabel" name="puansonModelLabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>50</y>
+     <width>151</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Модель пуансона</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="saveFolderPathLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>180</x>
+     <y>9</y>
+     <width>371</width>
+     <height>26</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="chooseSaveFolderPathPushButton">
+   <property name="geometry">
+    <rect>
+     <x>560</x>
+     <y>9</y>
+     <width>71</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Обзор</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="saveFolderPathLabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>13</y>
+     <width>161</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Папка для сохранения</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="creationDateTimeLabel">
+   <property name="geometry">
+    <rect>
+     <x>310</x>
+     <y>50</y>
+     <width>181</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Дата и время создания</string>
+   </property>
+  </widget>
+  <widget class="QDateTimeEdit" name="creationDateTimeEdit">
+   <property name="geometry">
+    <rect>
+     <x>503</x>
+     <y>47</y>
+     <width>131</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="layoutDirection">
+    <enum>Qt::LeftToRight</enum>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -98,30 +98,6 @@
     <property name="title">
      <string>Меню</string>
     </property>
-    <widget class="QMenu" name="angle_menu">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="title">
-      <string>Ракурс</string>
-     </property>
-     <addaction name="angle_1_action"/>
-     <addaction name="angle_2_action"/>
-     <addaction name="angle_3_action"/>
-     <addaction name="angle_4_action"/>
-     <addaction name="angle_5_action"/>
-    </widget>
-    <widget class="QMenu" name="load_menu">
-     <property name="title">
-      <string>Загрузить изображение</string>
-     </property>
-     <addaction name="load_etalon_1_action"/>
-     <addaction name="load_etalon_2_action"/>
-     <addaction name="load_etalon_3_action"/>
-     <addaction name="load_etalon_4_action"/>
-     <addaction name="load_etalon_5_action"/>
-     <addaction name="load_current_action"/>
-    </widget>
     <widget class="QMenu" name="goto_menu">
      <property name="title">
       <string>Перейти к </string>
@@ -134,32 +110,87 @@
       <string>Настройки</string>
      </property>
      <addaction name="settings_action"/>
-     <addaction name="set_etalon_reference_points_action"/>
-     <addaction name="set_current_reference_points_action"/>
-     <addaction name="impose_ideal_contour_to_etalon_action"/>
-     <addaction name="reference_points_auto_search_action"/>
     </widget>
-    <widget class="QMenu" name="shoot_and_load_menu">
+    <widget class="QMenu" name="image_work_menu">
      <property name="title">
-      <string>Сделать фотографию и загрузить</string>
+      <string>Работа с изображением</string>
      </property>
-     <addaction name="shoot_and_load_etalon_action"/>
-     <addaction name="shoot_and_load_current_action"/>
+     <widget class="QMenu" name="image_work_etalon_menu">
+      <property name="title">
+       <string>Эталон</string>
+      </property>
+      <addaction name="image_work_etalon_load_image_action"/>
+      <addaction name="image_work_etalon_shoot_and_load_action"/>
+      <addaction name="separator"/>
+      <addaction name="image_work_etalon_manually_set_reference_points_action"/>
+      <addaction name="image_work_etalon_reference_points_auto_search_action"/>
+      <addaction name="image_work_etalon_impose_ideal_contour_action"/>
+      <addaction name="separator"/>
+      <addaction name="image_work_etalon_save_angle_to_research"/>
+     </widget>
+     <widget class="QMenu" name="image_work_current_menu">
+      <property name="title">
+       <string>Текущая деталь</string>
+      </property>
+      <addaction name="image_work_current_load_image_action"/>
+      <addaction name="image_work_current_shoot_and_load_action"/>
+      <addaction name="separator"/>
+      <addaction name="image_work_current_manually_set_reference_points_action"/>
+      <addaction name="image_work_current_reference_points_auto_search_action"/>
+      <addaction name="separator"/>
+      <addaction name="image_work_current_save_action"/>
+     </widget>
+     <addaction name="image_work_etalon_menu"/>
+     <addaction name="image_work_current_menu"/>
+     <addaction name="separator"/>
+     <addaction name="image_work_set_left_bottom_reference_point_search_area"/>
+     <addaction name="image_work_set_right_top_reference_point_search_area"/>
+     <addaction name="separator"/>
+     <addaction name="image_work_save_result_action"/>
     </widget>
-    <addaction name="load_menu"/>
-    <addaction name="shoot_and_load_menu"/>
-    <addaction name="angle_menu"/>
+    <widget class="QMenu" name="etalon_menu">
+     <property name="title">
+      <string>Эталон</string>
+     </property>
+     <widget class="QMenu" name="etalon_angle_menu">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="title">
+       <string>Выбрать активный ракурс исследования</string>
+      </property>
+      <addaction name="etalon_angle_set_active_1_action"/>
+      <addaction name="etalon_angle_set_active_2_action"/>
+      <addaction name="etalon_angle_set_active_3_action"/>
+      <addaction name="etalon_angle_set_active_4_action"/>
+      <addaction name="etalon_angle_set_active_5_action"/>
+      <addaction name="etalon_angle_set_active_6_action"/>
+     </widget>
+     <addaction name="etalon_research_action"/>
+     <addaction name="etalon_load_research_action"/>
+     <addaction name="separator"/>
+     <addaction name="etalon_angle_menu"/>
+     <addaction name="etalon_research_properties_action"/>
+    </widget>
+    <widget class="QMenu" name="current_menu">
+     <property name="title">
+      <string>Текущая деталь</string>
+     </property>
+     <addaction name="current_research_action"/>
+    </widget>
+    <addaction name="etalon_menu"/>
+    <addaction name="current_menu"/>
+    <addaction name="image_work_menu"/>
+    <addaction name="separator"/>
     <addaction name="goto_menu"/>
     <addaction name="settings_menu"/>
-    <addaction name="save_current_action"/>
-    <addaction name="save_result_action"/>
     <addaction name="separator"/>
     <addaction name="exit_action"/>
    </widget>
    <addaction name="main_menu"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
-  <action name="angle_1_action">
+  <action name="_angle_1_action">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -170,7 +201,7 @@
     <string>1</string>
    </property>
   </action>
-  <action name="angle_2_action">
+  <action name="_angle_2_action">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -181,7 +212,7 @@
     <string>2</string>
    </property>
   </action>
-  <action name="angle_3_action">
+  <action name="_angle_3_action">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -192,7 +223,7 @@
     <string>3</string>
    </property>
   </action>
-  <action name="angle_4_action">
+  <action name="_angle_4_action">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -205,7 +236,7 @@
   </action>
   <action name="load_etalon_1_action">
    <property name="text">
-    <string>Эталон ракурса 1</string>
+    <string>Ракурс эталона</string>
    </property>
   </action>
   <action name="load_etalon_2_action">
@@ -252,27 +283,17 @@
     <string>Выход</string>
    </property>
   </action>
-  <action name="save_result_action">
-   <property name="text">
-    <string>Сохранить результат(контуры деталей)</string>
-   </property>
-  </action>
   <action name="settings_action">
    <property name="text">
     <string>Настройки программы</string>
    </property>
   </action>
-  <action name="set_etalon_reference_points_action">
+  <action name="_set_etalon_reference_points_action">
    <property name="text">
     <string>Задать реперные точки для эталона</string>
    </property>
   </action>
-  <action name="save_current_action">
-   <property name="text">
-    <string>Сохранить изображение текущей детали</string>
-   </property>
-  </action>
-  <action name="angle_5_action">
+  <action name="_angle_5_action">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -309,19 +330,179 @@
     <string>Наложить идеальный контур на эталон</string>
    </property>
   </action>
-  <action name="shoot_and_load_etalon_action">
+  <action name="_etalon_reference_points_auto_search_action">
    <property name="text">
-    <string>Эталона</string>
+    <string>Автоматический поиск реперных точек эталона</string>
    </property>
   </action>
-  <action name="shoot_and_load_current_action">
+  <action name="_set_left_bottom_reference_point_search_area">
    <property name="text">
-    <string>Текущей детали</string>
+    <string>Задать область поиска левой нижней реперной точки</string>
    </property>
   </action>
-  <action name="reference_points_auto_search_action">
+  <action name="_set_right_top_reference_point_search_area">
+   <property name="text">
+    <string>Задать область поиска правой верхней реперной точки</string>
+   </property>
+  </action>
+  <action name="_current_reference_points_auto_search_action">
+   <property name="text">
+    <string>Автоматический поиск реперных точек текущей детали</string>
+   </property>
+  </action>
+  <action name="action_4">
+   <property name="text">
+    <string>м</string>
+   </property>
+  </action>
+  <action name="etalon_research_action">
+   <property name="text">
+    <string>Произвести исследование всех ракурсов</string>
+   </property>
+  </action>
+  <action name="etalon_load_research_action">
+   <property name="text">
+    <string>Загрузка исследования</string>
+   </property>
+  </action>
+  <action name="current_research_action">
+   <property name="text">
+    <string>Проверка детали (все ракурсы)</string>
+   </property>
+  </action>
+  <action name="image_work_etalon_manually_set_reference_points_action">
+   <property name="text">
+    <string>Вручную задать реперные точки</string>
+   </property>
+  </action>
+  <action name="image_work_set_left_bottom_reference_point_search_area">
+   <property name="text">
+    <string>Задать область поиска левой нижней реперной точки</string>
+   </property>
+  </action>
+  <action name="image_work_set_right_top_reference_point_search_area">
+   <property name="text">
+    <string>Задать область поиска правой верхней реперной точки</string>
+   </property>
+  </action>
+  <action name="image_work_etalon_reference_points_auto_search_action">
    <property name="text">
     <string>Автоматический поиск реперных точек</string>
+   </property>
+  </action>
+  <action name="image_work_current_manually_set_reference_points_action">
+   <property name="text">
+    <string>Вручную задать реперные точки</string>
+   </property>
+  </action>
+  <action name="image_work_current_reference_points_auto_search_action">
+   <property name="text">
+    <string>Автоматический поиск реперных точек</string>
+   </property>
+  </action>
+  <action name="image_work_etalon_impose_ideal_contour_action">
+   <property name="text">
+    <string>Наложить идеальный контур</string>
+   </property>
+  </action>
+  <action name="etalon_angle_set_active_1_action">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>1</string>
+   </property>
+  </action>
+  <action name="etalon_angle_set_active_2_action">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>2</string>
+   </property>
+  </action>
+  <action name="etalon_angle_set_active_3_action">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>3</string>
+   </property>
+  </action>
+  <action name="etalon_angle_set_active_4_action">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>4</string>
+   </property>
+  </action>
+  <action name="etalon_angle_set_active_5_action">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>5</string>
+   </property>
+  </action>
+  <action name="etalon_angle_set_active_6_action">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>6</string>
+   </property>
+  </action>
+  <action name="image_work_current_save_action">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Сохранить изображение</string>
+   </property>
+  </action>
+  <action name="image_work_save_result_action">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Сохранить результат (изображение контуров деталей)</string>
+   </property>
+  </action>
+  <action name="image_work_etalon_load_image_action">
+   <property name="text">
+    <string>Загрузить изображение из файла</string>
+   </property>
+  </action>
+  <action name="image_work_current_load_image_action">
+   <property name="text">
+    <string>Загрузить изображение из файла</string>
+   </property>
+  </action>
+  <action name="image_work_etalon_shoot_and_load_action">
+   <property name="text">
+    <string>Фотосъёмка эталонной детали</string>
+   </property>
+  </action>
+  <action name="image_work_current_shoot_and_load_action">
+   <property name="text">
+    <string>Фотосъёмка текущей детали</string>
+   </property>
+  </action>
+  <action name="image_work_etalon_save_angle_to_research">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Сохранить ракурс эталона в исследование</string>
+   </property>
+  </action>
+  <action name="etalon_research_properties_action">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Свойства загруженного исследования</string>
    </property>
   </action>
  </widget>

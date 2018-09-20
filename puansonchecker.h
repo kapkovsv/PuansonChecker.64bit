@@ -22,10 +22,12 @@
 // Номер ракурса для задания текущего изображения
 #define CURRENT_IMAGE_ANGLE 0
 // Количество ракурсов
-#define NUMBER_OF_ANGLES 5
+#define PUANSON_IMAGE_MAX_ANGLE 6
 
+#include "types.h"
 #include "puansonimage.h"
 #include "photocamera.h"
+#include "puansonmachine.h"
 #include "generalsettings.h"
 
 #define CONFIGURATION_FILE "puanson_checker_config.xml"
@@ -36,6 +38,13 @@
 #define DEFAULT_CANNY_THRES_1 20
 #define DEFAULT_CANNY_THRES_2 30
 
+#define REFERENCE_POINT_AUTO_SEARCH_AREA_DEFAULT_WIDTH 150
+#define REFERENCE_POINT_AUTO_SEARCH_AREA_DEFAULT_HEIGHT 150
+
+#define NUMBER_OF_ETALON_ANGLES 6
+
+#define UNKNOWN_ETALON_ANGLE UCHAR_MAX
+
 class MainWindow;
 class CurrentForm;
 class ContoursForm;
@@ -44,24 +53,17 @@ class ImageWindow;
 
 class GeneralSettings;
 
-enum CalibrationMode_e
-{
-    NO_CALIBRATION = 0,
-    // Реперные точки
-    REFERENCE_POINT_1 = 1,
-    REFERENCE_POINT_2 = 2,
-    // Идеальный контур
-    IDEAL_IMPOSE = 14
-};
-
 class PuansonChecker: public QObject
 {
     Q_OBJECT
 
-    const cv::Vec3b inner_contour_color = cv::Vec3b(250, 100, 100);
-    const cv::Vec3b outer_contour_color = cv::Vec3b(100, 250, 100);
-    const cv::Vec3b etalon_contour_color = cv::Vec3b( 255, 255, 255 );
-    const cv::Vec3b current_contour_color = cv::Vec3b( 50, 50, 250 );
+    static const cv::Vec3b empty_contour_color;
+    static const cv::Vec3b empty_contour_color_2;
+
+    static const cv::Vec3b inner_contour_color;
+    static const cv::Vec3b outer_contour_color;
+    static const cv::Vec3b etalon_contour_color;
+    static const cv::Vec3b current_contour_color;
 
 private:
     PuansonChecker(const QApplication *app);
@@ -71,8 +73,8 @@ public:
     PuansonChecker() = delete;
     PuansonChecker(const PuansonChecker&) = delete;
     PuansonChecker(const PuansonChecker&&) = delete;
-    PuansonChecker& operator =(const PuansonChecker&) = delete;
-    PuansonChecker& operator =(PuansonChecker&&) = delete;
+    PuansonChecker& operator=(const PuansonChecker&) = delete;
+    PuansonChecker& operator=(PuansonChecker&&) = delete;
 
     static PuansonChecker *getInstance(const QApplication *app = Q_NULLPTR);
 
@@ -80,64 +82,171 @@ public:
 
     // UI
     void showSettingsDialog();
+    bool showConfirmCheckResultCorrectnessDialog(bool check_result);
 
-    void activateContoursWindow();
-    void activateCurrentImageWindow();
+    void activateContoursWindow() const;
+    void activateCurrentImageWindow() const;
     // --
 
-    // Etalon image
-    bool loadEtalonImage(const quint8 angle, const QString &path);
-
-    inline bool isEtalonImageLoaded(const quint8 angle)
+    // Research
+    inline void setEtalonResearchSettings(const QString &_etalon_research_folder_path, PuansonModel _detail_research_puanson_model, const QDateTime &_etalon_research_date_time_of_creation, const quint8 _etalon_research_number_of_angles)
     {
-        return angle <= NUMBER_OF_ANGLES && !etalon_puanson_image[angle - 1].isEmpty();
+        etalon_research_folder_path = _etalon_research_folder_path;
+        etalon_puanson_image.setEtalonResearchPuansonModel(_detail_research_puanson_model);
+        etalon_research_date_time_of_creation = _etalon_research_date_time_of_creation;
+        etalon_research_number_of_angles = _etalon_research_number_of_angles;
     }
 
-    inline bool isCurrentImageLoaded()
+    inline void setCurrentResearchSettings(const QString &_current_research_folder_path, const QDateTime &_current_research_date_time_of_creation, const bool _current_detail_angle_source_photo_shooting_only)
+    {
+        current_research_folder_path = _current_research_folder_path;
+        current_research_date_time_of_creation = _current_research_date_time_of_creation;
+        current_detail_angle_source_photo_shooting_only = _current_detail_angle_source_photo_shooting_only;
+    }
+
+    inline void cancelEtalonResearch()
+    {
+        QDir(etalon_research_folder_path).removeRecursively();
+        QDir().mkdir(etalon_research_folder_path);
+        resetEtalonResearchSettings();
+    }
+
+    inline void cancelCurrentResearch()
+    {
+        if(!current_research_folder_path.isEmpty())
+        {
+            QDir(current_research_folder_path).removeRecursively();
+            QDir().mkdir(current_research_folder_path);
+        }
+        current_research_active_angle = 0;
+    }
+
+    inline void resetEtalonResearchSettings()
+    {
+        setEtalonResearchSettings("", PuansonModel::PUANSON_MODEL_658, QDateTime(), 0);
+
+        etalon_research_active_angle = 0;
+    }
+
+    inline QString getEtalonResearchFolderPath() const
+    {
+        return etalon_research_folder_path;
+    }
+
+    inline QString getCurrentResearchFolderPath() const
+    {
+        return current_research_folder_path;
+    }
+
+    inline void getEtalonResearchSettings(QString &_etalon_research_folder_path, PuansonModel &_detail_research_puanson_model, QDateTime &_etalon_research_date_time_of_creation, quint8 &_etalon_research_number_of_angles) const
+    {
+        _etalon_research_folder_path = etalon_research_folder_path;
+        _detail_research_puanson_model = etalon_puanson_image.getDetailPuansonModel();
+        _etalon_research_date_time_of_creation = etalon_research_date_time_of_creation;
+        _etalon_research_number_of_angles = etalon_research_number_of_angles;
+    }
+
+    inline void getCurrentResearchSettings(QString &_current_research_folder_path, QDateTime &_current_research_date_time_of_creation, bool &_current_detail_angle_source_photo_shooting_only) const
+    {
+        _current_research_folder_path = current_research_folder_path;
+        _current_research_date_time_of_creation = current_research_date_time_of_creation;
+        _current_detail_angle_source_photo_shooting_only = current_detail_angle_source_photo_shooting_only;
+    }
+
+    inline bool isCurrentDetailAngleSourcePhotoShootingOnly() const
+    {
+        return current_detail_angle_source_photo_shooting_only;
+    }
+
+    inline bool isEtalonResearchLoaded() const
+    {
+        return !etalon_research_folder_path.isEmpty();
+    }
+
+    inline bool isEtalonResearchCompleted() const
+    {
+        return etalon_research_completed;
+    }
+
+    inline void completeEtalonResearch()
+    {
+        etalon_research_completed = true;
+    }
+
+    inline quint8 completeCurrentResearch(const bool is_detail_suitable = true)
+    {
+        quint8 active_angle = current_research_active_angle;
+
+        current_research_active_angle = 0;
+        current_puanson_image.setCurrentDetailSuitable(is_detail_suitable);
+
+        // Рассчёт размеров текущей детали детали на основе отклонений
+        PuansonChecker::getInstance()->getCurrent().calculateDetailDimensionsFromDeviations(PuansonChecker::getInstance()->getEtalon());
+
+        return active_angle;
+    }
+    // --------
+
+    // Etalon image
+    bool loadEtalonImage(const quint8 angle, const QString &path, const QString &contours_path = "", bool save_attributes = false);
+
+    inline bool isEtalonImageLoaded() const
+    {
+        return !etalon_puanson_image.isEmpty();
+    }
+
+    inline bool isCurrentImageLoaded() const
     {
         return !current_puanson_image.isEmpty();
     }
 
-    PuansonImage &getEtalon(const quint8 angle)
+    PuansonImage &getEtalon()
     {
-        if(angle < NUMBER_OF_ANGLES)
-            return etalon_puanson_image[angle-1];
-        else
-            return etalon_puanson_image[NUMBER_OF_ANGLES - 1];
+        return etalon_puanson_image;
     }
 
-    bool getEtalonImage(const quint8 angle, QImage &img);
+    quint8 getActiveEtalonResearchAngle() const
+    {
+        return etalon_research_active_angle;
+    }
+
+    quint8 incrementActiveEtalonResearchAngle()
+    {
+        return ++etalon_research_active_angle;
+    }
+
+    void setActiveEtalonResearchAngle(quint8 angle)
+    {
+        etalon_research_active_angle = angle;
+    }
+
+    quint8 getActiveCurrentResearchAngle() const
+    {
+        return current_research_active_angle;
+    }
+
+    quint8 incrementActiveCurrentResearchAngle()
+    {
+        return ++current_research_active_angle;
+    }
+
+    void setActiveCurrentResearchAngle(quint8 angle)
+    {
+        current_research_active_angle = angle;
+    }
+
+    bool getEtalonImage(QImage &img);
     bool getEtalonContour(QImage &img);
 
     void cropImages(qreal scale = 4.0)
     {
-        etalon_puanson_image[etalon_angle - 1].cropImage(scale);
-        etalon_contour = getContour(etalon_puanson_image[etalon_angle - 1]);
+        etalon_puanson_image.cropImage(scale);
+        etalon_puanson_image.setImageContour(getContour(etalon_puanson_image));
 
         current_puanson_image.cropImage(scale);
         current_puanson_image.setImageContour(getContour(current_puanson_image));
     }
-
-    inline bool setEtalonAngle(const quint8 angle)
-    {
-        if(angle > NUMBER_OF_ANGLES)
-            return false;
-
-        etalon_angle = angle;
-
-//        if(areInnerSkelenonPointsSet(angle))
-//            getContour(etalon_puanson_image[etalon_angle - 1]);
-
-        return true;
-    }
-
-    inline quint8 getEtalonAngle()
-    {
-        return etalon_angle;
-    }
     // --------------------
-
-    bool loadEtalonReferencePointImages(const QString &left_bottom_reference_point_path, const QString &right_top_reference_point_path);
 
     // Current detail
     void loadCurrentImage(const QString &path);
@@ -148,9 +257,16 @@ public:
     void shiftCurrentImage(const qreal dx, const qreal dy);
     void rotateCurrentImage(const double angle);
     bool combineImagesByReferencePoints();
+    bool combineImagesByReferencePointsAndDrawBadPoints();
+    bool detectDeviations(const Rect &analysis_area);
 
-    QVector<QPointF> findReferencePoints();
+    QVector<QPointF> findReferencePoints(const PuansonImage &reference_point_image) const;
     bool checkDetail(QVector<QPoint> &bad_points);
+
+    const PuansonImage &getCurrent() const
+    {
+        return current_puanson_image;
+    }
 
     PuansonImage &getCurrent()
     {
@@ -163,6 +279,13 @@ public:
     void startCurrentCalibration();
     // --------------
 
+    // Research
+    void researchEtalonAngle(quint8 angle = 0);
+    void researchCurrentAngle(quint8 angle = 0);
+
+    bool loadEtalonResearch(const QString &etalon_research_folder_path);
+    // --------
+
     // Move images
     void moveImages(const int &dx, const int &dy, const ImageWindow *owner_window = Q_NULLPTR, const bool scroll_event = false);
     // -----------
@@ -170,14 +293,25 @@ public:
     // Camera
     bool connectToCamera();
     bool disconnectFromCamera();
-    QString getCameraStatus();
+    QString getCameraStatus() const;
     // ------
 
     // Drawing images
-    void drawEtalonImage();
+    void drawEtalonImage(bool draw_etalon_image = true);
     void drawCurrentImage(bool draw_reference_points = true);
+    void drawCurrentImageReferencePoints();
     void drawCurrentContour();
     void drawContoursImage();
+    // -----------
+
+    // Current detail measurements
+    bool findMeasurementContourPoints(const QRect &analysis_rect);
+    void measurementPointsSettingMode();
+    QPoint findNearestContourPoint(const ContourPoints_e contour_point_type, const QPoint &original_point, const QLine &measurement_line, const quint16 neighborhood_len);
+    // -----------
+
+    // Current detail research goto next angle
+    void currentDetailResearchGotoNextAngle();
     // -----------
 
     // Calculate image contour
@@ -199,7 +333,7 @@ public:
     // Contours image
     void updateContoursImage();
 
-    inline bool getDrawEtalonContourFlag()
+    inline bool getDrawEtalonContourFlag() const
     {
         return draw_etalon_contour_flag;
     }
@@ -209,14 +343,14 @@ public:
         draw_etalon_contour_flag = val;
     }
 
-    inline quint16 getCannyThreshold1()
-    {
-        return CannyThreshold1;
-    }
-
     inline void setCannyThreshold1(const quint16 val)
     {
         CannyThreshold1 = val;
+    }
+
+    inline quint16 getCannyThreshold1() const
+    {
+        return CannyThreshold1;
     }
 
     inline void setCannyThreshold2(const quint16 val)
@@ -224,15 +358,25 @@ public:
         CannyThreshold2 = val;
     }
 
-    inline quint16 getCannyThreshold2()
+    inline quint16 getCannyThreshold2() const
     {
         return CannyThreshold2;
     }
     // -----------------
 
-    inline GeneralSettings *getGeneralSettings()
+    inline GeneralSettings *getGeneralSettings() const
     {
         return general_settings;
+    }
+
+    void setReferencePointSearchArea(const ReferencePointType_e reference_point_type, const QRect &area_rect);
+    QRect getReferencePointSearchArea(const ImageType_e image_type, const ReferencePointType_e reference_point_type) const;
+
+    static int loadImage(const ImageType_e type, const QString &path, PuansonImage &output, bool save_attributes = false);
+
+    inline bool isImageLoadingFinished()
+    {
+        return load_image_watcher.isFinished();
     }
 
 public slots:
@@ -245,11 +389,8 @@ signals:
 private:
     static PuansonChecker *instance;
 
-    static int loadImage(const ImageType_e type, const QString &path, PuansonImage &output);
     static void drawReferencePointOnContoursImage(const QPaintDevice &paint_device, const QPoint &position, const Qt::GlobalColor color, const QString &text);
-
-    QVector<QPointF> getReferencePointArea(const Mat &grayscale_img_object, const Mat &grayscale_img_scene);
-    QPointF findReferencePoint(const CalibrationMode_e reference_point_type, const PuansonImage &img_object);
+    static QPointF findReferencePoint(const ReferencePointType_e reference_point_type, const PuansonImage &reference_point_image);
 
     // Приложение
     QApplication *application; // Указатель на единственный экземляр PuansonChecker
@@ -269,17 +410,33 @@ private:
     PhotoCamera *camera;
     // ----------
 
-    // Эталоны
-    PuansonImage etalon_puanson_image[NUMBER_OF_ANGLES];
-    PuansonImage *etalon_puanson_image_ptr; // Указатель на эталонное изображение
-    cv::Mat etalon_contour;                 // Контур активного эталона
-    quint8 etalon_angle;                    // Номер активного эталона
+    // Станок
+    PuansonMachine *machine;
+    // ------
+
+    // Ракурс эталона
+    PuansonImage etalon_puanson_image;      // Активный ракурс эталона
     // -------
 
-    // Эталонные изображения реперных точек
-    PuansonImage etalon_reference_point_left_bottom;
-    PuansonImage etalon_reference_point_right_top;
+    // Исследование эталона
+    QString etalon_research_folder_path;
+    QDateTime etalon_research_date_time_of_creation;
+    quint8 etalon_research_number_of_angles = 0;
+    quint8 etalon_research_completed = false;
+    quint8 etalon_research_active_angle = 0;    // Номер активного ракурса эталона в исследовании
     // -------
+
+    // Исследование текущей детали
+    QString current_research_folder_path;
+    QDateTime current_research_date_time_of_creation;
+    bool current_detail_angle_source_photo_shooting_only = false;
+    quint8 current_research_active_angle = 0;   // Номер активного ракурса текущей детали в исследовании
+    // -------
+
+    // Области для автоматического поиска реперных точек
+    QRect reference_point_1_search_area_rect;
+    QRect reference_point_2_search_area_rect;
+    // --------------------
 
     // Текущая деталь
     PuansonImage current_puanson_image;
@@ -301,6 +458,10 @@ private:
 
     // Флаг
     bool ignore_scroll_move_image;
+    // ----
+
+    // Флаг, что изображения эталона и текущей детали совмещены
+    bool images_combined_by_reference_points = false;
     // ----
 };
 

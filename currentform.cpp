@@ -98,7 +98,7 @@ void CurrentFormGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEv
 {
     if(mouseEvent->button() == Qt::LeftButton)
     {
-        if(window->getCalibrationMode() != NO_CALIBRATION)
+        if(window->getCalibrationMode() != CalibrationMode_e::NO_CALIBRATION)
         {
             window->mousePressEvent(mouseEvent->scenePos().toPoint());
         }
@@ -129,7 +129,7 @@ void CurrentFormGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouse
 {
     if(mouseEvent->button() == Qt::LeftButton)
     {
-        if(window->getCalibrationMode() == NO_CALIBRATION)
+        if(window->getCalibrationMode() == CalibrationMode_e::NO_CALIBRATION)
         {
             switch(window->getImageMoveMode())
             {
@@ -166,7 +166,7 @@ void CurrentFormGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouse
 
 void CurrentFormGraphicsScene::wheelEvent(QGraphicsSceneWheelEvent *event)
 {
-    if(window->getCalibrationMode() == NO_CALIBRATION && window->getImageMoveMode() == IMAGE_MOVE_EDITING)
+    if(window->getCalibrationMode() == CalibrationMode_e::NO_CALIBRATION && window->getImageMoveMode() == IMAGE_MOVE_EDITING)
     {
         int delta = event->delta();
 
@@ -188,9 +188,9 @@ void CurrentForm::setImageCursor(const QCursor &cursor)
 
 void CurrentForm::moveImage(const qreal dx, const qreal dy)
 {
-    QGraphicsScene *scene = ui->graphicsView->scene();
+   // QGraphicsScene *scene = ui->graphicsView->scene();
 
-    QGraphicsPixmapItem *pixmap_item = scene == Q_NULLPTR ? Q_NULLPTR : qgraphicsitem_cast<QGraphicsPixmapItem *>(scene->items().at(scene->items().count()-1));
+    //QGraphicsPixmapItem *pixmap_item = scene == Q_NULLPTR ? Q_NULLPTR : qgraphicsitem_cast<QGraphicsPixmapItem *>(scene->items().at(scene->items().count()-1));
     if(pixmap_item)
     {
         qreal new_x, new_y;
@@ -218,26 +218,44 @@ void CurrentForm::moveImage(const qreal dx, const qreal dy)
 void CurrentForm::drawImage(const QImage &img)
 {
     if(!scene->items().isEmpty())
+    {
         scene->clear();
+        reference_point_1_auto_search_area_ideal_item = reference_point_2_auto_search_area_ideal_item = Q_NULLPTR;
+    }
 
     scene->setSceneRect(0, 0, img.width(), img.height());
-    scene->addPixmap(QPixmap::fromImage(img));
+    pixmap_item = scene->addPixmap(QPixmap::fromImage(img));
 
     ui->graphicsView->setScene(scene);
 }
 
 void CurrentForm::removeReferencePoints()
 {
-    while(ui->graphicsView->scene()->items().size() != 1)
+    QGraphicsItem *current_item;
+
+    if(ui->graphicsView->scene() == Q_NULLPTR)
+        return;
+
+    int i = 0;
+    while(i < ui->graphicsView->scene()->items().size() - 1)
     {
-        ui->graphicsView->scene()->removeItem(ui->graphicsView->scene()->items().first());
-        ui->graphicsView->scene()->update();
+        current_item = ui->graphicsView->scene()->items()[i];
+        if(current_item != pixmap_item && current_item != reference_point_1_auto_search_area_ideal_item && current_item != reference_point_2_auto_search_area_ideal_item)
+        {
+            ui->graphicsView->scene()->removeItem(current_item);
+            continue;
+        }
+
+        i++;
     }
+
     ui->graphicsView->scene()->update();
 }
 
 void CurrentForm::drawReferencePoints()
 {
+    removeReferencePoints();
+
     if(PuansonChecker::getInstance()->getCurrent().isReferencePointsAreSet())
     {
         QPoint reference_point1;
@@ -247,6 +265,7 @@ void CurrentForm::drawReferencePoints()
         PuansonChecker::getInstance()->getCurrent().getReferencePoints(reference_point1, reference_point2);
 
         ui->graphicsView->scene()->addEllipse(reference_point1.x() - GRAPHICAL_POINT_RADIUS, reference_point1.y() - GRAPHICAL_POINT_RADIUS, GRAPHICAL_POINT_RADIUS*2, GRAPHICAL_POINT_RADIUS*2, QPen(Qt::black, 1), QBrush(Qt::red, Qt::Dense5Pattern));
+
         text_item = ui->graphicsView->scene()->addText("Реперная точка 1", QFont("Arial", 10, QFont::Bold));
         text_item->setDefaultTextColor(Qt::red);
         text_item->setPos(reference_point1.x() + GRAPHICAL_POINT_RADIUS + 3, reference_point1.y() - GRAPHICAL_POINT_RADIUS - 3);
@@ -258,11 +277,36 @@ void CurrentForm::drawReferencePoints()
     }
 }
 
+void CurrentForm::drawReferencePointAutoSearchArea(const ReferencePointType_e reference_point_type, const QRect &search_area_rect)
+{
+    QGraphicsRectItem **reference_point_auto_search_area_ideal_item = Q_NULLPTR;
+
+    switch(reference_point_type)
+    {
+    case ReferencePointType_e::REFERENCE_POINT_1:
+    default:
+        reference_point_auto_search_area_ideal_item = &reference_point_1_auto_search_area_ideal_item;
+        break;
+    case ReferencePointType_e::REFERENCE_POINT_2:
+        reference_point_auto_search_area_ideal_item = &reference_point_2_auto_search_area_ideal_item;
+        break;
+    }
+
+    if(ui->graphicsView->scene() != Q_NULLPTR && reference_point_auto_search_area_ideal_item && *reference_point_auto_search_area_ideal_item && (*reference_point_auto_search_area_ideal_item)->scene() == ui->graphicsView->scene())
+    {
+        ui->graphicsView->scene()->removeItem(*reference_point_auto_search_area_ideal_item);
+        ui->graphicsView->scene()->update();
+    }
+
+    if(ui->graphicsView->scene())
+        *reference_point_auto_search_area_ideal_item = ui->graphicsView->scene()->addRect(search_area_rect, QPen(Qt::red, 3));
+}
+
 void CurrentForm::mousePressEvent(const QPoint &p)
 {
     switch(calibration_mode)
     {
-        case REFERENCE_POINT_1:
+        case CalibrationMode_e::REFERENCE_POINT_1:
         {
             reference_point1 = p;
 
@@ -272,7 +316,7 @@ void CurrentForm::mousePressEvent(const QPoint &p)
             text_item->setPos(p.x() + GRAPHICAL_POINT_RADIUS + 3, p.y() - GRAPHICAL_POINT_RADIUS - 3);
         }
         break;
-        case REFERENCE_POINT_2:
+        case CalibrationMode_e::REFERENCE_POINT_2:
         {
             reference_point2 = p;
             PuansonChecker::getInstance()->getCurrent().setReferencePoints(reference_point1, reference_point2);
@@ -283,7 +327,7 @@ void CurrentForm::mousePressEvent(const QPoint &p)
             text_item->setPos(p.x() - GRAPHICAL_POINT_RADIUS - 60, p.y() + GRAPHICAL_POINT_RADIUS + 3);
         }
         break;
-        case NO_CALIBRATION:
+        case CalibrationMode_e::NO_CALIBRATION:
         default:
         break;
     }
@@ -293,13 +337,13 @@ void CurrentForm::mouseReleaseEvent(const QPoint &p)
 {
     Q_UNUSED(p)
 
-    if(calibration_mode == REFERENCE_POINT_1)
+    if(calibration_mode == CalibrationMode_e::REFERENCE_POINT_1)
     {
-        setCalibrationMode(REFERENCE_POINT_2);
+        setCalibrationMode(CalibrationMode_e::REFERENCE_POINT_2);
     }
-    else if(calibration_mode == REFERENCE_POINT_2)
+    else if(calibration_mode == CalibrationMode_e::REFERENCE_POINT_2)
     {
-        setCalibrationMode(NO_CALIBRATION);
+        setCalibrationMode(CalibrationMode_e::NO_CALIBRATION);
         PuansonChecker::getInstance()->updateContoursImage();
     }
 }
@@ -346,11 +390,11 @@ bool CurrentForm::windowKeyPressEvent(QKeyEvent *event)
 
         return true;
     }
-    else if(calibration_mode != NO_CALIBRATION && event->key() == Qt::Key_Escape)
+    else if(calibration_mode != CalibrationMode_e::NO_CALIBRATION && event->key() == Qt::Key_Escape)
     {
         removeReferencePoints();
         drawReferencePoints();
-        setCalibrationMode(NO_CALIBRATION);
+        setCalibrationMode(CalibrationMode_e::NO_CALIBRATION);
 
         return true;
     }
@@ -370,11 +414,11 @@ void CurrentForm::shotAndLoadButtonPressedSlot()
     PuansonChecker::getInstance()->shootAndLoadCurrentImage();
 }
 
-void CurrentForm::setReferencePointsButtonPressedSlot()
+void CurrentForm::setReferencePointsManuallyButtonPressedSlot()
 {
     if(PuansonChecker::getInstance()->isCurrentImageLoaded())
     {
-        setCalibrationMode(REFERENCE_POINT_1);
+        setCalibrationMode(CalibrationMode_e::REFERENCE_POINT_1);
     }
     else
     {
@@ -382,6 +426,35 @@ void CurrentForm::setReferencePointsButtonPressedSlot()
         msgBox.setText("Изображение текущей детали не загружено!");
         msgBox.exec();
     }
+}
+
+void CurrentForm::setReferencePointsAutomaticButtonPressedSlot()
+{
+    if(!PuansonChecker::getInstance()->isCurrentImageLoaded())
+    {
+        QMessageBox msgBox;
+        msgBox.setText("Изображение текущей детали не загружено!");
+        msgBox.exec();
+
+        return;
+    }
+
+    if(PuansonChecker::getInstance()->getReferencePointSearchArea(ImageType_e::CURRENT_IMAGE, ReferencePointType_e::REFERENCE_POINT_1).isNull())
+    {
+        QMessageBox::warning(this, "Внимание", "Не задана область поиска левой нижней реперной точки");
+        return;
+    }
+
+    if(PuansonChecker::getInstance()->getReferencePointSearchArea(ImageType_e::CURRENT_IMAGE, ReferencePointType_e::REFERENCE_POINT_2).isNull())
+    {
+        QMessageBox::warning(this, "Внимание", "Не задана область поиска правой верхней реперной точки");
+        return;
+    }
+
+    QVector<QPointF> reference_points = PuansonChecker::getInstance()->findReferencePoints(PuansonChecker::getInstance()->getCurrent());
+    PuansonChecker::getInstance()->getCurrent().setReferencePoints(reference_points[0].toPoint(), reference_points[1].toPoint());
+    PuansonChecker::getInstance()->drawCurrentImageReferencePoints();
+    PuansonChecker::getInstance()->updateContoursImage();
 }
 
 void CurrentForm::cameraConnectionStatusChangedSlot(bool connected)
@@ -403,19 +476,19 @@ void CurrentForm::setCalibrationMode(CalibrationMode_e mode)
 
     switch(calibration_mode)
     {
-        case REFERENCE_POINT_1:
+        case CalibrationMode_e::REFERENCE_POINT_1:
             removeReferencePoints();
             setLabel2Text("Калибровка. Укажите реперную точку 1.");
             setImageCursor(Qt::CrossCursor);
         break;
-        case REFERENCE_POINT_2:
+        case CalibrationMode_e::REFERENCE_POINT_2:
             setLabel2Text("Калибровка. Укажите реперную точку 2.");
         break;
-        case NO_CALIBRATION:
+        case CalibrationMode_e::NO_CALIBRATION:
         default:
             setLabel2Text("Файл " + PuansonChecker::getInstance()->getCurrent().getFilename());
 
-            switch(mode)
+            switch(image_move_mode)
             {
                 case IMAGE_MOVE_EDITING:
                     setImageCursor(Qt::OpenHandCursor);
@@ -447,7 +520,8 @@ CurrentForm::CurrentForm(PuansonChecker *checker) :
     //connect(ui->calculateContourOnRotationCheckBox, SIGNAL(stateChanged(int)), SLOT(calculateContourOnRotationCheckBoxStateChanged(int)));
     connect(ui->shotAndLoadButton, SIGNAL(pressed()), SLOT(shotAndLoadButtonPressedSlot()));
     connect(checker, SIGNAL(cameraConnectionStatusChanged(bool)), SLOT(cameraConnectionStatusChangedSlot(bool)));
-    connect(ui->setReferencePointsButton, SIGNAL(pressed()), SLOT(setReferencePointsButtonPressedSlot()));
+    connect(ui->setReferencePointsManuallyButton, SIGNAL(pressed()), SLOT(setReferencePointsManuallyButtonPressedSlot()));
+    connect(ui->setReferencePointsAutomaticButton, SIGNAL(pressed()), SLOT(setReferencePointsAutomaticButtonPressedSlot()));
 }
 
 CurrentForm::~CurrentForm()

@@ -1,4 +1,4 @@
-#ifndef MAINWINDOW_H
+﻿#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 #include "imagewindow.h"
@@ -19,8 +19,9 @@ class MainWindow : public QMainWindow, public ImageWindow
 
     friend class ImageGraphicsScene;
 private:
+    void removeReferencePoints();
     void removeReferencePointsAndIdealContour();
-    void drawReferencePoints();
+
     void drawReferencePointsAndIdealContour();
     void drawReferenceAndInnerSkeletonPoints();
 public:
@@ -28,69 +29,104 @@ public:
     ~MainWindow();
 
     void drawImage(const QImage &img);
+    void drawIdealContour(const QPoint &_ideal_origin_point = QPoint(), const qreal _ideal_rotation_angle = 0.0);
+    void drawActualBorders();
+    void drawReferencePoints(const QPoint &reference_point1, const QPoint &reference_point2);
+    void drawReferencePointAutoSearchArea(const ReferencePointType_e reference_point_type, const QRect &search_area_rect = QRect());
 
     void moveImage(const qreal dx, const qreal dy);
     void setImageCursor(const QCursor &cursor) Q_DECL_OVERRIDE;
     void setWindowStatus(const QString &status);
     void setCalibrationMode(CalibrationMode_e mode);
 
-    void drawActualBorders();
+    void currentDetailResearchGotoNextAngle();
 
     void mouseDoubleClickEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
 
     void mousePressEvent(const QPoint &p) Q_DECL_OVERRIDE;
     void mouseReleaseEvent(const QPoint &p) Q_DECL_OVERRIDE;
     void mouseMoveEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
-    bool wheelEvent(int delta) Q_DECL_OVERRIDE;
+    bool wheelEvent(bool control_modifier, int delta) Q_DECL_OVERRIDE;
 
     bool windowKeyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 
-    void drawIdealContour();
-
-    void loadImageFinished(const ImageType_e image_type, quint8 etalon_angle);
+    void loadImageFinished(const ImageType_e image_type);
 
 public slots:
-    void menuLoadEtalon1ActionTriggered();
-    void menuLoadEtalon2ActionTriggered();
-    void menuLoadEtalon3ActionTriggered();
-    void menuLoadEtalon4ActionTriggered();
-    void menuLoadEtalon5ActionTriggered();
-    void menuLoadCurrentActionTriggered();
 
-    void menuShootAndLoadEtalonActionTriggered();
-    void menuShootAndLoadCurrentActionTriggered();
+    // Меню "Эталон"
+    void menuEtalonResearchActionTriggered();
+    void menuEtalonLoadResearchActionTriggered();
+    void menuEtalonAngleSetActive1ActionTriggered();
+    void menuEtalonAngleSetActive2ActionTriggered();
+    void menuEtalonAngleSetActive3ActionTriggered();
+    void menuEtalonAngleSetActive4ActionTriggered();
+    void menuEtalonAngleSetActive5ActionTriggered();
+    void menuEtalonAngleSetActive6ActionTriggered();
+    void menuEtalonResearchPropertiesActionTriggered();
 
-    void menuAngle1ActionTriggered();
-    void menuAngle2ActionTriggered();
-    void menuAngle3ActionTriggered();
-    void menuAngle4ActionTriggered();
-    void menuAngle5ActionTriggered();
+    // Меню "Текущая деталь"
+    void menuCurrentResearchActionTriggered();
+
+    // Меню "Работа с изображением"
+    void menuImageWorkSetLeftBottomReferencePointSearchAreaActionTriggered();
+    void menuImageWorkSetRightTopReferencePointSearchAreaActionTriggered();
+    void menuImageWorkSaveResultTriggered();
+
+    // Меню "Работа с изображением" -> "Эталон"
+    void menuImageWorkEtalonLoadActionTriggered();
+    void menuImageWorkEtalonShootAndLoadActionTriggered();
+    void menuImageWorkEtalonReferencePointsAutoSearchActionTriggered();
+    void menuImageWorkEtalonManuallySetReferencePointsActionTriggered();
+    void menuImageWorkEtalonImposeIdealContourToEtalonActionTriggered();
+    void menuImageWorkEtalonSaveAngleToResearchActionTriggered();
+
+    // Меню "Работа с изображением" -> "Текущая деталь"
+    void menuImageWorkCurrentLoadActionTriggered();
+    void menuImageWorkCurrentShootAndLoadActionTriggered();
+    void menuImageWorkCurrentManuallySetReferencePointsActionTriggered();
+    void menuImageWorkCurrentReferencePointsAutoSearchActionTriggered();
+    void menuImageWorkCurrentSaveTriggered();
+
+    // Меню "Перейти к"
     void menuGotoCurrentWindowTriggered();
     void menuGotoContoursWindowTriggered();
+
+    // Меню "Настройки"
     void menuSettingsActionTriggered();
-    void menuSetEtalonReferencePointsActionTriggered();
-    void menuSetCurrentReferencePointsActionTriggered();
-    void menuImposeIdealContourToEtalonActionTriggered();
-    void menuReferencePointsAutoSearchActionTriggered();
-    void menuSaveCurrentTriggered();
-    void menuSaveResultTriggered();
+
+    // "Выход"
     void menuExitActionTriggered();
 
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 
 private:
     Ui::MainWindow *ui;
-    QAction *angle_actions[NUMBER_OF_ANGLES];
-    quint8 etalon_angle;
+    QAction *angle_actions[PUANSON_IMAGE_MAX_ANGLE];
 
+    // Реперные точки
     QPoint reference_point1;
     QPoint reference_point2;
+    // --------------
 
+    // Идеальный контур
     bool ideal_impose_mouse_pressed = false;
     QPoint ideal_impose_previous_point;
     QPoint ideal_origin_point;
-    double ideal_rotate_angle = 0.0;
+    qreal ideal_rotation_angle = 0.0;
     QGraphicsPathItem *ideal_item = Q_NULLPTR;
+    // ----------------
+
+    // Области автоматического поиска реперных точек
+    bool set_reference_point_auto_search_area_mouse_pressed = false;
+    QRect reference_point_1_auto_search_area_rect;
+    QRect reference_point_2_auto_search_area_rect;
+    QSize auto_search_area_reference_point_1_rect_size = QSize(REFERENCE_POINT_AUTO_SEARCH_AREA_DEFAULT_WIDTH, REFERENCE_POINT_AUTO_SEARCH_AREA_DEFAULT_HEIGHT);
+    QSize auto_search_area_reference_point_2_rect_size = QSize(REFERENCE_POINT_AUTO_SEARCH_AREA_DEFAULT_WIDTH, REFERENCE_POINT_AUTO_SEARCH_AREA_DEFAULT_HEIGHT);
+    QPoint previous_reference_point_auto_search_area_rect_top_left_point;
+    QGraphicsRectItem *reference_point_1_auto_search_area_ideal_item = Q_NULLPTR;
+    QGraphicsRectItem *reference_point_2_auto_search_area_ideal_item = Q_NULLPTR;
+    // ---------------------------------------------
 };
 
 #endif // MAINWINDOW_H

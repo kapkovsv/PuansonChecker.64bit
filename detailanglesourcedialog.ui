@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>DetailAngleSourceDialog</class>
+ <widget class="QDialog" name="DetailAngleSourceDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>437</width>
+    <height>177</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Выбор способа получения изображения</string>
+  </property>
+  <widget class="QPushButton" name="photoShootingButton">
+   <property name="geometry">
+    <rect>
+     <x>79</x>
+     <y>121</y>
+     <width>130</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Фотосъёмка</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="loadingFromFileButton">
+   <property name="geometry">
+    <rect>
+     <x>219</x>
+     <y>121</y>
+     <width>130</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Загрузка из файла</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="questionLabel">
+   <property name="geometry">
+    <rect>
+     <x>32</x>
+     <y>20</y>
+     <width>371</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Theano Old Style</family>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Выберете способ получения изображения ракурса эталонной детали</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+   <property name="wordWrap">
+    <bool>true</bool>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

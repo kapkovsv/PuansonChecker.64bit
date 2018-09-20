@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>EtalonAngleResultConfirmDialog</class>
+ <widget class="QDialog" name="EtalonAngleResultConfirmDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>422</width>
+    <height>298</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Подтверждение результата исследования ракурса эталона</string>
+  </property>
+  <widget class="QPushButton" name="passToNextAngleButton">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>151</y>
+     <width>361</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Перейти к следующему ракурсу</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="returnToIdealContourImposeButton">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>91</y>
+     <width>361</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Вернуться к наложению
+идеального контура</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="returnToSettingReferencePointsSearchAreasButton">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>31</y>
+     <width>361</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Вернуться к заданию позиции
+областей поиска реперных точек</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="cancelResearchButton">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>210</y>
+     <width>361</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Отменить исследование</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

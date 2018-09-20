@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CurrentAngleResultConfirmDialog</class>
+ <widget class="QDialog" name="CurrentAngleResultConfirmDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>422</width>
+    <height>271</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Подтверждение результата исследования ракурса текущей детали</string>
+  </property>
+  <widget class="QPushButton" name="researchThisAngleAgainButton">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>20</y>
+     <width>361</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Исследовать этот ракурс заново</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="passToNextAngleButton">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>140</y>
+     <width>361</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Перейти к следующему ракурсу</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="cancelResearchButton">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>199</y>
+     <width>361</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Отменить исследование</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="setPointsForMeasurementsButton">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>80</y>
+     <width>361</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Указать точки для измерения текущей детали</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

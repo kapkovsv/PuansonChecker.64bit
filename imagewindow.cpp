@@ -8,7 +8,7 @@ ImageWindow::ImageWindow():
     image_x = 0;
     image_y = 0;
 
-    calibration_mode = NO_CALIBRATION;
+    calibration_mode = CalibrationMode_e::NO_CALIBRATION;
 }
 
 ImageWindow::~ImageWindow()
@@ -18,7 +18,7 @@ ImageWindow::~ImageWindow()
 
 ImageGraphicsScene::ImageGraphicsScene(ImageWindow *owner_window):
     QGraphicsScene(),
-    previousX(0), previousY(0), left_button_down(false), window(owner_window)
+    previousX(0), previousY(0), mouse_button_down(false), window(owner_window)
 {
 }
 
@@ -26,7 +26,7 @@ void ImageGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
 {
     if(window)
     {
-        if(left_button_down)
+        if(mouse_button_down)
         {
             static int x = 0;
             static int y = 0;
@@ -56,30 +56,30 @@ void ImageGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
 
 void ImageGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
 {
-    if(mouseEvent->buttons() & Qt::LeftButton)
+    if(mouseEvent->buttons() & Qt::LeftButton && window->getCalibrationMode() != CalibrationMode_e::NO_CALIBRATION)
     {
-        if(window->getCalibrationMode() != NO_CALIBRATION)
-        {
-            window->mousePressEvent(mouseEvent->scenePos().toPoint());
-        }
-        else
-        {
-            left_button_down = true;
-            PuansonChecker::getInstance()->setIgnoreScrollMoveImage(true);
-            previousX = mouseEvent->screenPos().x();
-            previousY = mouseEvent->screenPos().y();
-            window->setImageCursor(Qt::SizeAllCursor);
-        }
+        window->mousePressEvent(mouseEvent->scenePos().toPoint());
+    }
+    else
+    {
+        mouse_button_down = true;
+        PuansonChecker::getInstance()->setIgnoreScrollMoveImage(true);
+        previousX = mouseEvent->screenPos().x();
+        previousY = mouseEvent->screenPos().y();
+        window->setImageCursor(Qt::SizeAllCursor);
     }
 }
 
 void ImageGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
 {
-    left_button_down = false;
-    previousX = 0;
-    previousY = 0;
+    if(mouse_button_down)
+    {
+        mouse_button_down = false;
+        previousX = 0;
+        previousY = 0;
+    }
 
-    if(window->getCalibrationMode() == NO_CALIBRATION)
+    if((mouseEvent->button() == Qt::LeftButton && window->getCalibrationMode() == CalibrationMode_e::NO_CALIBRATION) || mouseEvent->button() == Qt::RightButton)
     {
         PuansonChecker::getInstance()->setIgnoreScrollMoveImage(false);
         window->setImageCursor(Qt::ArrowCursor);
@@ -90,9 +90,20 @@ void ImageGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
     }
 }
 
+void ImageGraphicsScene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *mouseEvent)
+{
+    if(mouseEvent->buttons() & Qt::LeftButton)
+    {
+        if(window->getCalibrationMode() != CalibrationMode_e::NO_CALIBRATION)
+        {
+            window->mouseDoubleClickEvent(mouseEvent->scenePos().toPoint());
+        }
+    }
+}
+
 void ImageGraphicsScene::wheelEvent(QGraphicsSceneWheelEvent *wheelEvent)
 {
-    if(window->getCalibrationMode() == NO_CALIBRATION)
+    if(window->getCalibrationMode() == CalibrationMode_e::NO_CALIBRATION)
     {
     }
     else
@@ -108,6 +119,6 @@ void ImageGraphicsScene::wheelEvent(QGraphicsSceneWheelEvent *wheelEvent)
         if(wheelEvent->buttons() & Qt::RightButton)
             delta *= 10;
 
-        window->wheelEvent(delta);
+        window->wheelEvent(wheelEvent->modifiers() & Qt::ControlModifier, delta);
     }
 }

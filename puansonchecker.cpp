@@ -1,9 +1,15 @@
-#include "puansonchecker.h"
+﻿#include "puansonchecker.h"
 #include "settingsdialog.h"
+#include "checkdetailvalidateddialog.h"
 
 #include "mainwindow.h"
 #include "currentform.h"
 #include "contoursform.h"
+
+#include "detailanglesourcedialog.h"
+#include "etalonangleresultconfirmdialog.h"
+#include "etalonresearchcreationdialog.h"
+#include "currentresearchcreationdialog.h"
 
 #include <QtMath>
 #include <vector>
@@ -14,6 +20,14 @@
 
 PuansonChecker *PuansonChecker::instance = Q_NULLPTR;
 
+const cv::Vec3b PuansonChecker::empty_contour_color = cv::Vec3b(180, 180, 180);
+const cv::Vec3b PuansonChecker::empty_contour_color_2 = cv::Vec3b(0, 0, 0);
+
+const cv::Vec3b PuansonChecker::inner_contour_color = cv::Vec3b(250, 100, 100);
+const cv::Vec3b PuansonChecker::outer_contour_color = cv::Vec3b(100, 250, 100);
+const cv::Vec3b PuansonChecker::etalon_contour_color = cv::Vec3b( 255, 255, 255 );
+const cv::Vec3b PuansonChecker::current_contour_color = cv::Vec3b( 50, 50, 250 );
+
 PuansonChecker *PuansonChecker::getInstance(const QApplication *app)
 {
     if(instance == Q_NULLPTR)
@@ -22,7 +36,7 @@ PuansonChecker *PuansonChecker::getInstance(const QApplication *app)
     return instance;
 }
 
-int PuansonChecker::loadImage(ImageType_e image_type, const QString &path, PuansonImage &output)
+int PuansonChecker::loadImage(ImageType_e image_type, const QString &path, PuansonImage &output, bool save_attributes)
 {
     LibRaw RawProcessor;
     int ret;
@@ -44,7 +58,10 @@ int PuansonChecker::loadImage(ImageType_e image_type, const QString &path, Puans
     loaded_image = cv::Mat(cv::Size(raw_image_ptr->width, raw_image_ptr->height), CV_8UC3, raw_image_ptr->data, cv::Mat::AUTO_STEP);
     cvtColor(loaded_image, loaded_image, COLOR_BGR2RGB);
 
-    output = PuansonImage(image_type, loaded_image, raw_image_ptr, path);
+    if(save_attributes)
+        output ^= PuansonImage(image_type, loaded_image, raw_image_ptr, path);
+    else
+        output = PuansonImage(image_type, loaded_image, raw_image_ptr, path);
 
     return 0;
 }
@@ -54,6 +71,7 @@ PuansonChecker::PuansonChecker(const QApplication *app)
     application = const_cast<QApplication *>(app);
     general_settings = new GeneralSettings(CONFIGURATION_FILE);
     camera = new PhotoCamera();
+    machine = new PuansonMachine();
 
     CannyThreshold1 = DEFAULT_CANNY_THRES_1;
     CannyThreshold2 = DEFAULT_CANNY_THRES_2;
@@ -69,37 +87,23 @@ PuansonChecker::PuansonChecker(const QApplication *app)
     contours_window->show();
     main_window->show();
 
-    etalon_angle = 1;
     loading_etalon_angle = 0;
 
-    quint16 ext_tolerance_mkm_array[NUMBER_OF_ANGLES];
-    quint16 int_tolerance_mkm_array[NUMBER_OF_ANGLES];
+    quint16 ext_tolerance_mkm_array[PUANSON_IMAGE_MAX_ANGLE];
+    quint16 int_tolerance_mkm_array[PUANSON_IMAGE_MAX_ANGLE];
 
-    quint32 reference_points_distance_array[NUMBER_OF_ANGLES];
+    quint32 reference_points_distance_array[PUANSON_IMAGE_MAX_ANGLE];
 
     general_settings->getToleranceFields(ext_tolerance_mkm_array, int_tolerance_mkm_array);
     general_settings->getReferencePointDistancesMkm(reference_points_distance_array);
 
-    for(int angle = 1; angle <= NUMBER_OF_ANGLES; angle++)
+    for(int angle = 1; angle <= PUANSON_IMAGE_MAX_ANGLE; angle++)
     {
-        getEtalon(angle).setToleranceFields(ext_tolerance_mkm_array[angle - 1], int_tolerance_mkm_array[angle - 1]);
-        getEtalon(angle).setReferencePointDistanceMkm(reference_points_distance_array[angle - 1]);
+        getEtalon().setToleranceFields(ext_tolerance_mkm_array[/*angle - 1*/0], int_tolerance_mkm_array[/*angle - 1*/0]);
+        getEtalon().setReferencePointDistanceMkm(reference_points_distance_array[/*angle - 1*/0]);
     }
 
     ignore_scroll_move_image = false;
-
-    cv::Mat image;
-    QString left_bottom_reference_point_path;
-    QString right_top_reference_point_path;
-
-    general_settings->getReferencePointEtalonFilenames(left_bottom_reference_point_path, right_top_reference_point_path);
-
-    image = imread(left_bottom_reference_point_path.toStdString().c_str(), IMREAD_GRAYSCALE);
-
-    etalon_reference_point_left_bottom = PuansonImage(REFERENCE_POINT_IMAGE, image, NULL, left_bottom_reference_point_path);
-
-    image = imread(right_top_reference_point_path.toStdString().c_str(), IMREAD_GRAYSCALE);
-    etalon_reference_point_right_top = PuansonImage(REFERENCE_POINT_IMAGE, image, NULL, right_top_reference_point_path);
 
     connect(&load_image_watcher, SIGNAL(finished()), SLOT(loadImageFinished()));
     //connect(camera, SIGNAL(cameraConnectionStatusChanged(bool)), SLOT(cameraConnectionStatusChangedSlot(bool)));
@@ -116,6 +120,9 @@ PuansonChecker::~PuansonChecker()
     delete camera;
     camera = Q_NULLPTR;
 
+    delete machine;
+    machine = Q_NULLPTR;
+
     delete main_window;
     main_window = Q_NULLPTR;
 
@@ -130,19 +137,22 @@ void PuansonChecker::updateContoursImage()
 {
     PuansonImage &current_image_ref = getCurrent();
 
-    if(!etalon_contour.empty())
+    if(!etalon_puanson_image.imageContour().empty())
     {
-       if(etalon_puanson_image[etalon_angle - 1].isIdealContourSet())
-            current_image_ref.copyIdealContour(etalon_puanson_image[etalon_angle - 1]);
+       if(etalon_puanson_image.isIdealContourSet())
+           current_image_ref.copyIdealContour(etalon_puanson_image);
 
-       etalon_contour.release();
-       etalon_contour = getContour(etalon_puanson_image[etalon_angle - 1]);
+       etalon_puanson_image.imageContour().release();
+       etalon_puanson_image.setImageContour(getContour(etalon_puanson_image));
 
        if(!current_image_ref.isEmpty())
-            current_image_ref.setImageContour(getContour(current_image_ref));
+       {
+           current_image_ref.imageContour().release();
+           current_image_ref.setImageContour(getContour(current_image_ref));
+       }
 
-       if(!current_image_ref.getImageContour().empty())
-            drawContoursImage();
+       if(!current_image_ref.imageContour().empty())
+           drawContoursImage();
     }
 }
 
@@ -157,9 +167,10 @@ void PuansonChecker::showSettingsDialog()
        case QDialog::Accepted:
             main_window->setWindowStatus("Применение настроек ...");
 
-            if(getEtalon(etalon_angle).isIdealContourSet())
-                main_window->drawIdealContour();  //  Нужно для пересчёта нормальных отрезков
+            if(getEtalon().isIdealContourSet())
+                main_window->drawIdealContour(etalon_puanson_image.getIdealContourPointOfOrigin().toPoint(), etalon_puanson_image.getIdealContourRotationAngle());  //  Нужно для пересчёта нормальных отрезков
 
+//PuansonChecker::getInstance()->drawEtalonImage();
             updateContoursImage();
             main_window->setWindowStatus("");
            break;
@@ -170,34 +181,44 @@ void PuansonChecker::showSettingsDialog()
     }
 }
 
+bool PuansonChecker::showConfirmCheckResultCorrectnessDialog(bool check_result)
+{
+    CheckDetailValidatedDialog check_detail_validated_dialog(check_result);
+    bool return_value = false;
+
+    check_detail_validated_dialog.setModal(false);
+    check_detail_validated_dialog.setFixedSize(check_detail_validated_dialog.size());
+
+    switch( check_detail_validated_dialog.exec() )
+    {
+       case QDialog::Accepted:
+           return_value = true;
+           break;
+       case QDialog::Rejected:
+           return_value = false;
+           break;
+       default:
+           break;
+    }
+
+    return return_value;
+}
+
 void PuansonChecker::quit()
 {
     application->quit();
 }
 
-void PuansonChecker::activateContoursWindow()
+void PuansonChecker::activateContoursWindow() const
 {
     contours_window->show();
     contours_window->activateWindow();
 }
 
-void PuansonChecker::activateCurrentImageWindow()
+void PuansonChecker::activateCurrentImageWindow() const
 {
     current_image_window->show();
     current_image_window->activateWindow();
-}
-
-bool PuansonChecker::loadEtalonReferencePointImages(const QString &left_bottom_reference_point_path, const QString &right_top_reference_point_path)
-{
-    cv::Mat image;
-
-    image = imread(left_bottom_reference_point_path.toStdString().c_str(), IMREAD_GRAYSCALE);
-    etalon_reference_point_left_bottom = PuansonImage(REFERENCE_POINT_IMAGE, image, NULL, left_bottom_reference_point_path);
-
-    image = imread(right_top_reference_point_path.toStdString().c_str(), IMREAD_GRAYSCALE);
-    etalon_reference_point_right_top = PuansonImage(REFERENCE_POINT_IMAGE, image, NULL, right_top_reference_point_path);
-
-    return true;
 }
 
 void PuansonChecker::loadCurrentImage(const QString &path)
@@ -205,12 +226,16 @@ void PuansonChecker::loadCurrentImage(const QString &path)
     load_image_future = QtConcurrent::run([&, path]() {
         PuansonImage &current_image = getCurrent();
 
-        if(PuansonChecker::loadImage(CURRENT_IMAGE, path, current_image) == 0)
-        {
-            if(etalon_puanson_image[etalon_angle - 1].isIdealContourSet())
-                current_image.copyIdealContour(etalon_puanson_image[etalon_angle-1]);
+        current_image.release();
 
-            current_image.setImageContour(getContour(current_image));
+        if(PuansonChecker::loadImage(ImageType_e::CURRENT_IMAGE, path, current_image) == 0)
+        {
+            if(etalon_puanson_image.isIdealContourSet())
+                current_image.copyIdealContour(etalon_puanson_image);
+
+            if(getActiveCurrentResearchAngle() == 0)
+                current_image.setImageContour(getContour(current_image));
+
             current_image.setToleranceFields(0, 0);
         }
         /*else
@@ -222,20 +247,24 @@ void PuansonChecker::loadCurrentImage(const QString &path)
     load_image_watcher.setFuture(load_image_future);
 }
 
-bool PuansonChecker::loadEtalonImage(const quint8 angle, const QString &path)
+bool PuansonChecker::loadEtalonImage(const quint8 angle, const QString &path, const QString &contours_path, bool save_attributes)
 {
-    if(angle > NUMBER_OF_ANGLES)
+    if(angle > PUANSON_IMAGE_MAX_ANGLE)
         return false;
 
     loading_etalon_angle = angle;
-    etalon_puanson_image_ptr = &etalon_puanson_image[angle - 1];
+    PuansonImage *etalon_puanson_image_ptr = &etalon_puanson_image;
 
-    load_image_future = QtConcurrent::run([&, path]() {
-        if(PuansonChecker::loadImage(ETALON_IMAGE, path, *etalon_puanson_image_ptr) == 0)
+    load_image_future = QtConcurrent::run([=]() {
+        etalon_puanson_image_ptr->release();
+
+        if(PuansonChecker::loadImage(ImageType_e::ETALON_IMAGE, path, *etalon_puanson_image_ptr, save_attributes) == 0)
         {
-            quint16 ext_tolerance_mkm_array[NUMBER_OF_ANGLES];
-            quint16 int_tolerance_mkm_array[NUMBER_OF_ANGLES];
-            quint32 reference_points_distance_array[NUMBER_OF_ANGLES];
+            loading_etalon_angle = angle;
+
+            quint16 ext_tolerance_mkm_array[PUANSON_IMAGE_MAX_ANGLE];
+            quint16 int_tolerance_mkm_array[PUANSON_IMAGE_MAX_ANGLE];
+            quint32 reference_points_distance_array[PUANSON_IMAGE_MAX_ANGLE];
 
             general_settings->getToleranceFields(ext_tolerance_mkm_array, int_tolerance_mkm_array);
             general_settings->getReferencePointDistancesMkm(reference_points_distance_array);
@@ -243,10 +272,18 @@ bool PuansonChecker::loadEtalonImage(const quint8 angle, const QString &path)
             etalon_puanson_image_ptr->setToleranceFields(ext_tolerance_mkm_array[loading_etalon_angle - 1], int_tolerance_mkm_array[loading_etalon_angle - 1]);
             etalon_puanson_image_ptr->setReferencePointDistanceMkm(reference_points_distance_array[loading_etalon_angle - 1]);
 
-            etalon_contour = getContour(*etalon_puanson_image_ptr);
+            if(/*contours_path.isEmpty()*/true)
+            {
+                etalon_puanson_image_ptr->drawIdealContour(QRect(2, 2, etalon_puanson_image_ptr->getImage().cols - 2, etalon_puanson_image_ptr->getImage().rows - 2), etalon_puanson_image_ptr->getIdealContourPointOfOrigin(), etalon_puanson_image_ptr->getIdealContourRotationAngle());
+                etalon_puanson_image_ptr->setImageContour(getContour(*etalon_puanson_image_ptr));
+            }
+            else
+            {
+                etalon_puanson_image_ptr->setImageContour(cv::imread(contours_path.toStdString()));
+            }
         }
 
-        return ETALON_IMAGE;
+        return ImageType_e::ETALON_IMAGE;
     });
 
     load_image_watcher.setFuture(load_image_future);
@@ -258,7 +295,7 @@ void PuansonChecker::loadImageFinished()
 {
     ImageType_e image_type = load_image_watcher.result();
 
-    main_window->loadImageFinished(image_type, loading_etalon_angle);
+    main_window->loadImageFinished(image_type);
 
     current_image_window->loadImageFinished();
     loading_etalon_angle = 0;
@@ -276,7 +313,7 @@ bool PuansonChecker::getCurrentImage(QImage &img)
 
 bool PuansonChecker::getCurrentContour(QImage &img)
 {
-    cv::Mat current_contour = getCurrent().getImageContour();
+    cv::Mat current_contour = getCurrent().imageContour();
 
     if(current_contour.empty())
         return false;
@@ -288,147 +325,208 @@ bool PuansonChecker::getCurrentContour(QImage &img)
     return true;
 }
 
-bool PuansonChecker::getEtalonImage(const quint8 angle, QImage &img)
+bool PuansonChecker::getEtalonImage(QImage &img)
 {
-    if(angle > NUMBER_OF_ANGLES || getEtalon(angle).isEmpty())
-        return false;
-
-    getEtalon(angle).getQImage(img);
+    getEtalon().getQImage(img);
 
     return true;
 }
 
 bool PuansonChecker::getEtalonContour(QImage &img)
 {
-    if(etalon_contour.empty())
+    if(etalon_puanson_image.imageContour().empty())
         return false;
 
-    img = QImage((const unsigned char*)(etalon_contour.data),
-                  etalon_contour.cols, etalon_contour.rows,
-                  etalon_contour.step, QImage::Format_Grayscale8);
+    img = QImage((const unsigned char*)(etalon_puanson_image.imageContour().data),
+                  etalon_puanson_image.imageContour().cols, etalon_puanson_image.imageContour().rows,
+                  etalon_puanson_image.imageContour().step, QImage::Format_Grayscale8);
 
     return true;
 }
 
-QVector<QPointF> PuansonChecker::findReferencePoints()
+QVector<QPointF> PuansonChecker::findReferencePoints(const PuansonImage &reference_point_image) const
 {
     QVector<QPointF> reference_points;
 
-    reference_points.append(findReferencePoint(REFERENCE_POINT_1, etalon_reference_point_left_bottom));
-    reference_points.append(findReferencePoint(REFERENCE_POINT_2, etalon_reference_point_right_top));
+    reference_points.append(findReferencePoint(ReferencePointType_e::REFERENCE_POINT_1, reference_point_image));
+    reference_points.append(findReferencePoint(ReferencePointType_e::REFERENCE_POINT_2, reference_point_image));
 
     return reference_points;
 }
 
-QVector<QPointF> PuansonChecker::getReferencePointArea(const Mat &grayscale_img_object, const Mat &grayscale_img_scene)
-{
-    using namespace std;
-
-    const uint16_t best_matches_size = 15;
-
-    vector<KeyPoint> keypoints_object;
-    vector<KeyPoint> keypoints_scene;
-
-    Mat descriptors_object;
-    Mat descriptors_scene;
-
-    Ptr<ORB> orb = ORB::create(500, 1.2f, 8, 23, 0, 2, ORB::HARRIS_SCORE, 23, 20);
-
-    orb->detectAndCompute(grayscale_img_object, noArray(), keypoints_object, descriptors_object);
-    orb->detectAndCompute(grayscale_img_scene, noArray(), keypoints_scene, descriptors_scene);
-
-    // matching descriptors
-    BFMatcher matcher(NORM_HAMMING, true);
-
-    vector<DMatch> matches;
-
-    matcher.match(descriptors_object, descriptors_scene, matches);
-
-    sort(matches.begin(), matches.end());
-
-    vector<DMatch> best_matches;
-    best_matches.resize(best_matches_size < matches.size() ? best_matches_size : matches.size());
-
-    copy_n(matches.begin(), best_matches_size < matches.size() ? best_matches_size : matches.size(), best_matches.begin());
-
-    //-- Localize the object
-    vector<Point2f> obj;
-    vector<Point2f> scene;
-
-    for( uint i = 0; i < best_matches.size(); i++ )
-    {
-        //-- Get the keypoints from the best matches
-        obj.push_back( keypoints_object[ best_matches[i].queryIdx ].pt );
-        scene.push_back( keypoints_scene[ best_matches[i].trainIdx ].pt );
-    }
-
-    Mat H = findHomography( obj, scene, 0 );
-
-    //-- Get the corners from the image_1 ( the object to be "detected" )
-    vector<Point2f> obj_corners(4);
-    obj_corners[0] = cvPoint(0, 0);
-    obj_corners[1] = cvPoint( grayscale_img_object.cols, 0 );
-    obj_corners[2] = cvPoint( grayscale_img_object.cols, grayscale_img_object.rows );
-    obj_corners[3] = cvPoint( 0, grayscale_img_object.rows );
-    vector<Point2f> scene_corners(4);
-
-    perspectiveTransform(obj_corners, scene_corners, H);
-
-    QVector<QPointF> q_scene_corners(4);
-
-    auto scene_corner_iter = scene_corners.begin();
-    auto q_scene_corner_iter = q_scene_corners.begin();
-
-    for(; scene_corner_iter != scene_corners.end(); ++scene_corner_iter, ++q_scene_corner_iter)
-    {
-        *q_scene_corner_iter = QPointF(scene_corner_iter->x, scene_corner_iter->y);
-    }
-
-    return q_scene_corners;
-}
-
-QPointF PuansonChecker::findReferencePoint(const CalibrationMode_e reference_point_type, const PuansonImage &reference_point_etalon_image)
+QPointF PuansonChecker::findReferencePoint(const ReferencePointType_e reference_point_type, const PuansonImage &reference_point_image)
 {
     using namespace std;
     using namespace cv;
 
-    if(!(reference_point_type == REFERENCE_POINT_1 || reference_point_type == REFERENCE_POINT_2))
-        return QPointF(-1.0, -1.0);
+    Rect search_area;
+    QRect q_search_area;
 
-    Mat &colour_etalon_image = getEtalon(getEtalonAngle()).getImage();
-    Mat img_scene(colour_etalon_image.rows, colour_etalon_image.cols, colour_etalon_image.depth());;
-    Mat img_object;
-    quint16 shift_x, shift_y;
-    const quint16 length_x = colour_etalon_image.cols / 4;
-    const quint16 length_y = colour_etalon_image.rows / 4;
+    q_search_area = PuansonChecker::getInstance()->getReferencePointSearchArea(reference_point_image.getImageType(), reference_point_type);
 
-    if(reference_point_type == REFERENCE_POINT_1)
+    if(q_search_area.topLeft().x() > reference_point_image.getImage().cols - 1 || q_search_area.topLeft().y() > reference_point_image.getImage().rows - 1)
+        return QPointF();
+
+    if(q_search_area.bottomRight().x() > reference_point_image.getImage().cols - 1)
+        q_search_area.setRight(reference_point_image.getImage().cols - 1);
+
+    if(q_search_area.bottomRight().y() > reference_point_image.getImage().rows - 1)
+        q_search_area.setBottom(reference_point_image.getImage().rows - 1);
+
+    search_area = Rect(q_search_area.x(), q_search_area.y(), q_search_area.width(), q_search_area.height());
+
+    const Mat &colour_image = reference_point_image.getImage();
+    Mat gray_image;
+
+    cvtColor(colour_image, gray_image, COLOR_RGB2GRAY);
+
+    Mat gray_image_reference_point_area = gray_image(search_area).clone();
+
+    // Применяем фильтр
+    medianBlur(gray_image_reference_point_area, gray_image_reference_point_area, 3);
+    threshold(gray_image_reference_point_area, gray_image_reference_point_area, 50, 250, THRESH_BINARY);
+
+    // Поиск средних точек
+    int upper_level_y;
+    int left_level_x;
+
+    Point upper_point;
+    Point left_point;
+
+    Point incoming_point, outcoming_point;
+    uchar point_color;
+
+    vector<Point> vertical_points;
+
+    for(upper_level_y = 1; upper_level_y < gray_image_reference_point_area.rows; upper_level_y += 5)
     {
-        shift_x = 0;
-        shift_y = 0;//colour_etalon_image.rows - 1 - colour_etalon_image.rows / 4;
+        incoming_point = Point(0, 0), outcoming_point = Point(0, 0);
 
-        img_scene = colour_etalon_image(Rect(shift_x, shift_y, length_x, length_y * 4));
+        for(int x = 0; x < gray_image_reference_point_area.cols; x++)
+        {
+            point_color = gray_image_reference_point_area.at<uchar>(upper_level_y, x);
+
+            if(x != 0 && point_color == 0/*black*/ && incoming_point == Point(0, 0))
+                incoming_point = Point(x, upper_level_y);
+            else if(outcoming_point == Point(0, 0) && incoming_point != Point(0, 0) && point_color >= 200/*white*/)
+            {
+                outcoming_point = Point(x, upper_level_y);
+                break;
+            }
+        }
+
+        upper_point = Point(0, 0);
+
+        if(incoming_point != Point(0, 0) && outcoming_point != Point(0, 0))
+        {
+            upper_point = (incoming_point + outcoming_point) / 2;
+        }
+        else if(!vertical_points.empty())
+        {
+            upper_point.y = vertical_points.back().y + 5;
+        }
+
+        if(!vertical_points.empty() &&
+            ((incoming_point == Point(0, 0) && outcoming_point == Point(0, 0)) || (abs(vertical_points.back().x - upper_point.x) > 1)))
+            upper_point.x = vertical_points.back().x;
+
+        if(upper_point != Point(0, 0))
+            vertical_points.push_back(upper_point);
+        else
+            qDebug() << "!!!!! upper_point is NULL!!!";
     }
-    else if(reference_point_type == REFERENCE_POINT_2)
+
+    vector<Point> horizontal_points;
+
+    for(left_level_x = 1; left_level_x < gray_image_reference_point_area.cols; left_level_x += 5)
     {
-        shift_x = colour_etalon_image.cols - 1 - colour_etalon_image.cols / 4;
-        shift_y = 0;
+        incoming_point = Point(), outcoming_point = Point();
+        for(int y = 0; y < gray_image_reference_point_area.rows; y++)
+        {
+            point_color = gray_image_reference_point_area.at<uchar>(y, left_level_x);
 
-        img_scene = colour_etalon_image(Rect(shift_x, shift_y, length_x, length_y));
+            if(point_color == 0/*black*/ && incoming_point == Point(0, 0))
+                incoming_point = Point(left_level_x, y);
+            else if(outcoming_point == Point(0, 0) && incoming_point != Point(0, 0) && point_color >= 200/*white*/)
+            {
+                outcoming_point = Point(left_level_x, y);
+                break;
+            }
+        }
+
+        if(incoming_point != Point(0, 0) && outcoming_point != Point(0, 0))
+        {
+            left_point = (incoming_point + outcoming_point) / 2;
+        }
+        else
+            left_point.x = horizontal_points.back().x + 5;
+
+        if(!horizontal_points.empty() &&
+            ((incoming_point == Point(0, 0) && outcoming_point == Point(0, 0)) || (abs(horizontal_points.back().y - left_point.y) > 1)))
+            left_point.y = horizontal_points.back().y;
+
+        horizontal_points.push_back(left_point);
+    }
+    // ------------------
+
+    // Аппроксимация прямой МНК
+    int vertical_sum_xy = 0;
+    int vertical_sum_x = 0;
+    int vertical_sum_y = 0;
+    int vertical_sum_x2 = 0;
+
+    int horizontal_sum_xy = 0;
+    int horizontal_sum_x = 0;
+    int horizontal_sum_y = 0;
+    int horizontal_sum_x2 = 0;
+
+    for(const Point& pt: vertical_points)
+    {
+        vertical_sum_xy += pt.x * pt.y;
+        vertical_sum_x += pt.x;
+        vertical_sum_y += pt.y;
+        vertical_sum_x2 += pt.x * pt.x;
+
+        circle(gray_image_reference_point_area, pt, 5, Scalar(250, 250, 250), 1);
     }
 
-    cvtColor(img_scene, img_scene, COLOR_RGB2GRAY);
-    img_object = reference_point_etalon_image.getImage();
+    for(const Point& pt: horizontal_points)
+    {
+        horizontal_sum_xy += pt.x * pt.y;
+        horizontal_sum_x += pt.x;
+        horizontal_sum_y += pt.y;
+        horizontal_sum_x2 += pt.x * pt.x;
 
-    QVector<QPointF> area_vector = getReferencePointArea(img_object, img_scene);
+        circle(gray_image_reference_point_area, pt, 5, Scalar(250, 250, 250), 1);
+    }
+
+    double A_vertical = (static_cast<double>(vertical_points.size() * vertical_sum_xy) - vertical_sum_x * vertical_sum_y) / (static_cast<double>(vertical_points.size() * vertical_sum_x2) - vertical_sum_x * vertical_sum_x);
+    double B_vertical = static_cast<double>(vertical_sum_y - A_vertical * vertical_sum_x) / vertical_points.size();
+
+    double A_horizontal = (static_cast<double>(horizontal_points.size() * horizontal_sum_xy) - horizontal_sum_x * horizontal_sum_y) / (horizontal_points.size() * horizontal_sum_x2 - horizontal_sum_x * horizontal_sum_x);
+    double B_horizontal = static_cast<double>(horizontal_sum_y - A_horizontal * horizontal_sum_x) / horizontal_points.size();
+    // ------------------
+
+    // Горизонтальная и вертикальная прямые
+    Point p1(0, B_horizontal);
+    Point p2(gray_image_reference_point_area.cols - 1, A_horizontal * (gray_image_reference_point_area.cols - 1) + B_horizontal);
+
+    //line(gray_image_reference_point_area, p1, p2, Scalar(250, 250, 250));
+
+    p1 = Point(- B_vertical / A_vertical, 0);
+    p2 = Point(((gray_image_reference_point_area.rows - 1) - B_vertical) / A_vertical, gray_image_reference_point_area.rows - 1);
+
+    //line(gray_image_reference_point_area, p1, p2, Scalar(250, 250, 250));
+    // ------------------
+
+    // Искомая реперная точка
     QPointF reference_point;
 
-    if(reference_point_type == REFERENCE_POINT_1)
-        reference_point = area_vector[1] + QPointF(-207 + shift_x, 182 + shift_y);
-    else if(reference_point_type == REFERENCE_POINT_2)
-        reference_point = area_vector[0] + QPointF(138 + shift_x, 98 + shift_y);
+    reference_point.setX((B_vertical - B_horizontal) / (A_horizontal - A_vertical));
+    reference_point.setY(A_horizontal * reference_point.x() + B_horizontal);
 
-    return reference_point;
+    return QPointF(search_area.x, search_area.y) + reference_point;
+    // -----------------------
 }
 
 bool PuansonChecker::checkDetail(QVector<QPoint> &bad_points)
@@ -446,17 +544,22 @@ bool PuansonChecker::checkDetail(QVector<QPoint> &bad_points)
     QLine last_line;
     cv::Point inner_point, outer_point, current_detail_point, bad_point;
 
-    function<bool (const int, const QLine &)> upConditionLambda = [](const int current_x, const QLine &control_line) -> bool { return current_x <= (control_line.x1() > control_line.x2() ? control_line.x1() : control_line.x2()); };
-    function<bool (const int, const QLine &)> downConditionLambda = [](const int current_x, const QLine &control_line) -> bool { return current_x >= (control_line.x1() < control_line.x2() ? control_line.x1() : control_line.x2()); };
+    //function<bool (const int, const QLine &)> upConditionLambda = [](const int current_x, const QLine &control_line) -> bool { qDebug() << "in upConditionLambda current_x " << current_x << " x1 " << control_line.x1() << " x2 " << control_line.x2(); return current_x <= (control_line.x1() > control_line.x2() ? control_line.x1() : control_line.x2()); };
+    //function<bool (const int, const QLine &)> downConditionLambda = [](const int current_x, const QLine &control_line) -> bool { qDebug() << "in downConditionLambda current_x " << current_x << " x1 " << control_line.x1() << " x2 " << control_line.x2(); return current_x >= (control_line.x1() < control_line.x2() ? control_line.x1() : control_line.x2()); };
 
-    function<bool (const int, const QLine &)> conditionLambda;
+    function<bool (const int, const QLine &)> conditionLambda = [](const int current_x, const QLine &control_line) -> bool { return (current_x <= (control_line.x1() > control_line.x2() ? control_line.x1() : control_line.x2())) && (current_x >= (control_line.x1() < control_line.x2() ? control_line.x1() : control_line.x2())); };
 
-    QVector<IdealInnerSegment> inner_segments = PuansonChecker::getInstance()->getEtalon(etalon_angle).getActualIdealInnerSegments();
+    QVector<IdealInnerSegment> inner_segments = PuansonChecker::getInstance()->getEtalon().getActualIdealInnerSegments();
+
+    QRect analysis_rect(qRound((contours_image.cols - contours_image.cols / 4.0) / 2.0),
+            qRound((contours_image.rows - contours_image.rows / 4.0) / 2.0),
+            qRound(contours_image.cols / 4.0),
+            qRound(contours_image.rows / 4.0));
 
     for(IdealInnerSegment segment: inner_segments)
     {
         control_lines = segment.getControlLines(30);
-        conditionLambda = upConditionLambda;
+        //conditionLambda = upConditionLambda;
         up_dir_flag = true;
 
         for(QLine control_line : control_lines)
@@ -483,8 +586,166 @@ bool PuansonChecker::checkDetail(QVector<QPoint> &bad_points)
                 current_y = qRound(static_cast<qreal>((current_x - control_line.x1()) * (dy)) / (dx) + control_line.y1());
                 next_y = qRound(static_cast<qreal>(((up_dir_flag ? (current_x + dx/qAbs(dx)) : (current_x - dx/qAbs(dx))) - control_line.x1()) * (dy)) / (dx) + control_line.y1());
 
+                bool previous_point_inside_analysis_rect = false;
+
                 while(conditionLambda(current_x, control_line))
                 {
+                    if(previous_point_inside_analysis_rect == true && !analysis_rect.contains(QPoint(current_x, current_y)) && current_detail_point == cv::Point(0, 0))
+                    {
+                        if(inner_point == cv::Point(0, 0) && outer_point == cv::Point(0, 0))
+                        {
+                            inner_point = outer_point = current_detail_point = bad_point = cv::Point(0, 0);
+                            last_line = control_line;
+
+                            if(up_dir_flag)
+                            {
+                                //conditionLambda = downConditionLambda;
+                                up_dir_flag = false;
+
+                                current_x = control_line.x2();
+                                current_y = control_line.y2();
+                                next_y = qRound(static_cast<qreal>(((current_x - dx/qAbs(dx)) - control_line.x1()) * (dy)) / (dx) + control_line.y1());
+                            }
+                            else
+                            {
+                                //conditionLambda = upConditionLambda;
+                                up_dir_flag = true;
+
+                                current_x = control_line.x1();
+                                current_y = control_line.y1();
+                                next_y = qRound(static_cast<qreal>(((current_x + dx/qAbs(dx)) - control_line.x1()) * (dy)) / (dx) + control_line.y1());
+                            }
+
+                            if(analysis_rect.contains(QPoint(current_x, current_y)))
+                            {
+                                previous_point_inside_analysis_rect = false;
+                                continue;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+                    if(previous_point_inside_analysis_rect == false && analysis_rect.contains(QPoint(current_x, current_y)))
+                        previous_point_inside_analysis_rect = true;
+                    else if(previous_point_inside_analysis_rect == true && !analysis_rect.contains(QPoint(current_x, current_y)))
+                        previous_point_inside_analysis_rect = false;
+
+                    cv::Vec3b current_point_color = contours_image.at<cv::Vec3b>(current_y, current_x);
+
+                    //qDebug() << " line " << __LINE__ << "!!! current_point_color (" << current_x << ", " << current_y << "): [" << current_point_color[0] << ", " << current_point_color[1] << ", " << current_point_color[2] << "]";
+
+                    if(current_point_color == empty_contour_color || current_point_color == empty_contour_color_2) // Если определена пустота, смотрим окрестности
+                    {
+                        const qreal normal_vector_len = 10.0;
+                        QPointF normal_vector;
+
+                        normal_vector.setX(qRound(normal_vector_len / qSqrt(1 + static_cast<qreal>(dx) / dy * static_cast<qreal>(dx) / dy)));
+                        normal_vector.setY(qRound(-(static_cast<qreal>(dx) / dy) * normal_vector.x()));
+
+                        QLine check_line;
+                        qreal check_line_length;
+
+                        check_line = QLine(QPoint(current_x, current_y) - normal_vector.toPoint(), QPoint(current_x, current_y) + normal_vector.toPoint());
+#if 1
+                        QPointF current_point = check_line.p1(), previous_interation_current_point = check_line.p1();
+                        do
+                        {
+                          //  qDebug() << "check_line.p1(): " << check_line.p1() << "current_point: " << current_point << " check_line.p2(): " << check_line.p2();
+                            current_point_color = contours_image.at<cv::Vec3b>(current_point.toPoint().y(), current_point.toPoint().x());
+
+                            //qDebug() << " line " << __LINE__ << "!!! current_point_color (" << current_point.x() << ", " << current_point.y() << "): [" << current_point_color[0] << ", " << current_point_color[1] << ", " << current_point_color[2] << "]";
+
+                            check_line_length = qSqrt(check_line.dx() * check_line.dx() + check_line.dy() * check_line.dy());
+                            do
+                            {
+                                current_point += QPointF(static_cast<qreal>(check_line.dx()) / check_line_length, static_cast<qreal>(check_line.dy()) / check_line_length);
+                            }
+                            while(current_point.toPoint() == previous_interation_current_point);
+
+                            previous_interation_current_point = current_point.toPoint();
+                        }
+                        while(current_point.toPoint() != check_line.p2() && !(current_point_color == inner_contour_color || current_point_color == outer_contour_color || current_point_color == current_contour_color));
+#endif // 0
+                        //qDebug() << "current_point_color (" << current_x << ", " << current_y << "): [" << current_point_color[0] << ", " << current_point_color[1] << ", " << current_point_color[2] << "]";
+
+                        //line(contours_image, Point(check_line.x1(), check_line.y1()), Point(check_line.x2(), check_line.y2()), Scalar(180, 180, 180));
+                    }
+
+                    if(inner_point == cv::Point(0, 0) && current_point_color == inner_contour_color)
+                    {
+                        //qDebug() << "inner point!";
+
+                        // Проверка на то, что направление поиска должно идти так, чтобы первой была найдена точка внешнего допуска
+                        if(last_line != control_line && outer_point == cv::Point(0, 0))
+                        {
+                            inner_point = outer_point = current_detail_point = bad_point = cv::Point(0, 0);
+                            last_line = control_line;
+
+                            if(up_dir_flag)
+                            {
+                                //conditionLambda = downConditionLambda;
+                                up_dir_flag = false;
+
+                                current_x = control_line.x2();
+                                current_y = control_line.y2();
+                                next_y = qRound(static_cast<qreal>(((current_x - dx/qAbs(dx)) - control_line.x1()) * (dy)) / (dx) + control_line.y1());
+                            }
+                            else
+                            {
+                                //conditionLambda = upConditionLambda;
+                                up_dir_flag = true;
+
+                                current_x = control_line.x1();
+                                current_y = control_line.y1();
+                                next_y = qRound(static_cast<qreal>(((current_x + dx/qAbs(dx)) - control_line.x1()) * (dy)) / (dx) + control_line.y1());
+                            }
+
+                            if(analysis_rect.contains(QPoint(current_x, current_y)))
+                            {
+                                previous_point_inside_analysis_rect = false;
+                                continue;
+                            }
+
+                            previous_point_inside_analysis_rect = false;
+                            continue;
+                        }
+                        else
+                        {
+                            inner_point = cv::Point(current_x, current_y);
+                        }
+                    }
+                    else if(outer_point == cv::Point(0, 0) && current_point_color == outer_contour_color)
+                    {
+                        //qDebug() << "outer point!";
+                        outer_point = cv::Point(current_x, current_y);
+                    }
+                    else if(current_detail_point == cv::Point(0, 0) && current_point_color == current_contour_color)
+                    {
+                        if(outer_point != cv::Point(0, 0) && inner_point == cv::Point(0, 0))
+                        {
+                            //qDebug() << "current point!";
+                            current_detail_point = cv::Point(current_x, current_y);
+                        }
+                        else if(analysis_rect.contains(QPoint(current_x, current_y)))
+                        {
+                            /*qDebug() << "bad point!";
+                            qDebug() << "bad point color: (" << current_x << ", " << current_y << "): [" << current_point_color[0] << ", " << current_point_color[1] << ", " << current_point_color[2] << "]";*/
+                            bad_point = cv::Point(current_x, current_y);
+                        }
+                    }
+
+                    if(bad_point != cv::Point(0, 0) ||
+                       (inner_point != cv::Point(0, 0) && outer_point != cv::Point(0, 0) && current_detail_point != cv::Point(0, 0))
+                      )
+                        break;
+
                     if(up_dir_flag)
                     {
                         if(current_y == next_y)
@@ -507,71 +768,9 @@ bool PuansonChecker::checkDetail(QVector<QPoint> &bad_points)
                         else
                             current_y -= dy/qAbs(dy);
                     }
-
-                    cv::Vec3b point = contours_image.at<cv::Vec3b>(current_y, current_x);
-
-                    //qDebug() << "point (" << current_x << ", " << current_y << "): [" << point[0] << ", " << point[1] << ", " << point[2] << "]";
-
-                    if(inner_point == cv::Point(0, 0) && point == inner_contour_color)
-                    {
-                        //qDebug() << "inner point!";
-
-                        // Проверка на то, что направление поиска должно идти так, чтобы первой была найдена точка внешнего допуска
-                        if(last_line != control_line && outer_point == cv::Point(0, 0))
-                        {
-                            inner_point = outer_point = current_detail_point = bad_point = cv::Point(0, 0);
-                            last_line = control_line;
-
-                            if(up_dir_flag)
-                            {
-                                conditionLambda = downConditionLambda;
-                                up_dir_flag = false;
-
-                                current_x = control_line.x2();
-                                current_y = control_line.y2();
-                                next_y = qRound(static_cast<qreal>(((current_x - dx/qAbs(dx)) - control_line.x1()) * (dy)) / (dx) + control_line.y1());
-                            }
-                            else
-                            {
-                                conditionLambda = upConditionLambda;
-                                up_dir_flag = true;
-
-                                current_x = control_line.x1();
-                                current_y = control_line.y1();
-                                next_y = qRound(static_cast<qreal>(((current_x + dx/qAbs(dx)) - control_line.x1()) * (dy)) / (dx) + control_line.y1());
-                            }
-
-                            continue;
-                        }
-                        else
-                            inner_point = cv::Point(current_x, current_y);
-                    }
-                    else if(outer_point == cv::Point(0, 0) && point == outer_contour_color)
-                    {
-                        //qDebug() << "outer point!";
-                        outer_point = cv::Point(current_x, current_y);
-                    }
-                    else if(current_detail_point == cv::Point(0, 0) && point == current_contour_color)
-                    {
-                        if(outer_point != cv::Point(0, 0) && inner_point == cv::Point(0, 0))
-                        {
-                            //qDebug() << "current point!";
-                            current_detail_point = cv::Point(current_x, current_y);
-                        }
-                        else
-                        {
-                            //qDebug() << "bad point!";
-                            bad_point = cv::Point(current_x, current_y);
-                        }
-                    }
-
-                    if(bad_point != cv::Point(0, 0) ||
-                       (inner_point != cv::Point(0, 0) && outer_point != cv::Point(0, 0) && current_detail_point != cv::Point(0, 0))
-                      )
-                        break;
                 }
 
-                if(current_detail_point == cv::Point(0, 0))
+                if(current_detail_point == cv::Point(0, 0) && inner_point != cv::Point(0, 0) && outer_point != cv::Point(0, 0))
                     result = false;
 
                 if(bad_point != cv::Point(0, 0) /*&& outer_point != cv::Point(0, 0)*/)
@@ -589,14 +788,12 @@ bool PuansonChecker::checkDetail(QVector<QPoint> &bad_points)
     if(!bad_points.empty())
         result = false;
 
-    //qDebug() << "bad_points size " << bad_points.size();
-
     return result;
 }
 
 void PuansonChecker::startCurrentCalibration()
 {
-    current_image_window->setCalibrationMode(REFERENCE_POINT_1);
+    current_image_window->setCalibrationMode(CalibrationMode_e::REFERENCE_POINT_1);
 }
 
 void PuansonChecker::moveImages(const int &dx, const int &dy, const ImageWindow *owner_window, const bool scroll_event)
@@ -606,7 +803,7 @@ void PuansonChecker::moveImages(const int &dx, const int &dy, const ImageWindow 
 
     if(main_window)
     {
-        if((!scroll_event || dynamic_cast<const QWidget *>(owner_window) != main_window) && isEtalonImageLoaded(etalon_angle))
+        if((!scroll_event || dynamic_cast<const QWidget *>(owner_window) != main_window) && isEtalonImageLoaded())
             main_window->moveImage(dx, dy);
         else if(scroll_event && dynamic_cast<const QWidget *>(owner_window) == main_window)
             main_window->shiftImageCoords(dx, dy);
@@ -622,20 +819,46 @@ void PuansonChecker::moveImages(const int &dx, const int &dy, const ImageWindow 
 
     if(contours_window)
     {
-        if((!scroll_event || dynamic_cast<const QWidget *>(owner_window) != contours_window) && (!getEtalon(etalon_angle).isEmpty() && isCurrentImageLoaded()))
+        if((!scroll_event || dynamic_cast<const QWidget *>(owner_window) != contours_window) && (!getEtalon().isEmpty() && isCurrentImageLoaded()))
             contours_window->moveImage(dx, dy);
         else if(scroll_event && dynamic_cast<const QWidget *>(owner_window) == contours_window)
             contours_window->shiftImageCoords(dx, dy);
     }
 }
 
-void PuansonChecker::drawEtalonImage()
+void PuansonChecker::currentDetailResearchGotoNextAngle()
 {
-    QImage img;
+    main_window->currentDetailResearchGotoNextAngle();
+}
 
-    getEtalonImage(etalon_angle, img);
-    main_window->drawImage(img);
-    main_window->drawIdealContour();
+void PuansonChecker::drawEtalonImage(bool draw_etalon_image)
+{
+    if(draw_etalon_image)
+    {
+        QImage img;
+
+        getEtalonImage(img);
+        main_window->drawImage(img);
+    }
+
+    QRect reference_point_1_area = PuansonChecker::getInstance()->getReferencePointSearchArea(ImageType_e::ETALON_IMAGE,  ReferencePointType_e::REFERENCE_POINT_1);
+    QRect reference_point_2_area = PuansonChecker::getInstance()->getReferencePointSearchArea(ImageType_e::ETALON_IMAGE,  ReferencePointType_e::REFERENCE_POINT_2);
+
+    if(!reference_point_1_area.isNull())
+        main_window->drawReferencePointAutoSearchArea(ReferencePointType_e::REFERENCE_POINT_1, reference_point_1_area);
+
+    if(!reference_point_2_area.isNull())
+        main_window->drawReferencePointAutoSearchArea(ReferencePointType_e::REFERENCE_POINT_2, reference_point_2_area);
+
+    QPoint reference_point_1, reference_point_2;
+    PuansonChecker::getInstance()->getEtalon().getReferencePoints(reference_point_1, reference_point_2);
+
+    if(reference_point_1 != reference_point_2)
+    {
+        main_window->drawReferencePoints(reference_point_1, reference_point_2);
+        main_window->drawIdealContour(PuansonChecker::getInstance()->getEtalon().getIdealContourPointOfOrigin().toPoint(), PuansonChecker::getInstance()->getEtalon().getIdealContourRotationAngle());
+        main_window->drawActualBorders();
+    }
 }
 
 void PuansonChecker::drawCurrentImage(bool draw_reference_points)
@@ -647,8 +870,22 @@ void PuansonChecker::drawCurrentImage(bool draw_reference_points)
     getCurrentImage(img);
     current_image_window->drawImage(img);
 
+    /*if(draw_reference_points)
+        current_image_window->drawReferencePoints();*/
+
     if(draw_reference_points)
-        current_image_window->drawReferencePoints();
+        drawCurrentImageReferencePoints();
+}
+
+void PuansonChecker::drawCurrentImageReferencePoints()
+{
+    if(!reference_point_1_search_area_rect.isNull())
+        current_image_window->drawReferencePointAutoSearchArea(ReferencePointType_e::REFERENCE_POINT_1, getCurrent().getImageTransform().map(QRegion(reference_point_1_search_area_rect)).rects().first());
+
+    if(!reference_point_2_search_area_rect.isNull())
+        current_image_window->drawReferencePointAutoSearchArea(ReferencePointType_e::REFERENCE_POINT_2, getCurrent().getImageTransform().map(QRegion(reference_point_2_search_area_rect)).rects().first());
+
+    current_image_window->drawReferencePoints();
 }
 
 void PuansonChecker::drawCurrentContour()
@@ -669,7 +906,7 @@ bool PuansonChecker::disconnectFromCamera()
     return camera->Disconnect();
 }
 
-QString PuansonChecker::getCameraStatus()
+QString PuansonChecker::getCameraStatus() const
 {
     return camera->getCameraStatus();
 }
@@ -689,10 +926,10 @@ void PuansonChecker::shootAndLoadCurrentImage()
 
         current_image.release();
 
-        if(PuansonChecker::loadImage(CURRENT_IMAGE, path, current_image) == 0)
+        if(PuansonChecker::loadImage(ImageType_e::CURRENT_IMAGE, path, current_image) == 0)
         {
-            if(etalon_puanson_image[etalon_angle - 1].isIdealContourSet())
-                current_image.copyIdealContour(etalon_puanson_image[etalon_angle-1]);
+            if(etalon_puanson_image.isIdealContourSet())
+                current_image.copyIdealContour(etalon_puanson_image);
 
             current_image.setToleranceFields(0, 0);
             current_image.setImageContour(getContour(current_image));
@@ -708,8 +945,8 @@ void PuansonChecker::shootAndLoadEtalonImage()
 {
     QString path = QDir::currentPath() + "/" + CAPTURED_ETALON_IMAGE_FILENAME;
 
-    loading_etalon_angle = etalon_angle;
-    etalon_puanson_image_ptr = &etalon_puanson_image[loading_etalon_angle - 1];
+    loading_etalon_angle = etalon_research_active_angle;
+    PuansonImage *etalon_puanson_image_ptr = &etalon_puanson_image;
 
     main_window->setWindowStatus("Фотосъёмка и загрузка изображения эталонной детали ...");
 
@@ -720,11 +957,11 @@ void PuansonChecker::shootAndLoadEtalonImage()
         //main_window->setWindowStatus("Загрузка изображения эталонной детали ...");
         etalon_puanson_image_ptr->release();
 
-        if(PuansonChecker::loadImage(ETALON_IMAGE, path, *etalon_puanson_image_ptr) == 0)
+        if(PuansonChecker::loadImage(ImageType_e::ETALON_IMAGE, path, *etalon_puanson_image_ptr) == 0)
         {
-            quint16 ext_tolerance_mkm_array[NUMBER_OF_ANGLES];
-            quint16 int_tolerance_mkm_array[NUMBER_OF_ANGLES];
-            quint32 reference_points_distance_array[NUMBER_OF_ANGLES];
+            quint16 ext_tolerance_mkm_array[PUANSON_IMAGE_MAX_ANGLE];
+            quint16 int_tolerance_mkm_array[PUANSON_IMAGE_MAX_ANGLE];
+            quint32 reference_points_distance_array[PUANSON_IMAGE_MAX_ANGLE];
 
             general_settings->getToleranceFields(ext_tolerance_mkm_array, int_tolerance_mkm_array);
             general_settings->getReferencePointDistancesMkm(reference_points_distance_array);
@@ -732,7 +969,7 @@ void PuansonChecker::shootAndLoadEtalonImage()
             etalon_puanson_image_ptr->setToleranceFields(ext_tolerance_mkm_array[loading_etalon_angle - 1], int_tolerance_mkm_array[loading_etalon_angle - 1]);
             etalon_puanson_image_ptr->setReferencePointDistanceMkm(reference_points_distance_array[loading_etalon_angle - 1]);
 
-            //etalon_contour = getContour(*etalon_puanson_image_ptr);
+            //etalon_puanson_image_ptr->setImageContour(getContour(*etalon_puanson_image_ptr));
         }
 
         return etalon_puanson_image_ptr->getImageType();
@@ -784,11 +1021,11 @@ public:
 
         switch(image_type)
         {
-            case ETALON_IMAGE:
+            case ImageType_e::ETALON_IMAGE:
                 detail_contour_color = Scalar( 255, 255, 255 );
                 thickness = 1;
                 break;
-            case CURRENT_IMAGE:
+            case ImageType_e::CURRENT_IMAGE:
             default:
                 detail_contour_color = Scalar( 50, 50, 250 );
                 thickness = 1;
@@ -801,6 +1038,8 @@ public:
         // Внутренняя точка
         int j; // Индекс
 
+//        qDebug() << "in " << __PRETTY_FUNCTION__ << " PointOfOrigin: " << p_puanson_image->getIdealContourPointOfOrigin() << " RotationAngle: " << p_puanson_image->getIdealContourRotationAngle();
+//        qDebug() << "image type: " << (p_puanson_image->getImageType() == ImageType_e::ETALON_IMAGE ? "ETALON" : "CURRENT");
         QLine last_skeleton_line;
 
         for(int i = range.start; i < range.end; i++)
@@ -808,7 +1047,7 @@ public:
             for(int l = 0; l < contours_per_thread; l++)
             {
                 j = i * contours_per_thread + l;
-
+//qDebug() << "p_puanson_image->isIdealContourSet() " << p_puanson_image->isIdealContourSet();
                 // Рассчитывать контура допуска только тогда, когда заданы точки остова
                 if(p_puanson_image->isIdealContourSet()/*(image_type == ETALON_IMAGE && p_puanson_image->isIdealContourSet()) || image_type == CURRENT_IMAGE*/)
                 {
@@ -819,7 +1058,7 @@ public:
 
                     if((/*p_puanson_image->isIdealContourSet() && */near_ideal_line)/* || image_type == CURRENT_IMAGE*/)
                     {
-                        if(image_type == ETALON_IMAGE)
+                        if(image_type == ImageType_e::ETALON_IMAGE)
                         {
                             for(auto it = inner_contours[j].begin(); it != inner_contours[j].end(); it++)
                                 *it += Point(internal_normal_vector.x(), internal_normal_vector.y());
@@ -830,7 +1069,7 @@ public:
 
                         // Рисование контуров
                         // Вывод контура детали
-                        if((image_type == ETALON_IMAGE &&  draw_etalon_contour_flag) || image_type == CURRENT_IMAGE)
+                        if((image_type == ImageType_e::ETALON_IMAGE &&  draw_etalon_contour_flag) || image_type == ImageType_e::CURRENT_IMAGE)
                         {
                             /*if(j % 10 == 0)
                             {
@@ -845,7 +1084,7 @@ public:
                         }
 
                         // Выводить контура допуска только тогда, когда заданы точки остова
-                        if(image_type == ETALON_IMAGE/* && p_puanson_image->isIdealContourSet()*/)
+                        if(image_type == ImageType_e::ETALON_IMAGE/* && p_puanson_image->isIdealContourSet()*/)
                         {
                             //line(image_contour_ref, *detail_contours[j].begin(), *inner_contours[j].begin(), Scalar(255, 0, 0));
                             // Вывод контура внутреннего допуска
@@ -1012,24 +1251,61 @@ private:
     findContours( bin1, detail_contours0, contours_hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0) );
 
     detail_contours.resize(detail_contours0.size());
+
     for( size_t k = 0; k < detail_contours0.size(); k++ )
+    {
         approxPolyDP(Mat(detail_contours0[k]), detail_contours[k], 3, true);
+    }
 
     //Scalar inner_line_color(229, 43, 80);
 
-    if(true && puanson_image.getImageType() == ETALON_IMAGE)
+    if(true && puanson_image.getImageType() == ImageType_e::ETALON_IMAGE)
     {
-        QVector<IdealInnerSegment> inner_segments = getEtalon(etalon_angle).getActualIdealInnerSegments();
+        /* Обрамление области анализа корректности детали */
+        line(image_contour, Point(qRound((image_contour.cols - image_contour.cols / 4.0) / 2.0),
+                                  qRound((image_contour.rows - image_contour.rows / 4.0) / 2.0)),
+                            Point(qRound((image_contour.cols + image_contour.cols / 4.0) / 2.0),
+                                  qRound((image_contour.rows - image_contour.rows / 4.0) / 2.0)),
+                            Scalar(250, 250, 250));
 
-        for(IdealInnerSegment segment: inner_segments)
+        line(image_contour, Point(qRound((image_contour.cols + image_contour.cols / 4.0) / 2.0),
+                                  qRound((image_contour.rows - image_contour.rows / 4.0) / 2.0)),
+                            Point(qRound((image_contour.cols + image_contour.cols / 4.0) / 2.0),
+                                  qRound((image_contour.rows + image_contour.rows / 4.0) / 2.0)),
+                            Scalar(250, 250, 250));
+
+        line(image_contour, Point(qRound((image_contour.cols + image_contour.cols / 4.0) / 2.0),
+                                  qRound((image_contour.rows + image_contour.rows / 4.0) / 2.0)),
+                            Point(qRound((image_contour.cols - image_contour.cols / 4.0) / 2.0),
+                                  qRound((image_contour.rows + image_contour.rows / 4.0) / 2.0)),
+                            Scalar(250, 250, 250));
+
+        line(image_contour, Point(qRound((image_contour.cols - image_contour.cols / 4.0) / 2.0),
+                                  qRound((image_contour.rows + image_contour.rows / 4.0) / 2.0)),
+                            Point(qRound((image_contour.cols - image_contour.cols / 4.0) / 2.0),
+                                  qRound((image_contour.rows - image_contour.rows / 4.0) / 2.0)),
+                            Scalar(250, 250, 250));
+        /* ********************************************** */
+
+        if(etalon_research_active_angle >= 1 && etalon_research_active_angle <= PUANSON_IMAGE_MAX_ANGLE)
         {
-            QVector<QLine> control_lines = segment.getControlLines(30);
+            QVector<IdealInnerSegment> inner_segments = getEtalon().getActualIdealInnerSegments();
 
-            for(QLine control_line : control_lines)
+            QRect analysis_rect(qRound((image_contour.cols - image_contour.cols / 4.0) / 2.0),
+                    qRound((image_contour.rows - image_contour.rows / 4.0) / 2.0),
+                    qRound(image_contour.cols / 4.0) ,
+                    qRound(image_contour.rows / 4.0));
+
+            for(IdealInnerSegment segment: inner_segments)
             {
-                line(image_contour, Point(control_line.x1(), control_line.y1()),
-                     Point(control_line.x2(), control_line.y2()),
-                     Scalar(180, 180, 180));
+                QVector<QLine> control_lines = segment.getControlLines(30, analysis_rect);
+
+                for(QLine control_line : control_lines)
+                {
+                    line(image_contour, Point(control_line.x1(), control_line.y1()),
+                         Point(control_line.x2(), control_line.y2()),
+                         Scalar(180, 180, 180));
+                }
             }
         }
     }
@@ -1444,24 +1720,23 @@ private:
 
         puanson_image.getToleranceFields(ext_tolerance_px, int_tolerance_px);
 
-        qDebug() << "this " << this << "before parallel_for_ " << QTime::currentTime();
+        //qDebug() << "this " << this << "before parallel_for_ " << QTime::currentTime();
 
         parallel_for_(Range(0, detail_contours.size() / contours_per_thread),
                       ParallelDrawContours(puanson_image, image_contour, detail_contours, contours_per_thread, contours_hierarchy,
                                            draw_etalon_contour_flag, ext_tolerance_px, int_tolerance_px));
 
-        qDebug() << "this " << this << "after parallel_for_ " << QTime::currentTime();
+        //qDebug() << "this " << this << "after parallel_for_ " << QTime::currentTime();
 
         /*for(int j = 0; j < detail_contours.size(); j++)
             drawContours( image_contour, detail_contours, j, color, thickness, 8, contours_hierarchy, 0, Point() );*/
     }
 #endif // PARALLEL_CONTOUR_COMPUTING
     //////////////////////////////
-
     bin1.release();
     gray_image.release();
     gray_roi.release();
-qDebug() << "in " << __PRETTY_FUNCTION__ << " before end";
+
     //image_contour.release();
     return image_contour;
 }
@@ -1487,18 +1762,25 @@ void PuansonChecker::drawContoursImage()
     using namespace cv;
     using namespace std;
 
-    if(!(isCurrentImageLoaded() && isEtalonImageLoaded(getEtalonAngle())))
+    if(!(isCurrentImageLoaded() && isEtalonImageLoaded()))
         return;
 
-    Mat current_contour = getCurrent().getImageContour();
+    Mat current_contour = getCurrent().imageContour();
     Mat current_contours_mask(current_contour.size(), CV_8UC1);
 
     contours_image.release();
-    etalon_contour.copyTo(contours_image);
+    etalon_puanson_image.imageContour().copyTo(contours_image);
 
     cvtColor(current_contour, current_contours_mask, CV_RGB2GRAY);
     current_contour.copyTo(contours_image, current_contours_mask);
     current_contours_mask.release();
+
+    QVector<QPoint> bad_points;
+
+    if(images_combined_by_reference_points)
+    {
+        checkDetail(bad_points);
+    }
 
     QImage img(QImage((const unsigned char*)(contours_image.data),
                   contours_image.cols, contours_image.rows,
@@ -1508,7 +1790,7 @@ void PuansonChecker::drawContoursImage()
     QPoint etalon_reference_point_1, etalon_reference_point_2;
     QPoint current_reference_point_1, current_reference_point_2;
 
-    getEtalon(getEtalonAngle()).getReferencePoints(etalon_reference_point_1, etalon_reference_point_2);
+    getEtalon().getReferencePoints(etalon_reference_point_1, etalon_reference_point_2);
     getCurrent().getReferencePoints(current_reference_point_1, current_reference_point_2);
 
     if(etalon_reference_point_1 != etalon_reference_point_2)
@@ -1549,19 +1831,12 @@ void PuansonChecker::drawContoursImage()
     }
     ////////////////////////
 
-    QVector<QPoint> bad_points;
-    bool valid_detail = checkDetail(bad_points);
-
     contours_window->drawImage(img);
-    contours_window->drawIdealContour(getEtalon(getEtalonAngle()).getIdealContourPath());
-    contours_window->drawBadPoints(bad_points);
-qDebug() << "valid_detail " << valid_detail;
-    if(false && valid_detail == false)
+    //contours_window->drawIdealContour(getEtalon().getIdealContourPath(), getEtalon().getIdealContourMeasurementsPath());
+
+    if(images_combined_by_reference_points)
     {
-        QMessageBox msgBox;
-        msgBox.setText("Деталь не попадает в допуск.");
-        //msgBox.setModal(false);
-        msgBox.show();
+        contours_window->drawBadPoints(bad_points);
     }
 }
 
@@ -1569,7 +1844,7 @@ void PuansonChecker::shiftCurrentImage(const qreal dx, const qreal dy)
 {
     using namespace cv;
 
-    Mat &current_contour = getCurrent().getImageContour();
+    Mat &current_contour = getCurrent().imageContour();
 
     if(!current_contour.empty())
     {
@@ -1607,9 +1882,10 @@ void PuansonChecker::rotateCurrentImage(const double angle)
 {
     using namespace cv;
 
-    Mat &current_contour = getCurrent().getImageContour();
+    Mat current_image = current_puanson_image.getImage();
+    //Mat &current_contour = current_puanson_image.imageContour();
 
-    if(!current_contour.empty())
+    if(!current_image.empty())
     {
         Mat rot_mat( 2, 3, CV_32FC1 );
         Point center_of_rotation;
@@ -1620,18 +1896,18 @@ void PuansonChecker::rotateCurrentImage(const double angle)
 
         double angle_in_degrees = qRadiansToDegrees(angle);
 
-        getCurrent().getReferencePoints(current_reference_point1, current_reference_point2);
+        current_puanson_image.getReferencePoints(current_reference_point1, current_reference_point2);
 
-        if(getCurrent().isReferencePointsAreSet())
+        if(current_puanson_image.isReferencePointsAreSet())
             center_of_rotation = Point(current_reference_point1.x(), current_reference_point1.y());
         else
-            center_of_rotation = Point( current_contour.cols / 2 + 1, current_contour.rows / 2 + 1 );
+            center_of_rotation = Point( current_image.cols / 2 + 1, current_image.rows / 2 + 1 );
 
         rot_mat = getRotationMatrix2D( center_of_rotation, angle_in_degrees, scale );
 
-        warpAffine( getCurrent().getImage(), getCurrent().getImage(), rot_mat, getCurrent().getImage().size() );
+        warpAffine( current_puanson_image.getImage(), current_puanson_image.getImage(), rot_mat, current_puanson_image.getImage().size() );
 
-        if(getCurrent().isReferencePointsAreSet())
+        if(current_puanson_image.isReferencePointsAreSet())
         {
             //Mat reference_point1_column_vector = (Mat_<int>(3,1) << current_reference_point1.x(), current_reference_point1.y());
             //reference_point1_column_vector = rot_mat.mul(reference_point1_column_vector);
@@ -1640,13 +1916,13 @@ void PuansonChecker::rotateCurrentImage(const double angle)
             Mat reference_point2_column_vector = (Mat_<double>(3,1) << current_reference_point2.x(), current_reference_point2.y(), 1.0);
             reference_point2_column_vector = rot_mat * reference_point2_column_vector; // Нужно именно так множить, согласно док-ции OpenCV
             current_reference_point2 = QPointF(reference_point2_column_vector.at<double>(0,0), reference_point2_column_vector.at<double>(1,0)).toPoint();
-            getCurrent().setReferencePoints(current_reference_point1, current_reference_point2);
+            current_puanson_image.setReferencePoints(current_reference_point1, current_reference_point2);
         }
 
 //        if(this->getCalculateContourOnRotationFlag())
 //        {
-            current_contour.release();
-            current_puanson_image.setImageContour(getContour(current_puanson_image));
+//            current_contour.release();
+//            current_puanson_image.setImageContour(getContour(current_puanson_image));
 //        }
 //        else
 //        {
@@ -1657,13 +1933,14 @@ void PuansonChecker::rotateCurrentImage(const double angle)
 
 bool PuansonChecker::combineImagesByReferencePoints()
 {
-    if((isEtalonImageLoaded(etalon_angle) && getEtalon(etalon_angle).isReferencePointsAreSet()) &&
+    if((isEtalonImageLoaded() && getEtalon().isReferencePointsAreSet()) &&
        (isCurrentImageLoaded() && getCurrent().isReferencePointsAreSet()))
     {
         QPoint etalon_reference_point1, etalon_reference_point2;
         QPoint current_reference_point1, current_reference_point2;
+        QTransform current_puanson_image_transform;
 
-        getEtalon(etalon_angle).getReferencePoints(etalon_reference_point1, etalon_reference_point2);
+        getEtalon().getReferencePoints(etalon_reference_point1, etalon_reference_point2);
         getCurrent().getReferencePoints(current_reference_point1, current_reference_point2);
 
         // Сдвиг изображения текущей детали для совмещения изображений по первой реперной точке
@@ -1673,6 +1950,7 @@ bool PuansonChecker::combineImagesByReferencePoints()
         shift_dy = (etalon_reference_point1-current_reference_point1).y();
 
         shiftCurrentImage(shift_dx, shift_dy);
+        current_puanson_image_transform.translate(shift_dx, shift_dy);
         ///////////////////////////////////////////////////////////////////////////////////////
 
         getCurrent().getReferencePoints(current_reference_point1, current_reference_point2);
@@ -1685,7 +1963,14 @@ bool PuansonChecker::combineImagesByReferencePoints()
         qreal y_cur = current_reference_point2.y() - current_reference_point1.y();
 
         qreal cos_value = (x_etal*x_cur + y_etal*y_cur) / (qSqrt(x_etal*x_etal + y_etal*y_etal) * qSqrt(x_cur*x_cur + y_cur*y_cur));
-        qreal rotation_angle_in_radians = qAcos(cos_value);
+        qreal rotation_angle_in_radians;
+
+        if(cos_value > 1.0)
+            cos_value = 1.0;
+
+        rotation_angle_in_radians = qAcos(cos_value);
+
+        //qDebug() << "rotation_angle_in_radians " << rotation_angle_in_radians << " cos_value " << cos_value;
 
         // Вычисление косого произведения векторов (Rep2_etal - Rep1_etal) и (Rep2_cur - Rep1_cur) для определения направления вращения
         qreal pseudoscalar_product = x_etal*y_cur - y_etal*x_cur;
@@ -1693,20 +1978,343 @@ bool PuansonChecker::combineImagesByReferencePoints()
             rotation_angle_in_radians = -rotation_angle_in_radians;
 
         rotateCurrentImage(rotation_angle_in_radians);
+        current_puanson_image_transform.rotateRadians(rotation_angle_in_radians);
         ///////////////////////////////////////////////////////////////////////////////////////
 
-        QString combine_transformation_message;
+        current_puanson_image.imageContour().release();
+        current_puanson_image.setImageContour(getContour(current_puanson_image));
+
+        /*QString combine_transformation_message;
         combine_transformation_message = "Изображения совмещены: сдвиг dx " + QString::number(shift_dx) + " dy " + QString::number(shift_dy) + "; угол поворота " + QString::number(rotation_angle_in_radians) +  " радиан.";
 
         QMessageBox msgBox;
         msgBox.setText(combine_transformation_message);
         msgBox.setModal(false);
-        msgBox.show();
+        msgBox.show();*/
+
+        getCurrent().setImageTransform(current_puanson_image_transform);
+
+        images_combined_by_reference_points = true;
 
         return true;
     }
 
     return false;
+}
+
+bool PuansonChecker::combineImagesByReferencePointsAndDrawBadPoints()
+{
+    return contours_window->combineImagesByReferencePointsButtonPressed();
+}
+
+QPoint PuansonChecker::findNearestContourPoint(const ContourPoints_e contour_point_type, const QPoint &original_point, const QLine &measurement_line, const quint16 neighborhood_len)
+{
+    using namespace std;
+
+    auto findNeighbourContourPoint = [] (const cv::Mat &contours_image, const cv::Vec3b contour_color, const QLine &neighborhood_line) -> QPoint {
+        function<bool (const int, const QLine &)> conditionLambda = [](const int current_x, const QLine &control_line) -> bool { return (current_x <= (control_line.x1() > control_line.x2() ? control_line.x1() : control_line.x2())) && (current_x >= (control_line.x1() < control_line.x2() ? control_line.x1() : control_line.x2())); };
+
+        QPoint original_point = neighborhood_line.p1();
+        QPoint new_contour_point;
+
+        const qreal normal_vector_len = 2.0;
+        cv::Vec3b current_point_color;
+        qint16 current_x = -1, current_y = -1, next_y = -1;
+        qint16 dx, dy;
+
+        dx = neighborhood_line.dx();
+        dy = neighborhood_line.dy();
+
+        new_contour_point = QPoint(0, 0);
+
+        current_x = original_point.x();
+        current_y = original_point.y();
+        next_y = qRound(static_cast<qreal>(((current_x + dx/qAbs(dx)) - original_point.x()) * (dy)) / (dx) + original_point.y());
+
+        while(conditionLambda(current_x, neighborhood_line))
+        {
+            current_point_color = contours_image.at<cv::Vec3b>(current_y, current_x);
+
+            if(current_point_color == PuansonChecker::empty_contour_color || current_point_color == PuansonChecker::empty_contour_color_2) // Если определена пустота, смотрим окрестности
+            {
+                QPointF normal_vector;
+
+                normal_vector.setX(qRound(normal_vector_len / qSqrt(1 + static_cast<qreal>(dx) / dy * static_cast<qreal>(dx) / dy)));
+                normal_vector.setY(qRound(-(static_cast<qreal>(dx) / dy) * normal_vector.x()));
+
+                QLine check_line(QPoint(current_x, current_y) - normal_vector.toPoint(), QPoint(current_x, current_y) + normal_vector.toPoint());
+                qreal check_line_length;
+
+                QPointF current_point = check_line.p1(), previous_interation_current_point = check_line.p1();
+
+                do
+                {
+                    current_point_color = contours_image.at<cv::Vec3b>(current_point.toPoint().y(), current_point.toPoint().x());
+                    check_line_length = qSqrt(check_line.dx() * check_line.dx() + check_line.dy() * check_line.dy());
+
+                    do
+                    {
+                        current_point += QPointF(static_cast<qreal>(check_line.dx()) / check_line_length, static_cast<qreal>(check_line.dy()) / check_line_length);
+                    }
+                    while(current_point.toPoint() == previous_interation_current_point);
+
+                    previous_interation_current_point = current_point.toPoint();
+                }
+                while(current_point.toPoint() != check_line.p2() && !(current_point_color == contour_color));
+            }
+
+            if(new_contour_point.isNull() && current_point_color == contour_color)
+                new_contour_point = QPoint(current_x, current_y);
+
+            if(!new_contour_point.isNull())
+                break;
+
+            if(current_y == next_y)
+            {
+                current_x += dx/qAbs(dx);
+                current_y = qRound(static_cast<qreal>((current_x - original_point.x()) * (dy)) / (dx) + original_point.y());
+                next_y = qRound(static_cast<qreal>(((current_x + dx/qAbs(dx)) - original_point.x()) * (dy)) / (dx) + original_point.y());
+            }
+            else
+                current_y += dy/qAbs(dy);
+        }
+
+        return new_contour_point;
+    };
+
+    QPoint new_contour_point;
+    cv::Vec3b contour_color;
+
+    switch(contour_point_type)
+    {
+    case ContourPoints_e::OUTER_TOLERANCE_ETALON_CONTOUR_POINT:
+        contour_color = outer_contour_color;
+        break;
+    case ContourPoints_e::INNER_TOLERANCE_ETALON_CONTOUR_POINT:
+        contour_color = inner_contour_color;
+        break;
+    case ContourPoints_e::ETALON_DETAIL_CONTOUR_POINT:
+        contour_color = etalon_contour_color;
+        break;
+    case ContourPoints_e::CURRENT_DEATIL_CONTOUR_POINT:
+        contour_color = current_contour_color;
+        break;
+    }
+
+    quint16 line_len = QLineF(measurement_line).length();
+    QPointF measurement_line_ort = QPointF(measurement_line.dx(), measurement_line.dy()) / line_len;
+
+    // Поиск точек контура вверх по линии измерений
+    new_contour_point = findNeighbourContourPoint(contours_image, contour_color, QLine(original_point, original_point + (measurement_line_ort * neighborhood_len).toPoint()));
+
+    if(!new_contour_point.isNull())
+        return new_contour_point;
+
+    // Поиск точек контура вниз по линии измерений
+    new_contour_point = findNeighbourContourPoint(contours_image, contour_color, QLine(original_point, original_point - (measurement_line_ort * neighborhood_len).toPoint()));
+
+    return new_contour_point;
+}
+
+bool PuansonChecker::findMeasurementContourPoints(const QRect &analysis_rect)
+{
+    using namespace std;
+
+    bool ret_val = false;
+
+    QVector<QLine> measurement_lines = getEtalon().getMeasurementLines(analysis_rect);
+
+    bool up_dir_flag;
+    int current_x = -1, current_y = -1, next_y = -1;
+    QLine last_line;
+    QPoint inner_point, outer_point, current_detail_point;
+
+    function<bool (const int, const QLine &)> conditionLambda = [](const int current_x, const QLine &control_line) -> bool { return (current_x <= (control_line.x1() > control_line.x2() ? control_line.x1() : control_line.x2())) && (current_x >= (control_line.x1() < control_line.x2() ? control_line.x1() : control_line.x2())); };
+    up_dir_flag = true;
+
+    for(const QLine &measurement_line : measurement_lines)
+    {
+//        if(0)
+        {
+            inner_point = outer_point = current_detail_point = QPoint(0, 0);
+
+            int dx = measurement_line.x2() - measurement_line.x1();
+            int dy = measurement_line.y2() - measurement_line.y1();
+
+            current_x = up_dir_flag ? measurement_line.x1() : measurement_line.x2();
+            current_y = qRound(static_cast<qreal>((current_x - measurement_line.x1()) * (dy)) / (dx) + measurement_line.y1());
+            next_y = qRound(static_cast<qreal>(((up_dir_flag ? (current_x + dx/qAbs(dx)) : (current_x - dx/qAbs(dx))) - measurement_line.x1()) * (dy)) / (dx) + measurement_line.y1());
+
+            bool previous_point_inside_analysis_rect = false;
+
+            while(conditionLambda(current_x, measurement_line))
+            {
+                if(previous_point_inside_analysis_rect == true && !analysis_rect.contains(QPoint(current_x, current_y)) && current_detail_point.isNull())
+                {
+                    if(inner_point.isNull() && outer_point.isNull())
+                    {
+                        inner_point = outer_point = current_detail_point = QPoint(0, 0);
+                        last_line = measurement_line;
+
+                        if(up_dir_flag)
+                        {
+                            up_dir_flag = false;
+
+                            current_x = measurement_line.x2();
+                            current_y = measurement_line.y2();
+                            next_y = qRound(static_cast<qreal>(((current_x - dx/qAbs(dx)) - measurement_line.x1()) * (dy)) / (dx) + measurement_line.y1());
+                        }
+                        else
+                        {
+                            up_dir_flag = true;
+
+                            current_x = measurement_line.x1();
+                            current_y = measurement_line.y1();
+                            next_y = qRound(static_cast<qreal>(((current_x + dx/qAbs(dx)) - measurement_line.x1()) * (dy)) / (dx) + measurement_line.y1());
+                        }
+
+                        if(analysis_rect.contains(QPoint(current_x, current_y)))
+                        {
+                            previous_point_inside_analysis_rect = false;
+                            continue;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                if(previous_point_inside_analysis_rect == false && analysis_rect.contains(QPoint(current_x, current_y)))
+                    previous_point_inside_analysis_rect = true;
+                else if(previous_point_inside_analysis_rect == true && !analysis_rect.contains(QPoint(current_x, current_y)))
+                    previous_point_inside_analysis_rect = false;
+
+                cv::Vec3b current_point_color = contours_image.at<cv::Vec3b>(current_y, current_x);
+
+                if(current_point_color == empty_contour_color || current_point_color == empty_contour_color_2) // Если определена пустота, смотрим окрестности
+                {
+                    const qreal normal_vector_len = 10.0;
+                    QPointF normal_vector;
+
+                    normal_vector.setX(qRound(normal_vector_len / qSqrt(1 + static_cast<qreal>(dx) / dy * static_cast<qreal>(dx) / dy)));
+                    normal_vector.setY(qRound(-(static_cast<qreal>(dx) / dy) * normal_vector.x()));
+
+                    QLine check_line;
+                    qreal check_line_length;
+
+                    check_line = QLine(QPoint(current_x, current_y) - normal_vector.toPoint(), QPoint(current_x, current_y) + normal_vector.toPoint());
+
+                    QPointF current_point = check_line.p1(), previous_interation_current_point = check_line.p1();
+                    do
+                    {
+                        current_point_color = contours_image.at<cv::Vec3b>(current_point.toPoint().y(), current_point.toPoint().x());
+
+                        check_line_length = qSqrt(check_line.dx() * check_line.dx() + check_line.dy() * check_line.dy());
+                        do
+                        {
+                            current_point += QPointF(static_cast<qreal>(check_line.dx()) / check_line_length, static_cast<qreal>(check_line.dy()) / check_line_length);
+                        }
+                        while(current_point.toPoint() == previous_interation_current_point);
+
+                        previous_interation_current_point = current_point.toPoint();
+                    }
+                    while(current_point.toPoint() != check_line.p2() && !(current_point_color == inner_contour_color || current_point_color == outer_contour_color || current_point_color == current_contour_color));
+                }
+
+                if(inner_point.isNull() && current_point_color == inner_contour_color)
+                {
+                    // Проверка на то, что направление поиска должно идти так, чтобы первой была найдена точка внешнего допуска
+                    if(last_line != measurement_line && outer_point.isNull())
+                    {
+                        inner_point = outer_point = current_detail_point = QPoint(0, 0);
+                        last_line = measurement_line;
+
+                        if(up_dir_flag)
+                        {
+                            up_dir_flag = false;
+
+                            current_x = measurement_line.x2();
+                            current_y = measurement_line.y2();
+                            next_y = qRound(static_cast<qreal>(((current_x - dx/qAbs(dx)) - measurement_line.x1()) * (dy)) / (dx) + measurement_line.y1());
+                        }
+                        else
+                        {
+                            up_dir_flag = true;
+
+                            current_x = measurement_line.x1();
+                            current_y = measurement_line.y1();
+                            next_y = qRound(static_cast<qreal>(((current_x + dx/qAbs(dx)) - measurement_line.x1()) * (dy)) / (dx) + measurement_line.y1());
+                        }
+
+                        if(analysis_rect.contains(QPoint(current_x, current_y)))
+                        {
+                            previous_point_inside_analysis_rect = false;
+                            continue;
+                        }
+
+                        previous_point_inside_analysis_rect = false;
+                        continue;
+                    }
+                    else
+                    {
+                        inner_point = QPoint(current_x, current_y);
+                    }
+                }
+                else if(outer_point.isNull() && current_point_color == outer_contour_color)
+                {
+                      outer_point = QPoint(current_x, current_y);
+                }
+                else if(current_detail_point.isNull() && current_point_color == current_contour_color)
+                {
+                    if(!outer_point.isNull() && inner_point.isNull())
+                    {
+                        current_detail_point = QPoint(current_x, current_y);
+                    }
+                }
+
+                if(!inner_point.isNull() && !outer_point.isNull() && !current_detail_point.isNull())
+                    break;
+
+                if(up_dir_flag)
+                {
+                    if(current_y == next_y)
+                    {
+                        current_x += dx/qAbs(dx);
+                        current_y = qRound(static_cast<qreal>((current_x - measurement_line.x1()) * (dy)) / (dx) + measurement_line.y1());
+                        next_y = qRound(static_cast<qreal>(((current_x + dx/qAbs(dx)) - measurement_line.x1()) * (dy)) / (dx) + measurement_line.y1());
+                    }
+                    else
+                        current_y += dy/qAbs(dy);
+                }
+                else
+                {
+                    if(current_y == next_y)
+                    {
+                        current_x -= dx/qAbs(dx);
+                        current_y = qRound(static_cast<qreal>((current_x - measurement_line.x1()) * (dy)) / (dx) + measurement_line.y1());
+                        next_y = qRound(static_cast<qreal>(((current_x - dx/qAbs(dx)) - measurement_line.x1()) * (dy)) / (dx) + measurement_line.y1());
+                    }
+                    else
+                        current_y -= dy/qAbs(dy);
+                }
+            }
+        }
+
+        // Нарисовать линию и точки контуров эталона и текущей детали
+        contours_window->drawMeasurementLineAndPoints(measurement_line, outer_point, current_detail_point);
+    }
+
+    return ret_val;
+}
+
+void PuansonChecker::measurementPointsSettingMode()
+{
+    contours_window->measurementPointsSettingMode();
 }
 
 bool PuansonChecker::saveCurrentImage(const QString &path)
@@ -1716,30 +2324,36 @@ bool PuansonChecker::saveCurrentImage(const QString &path)
 
     bool res = true;
 
-    if(path.endsWith(".tiff", Qt::CaseInsensitive))
-    {
-        imwrite(path.toStdString().c_str(), getCurrent().getImage());
-    }
-    else if(path.endsWith(".png", Qt::CaseInsensitive))
-    {
-        vector<int> compression_params;
-
-        compression_params.push_back(IMWRITE_PNG_COMPRESSION);
-        compression_params.push_back(3);
-
-        imwrite(path.toStdString().c_str(), getCurrent().getImage(), compression_params);
-    }
-    else if(path.endsWith(".jpg", Qt::CaseInsensitive) || path.endsWith(".jpeg", Qt::CaseInsensitive))
-    {
-        vector<int> compression_params;
-
-        compression_params.push_back(IMWRITE_JPEG_QUALITY);
-        compression_params.push_back(95);
-
-        imwrite(path.toStdString().c_str(), getCurrent().getImage(), compression_params);
-    }
-    else
+    if(getCurrent().isEmpty())
         res = false;
+
+    if(res == true)
+    {
+        if(path.endsWith(".tiff", Qt::CaseInsensitive))
+        {
+            imwrite(path.toStdString().c_str(), getCurrent().getImage());
+        }
+        else if(path.endsWith(".png", Qt::CaseInsensitive))
+        {
+            vector<int> compression_params;
+
+            compression_params.push_back(IMWRITE_PNG_COMPRESSION);
+            compression_params.push_back(3);
+
+            imwrite(path.toStdString().c_str(), getCurrent().getImage(), compression_params);
+        }
+        else if(path.endsWith(".jpg", Qt::CaseInsensitive) || path.endsWith(".jpeg", Qt::CaseInsensitive))
+        {
+            vector<int> compression_params;
+
+            compression_params.push_back(IMWRITE_JPEG_QUALITY);
+            compression_params.push_back(95);
+
+            imwrite(path.toStdString().c_str(), getCurrent().getImage(), compression_params);
+        }
+        else
+            res = false;
+    }
 
     return res;
 }
@@ -1751,30 +2365,332 @@ bool PuansonChecker::saveResultImage(const QString &path)
 
     bool res = true;
 
-    if(path.endsWith(".tiff", Qt::CaseInsensitive) || path.endsWith(".tif", Qt::CaseInsensitive))
-    {
-        imwrite(path.toStdString().c_str(), contours_image);
-    }
-    else if(path.endsWith(".png", Qt::CaseInsensitive))
-    {
-        vector<int> compression_params;
-
-        compression_params.push_back(IMWRITE_PNG_COMPRESSION);
-        compression_params.push_back(3);
-
-        imwrite(path.toStdString().c_str(), contours_image, compression_params);
-    }
-    else if(path.endsWith(".jpg", Qt::CaseInsensitive) || path.endsWith(".jpeg", Qt::CaseInsensitive))
-    {
-        vector<int> compression_params;
-
-        compression_params.push_back(IMWRITE_JPEG_QUALITY);
-        compression_params.push_back(95);
-
-        imwrite(path.toStdString().c_str(), contours_image, compression_params);
-    }
-    else
+    if(contours_image.empty())
         res = false;
 
+    if(res == true)
+    {
+        if(path.endsWith(".tiff", Qt::CaseInsensitive) || path.endsWith(".tif", Qt::CaseInsensitive))
+        {
+            imwrite(path.toStdString().c_str(), contours_image);
+        }
+        else if(path.endsWith(".png", Qt::CaseInsensitive))
+        {
+            vector<int> compression_params;
+
+            compression_params.push_back(IMWRITE_PNG_COMPRESSION);
+            compression_params.push_back(3);
+
+            imwrite(path.toStdString().c_str(), contours_image, compression_params);
+        }
+        else if(path.endsWith(".jpg", Qt::CaseInsensitive) || path.endsWith(".jpeg", Qt::CaseInsensitive))
+        {
+            vector<int> compression_params;
+
+            compression_params.push_back(IMWRITE_JPEG_QUALITY);
+            compression_params.push_back(95);
+
+            imwrite(path.toStdString().c_str(), contours_image, compression_params);
+        }
+        else
+            res = false;
+    }
+
     return res;
+}
+
+void PuansonChecker::setReferencePointSearchArea(const ReferencePointType_e reference_point_type, const QRect &area_rect)
+{
+    switch(reference_point_type)
+    {
+    case ReferencePointType_e::REFERENCE_POINT_1:
+    default:
+        reference_point_1_search_area_rect = area_rect;
+        break;
+    case ReferencePointType_e::REFERENCE_POINT_2:
+        reference_point_2_search_area_rect = area_rect;
+        break;
+    }
+}
+
+QRect PuansonChecker::getReferencePointSearchArea(const ImageType_e image_type, const ReferencePointType_e reference_point_type) const
+{
+    QTransform t;
+
+    if(image_type == ImageType_e::CURRENT_IMAGE)
+        t = getCurrent().getImageTransform();
+
+    switch(reference_point_type)
+    {
+    case ReferencePointType_e::REFERENCE_POINT_1:
+    default:
+        return t.map(QRegion(reference_point_1_search_area_rect)).rects().first();
+        break;
+    case ReferencePointType_e::REFERENCE_POINT_2:
+        return t.map(QRegion(reference_point_2_search_area_rect)).rects().first();
+        break;
+    }
+}
+
+void PuansonChecker::researchEtalonAngle(quint8 angle)
+{
+    if(angle == 0)
+    {
+        EtalonResearchCreationDialog etalon_research_creation_dialog;
+
+        etalon_research_creation_dialog.setModal(false);
+        etalon_research_creation_dialog.setFixedSize(etalon_research_creation_dialog.size());
+
+        etalon_research_creation_dialog.exec();
+
+        switch(etalon_research_creation_dialog.result()){
+        case QDialog::Accepted:
+            break;
+        case QDialog::Rejected:
+        default:
+            return;
+            break;
+        }
+
+        if(!etalon_research_folder_path.isEmpty())
+        {
+            QDir(etalon_research_folder_path).removeRecursively();
+            QDir().mkdir(etalon_research_folder_path);
+        }
+
+        const QString xml_config_filename = "etalon_research_configuration.xml";
+        QFile config_file(etalon_research_folder_path + "/" + xml_config_filename);
+
+        if(!config_file.open(QIODevice::WriteOnly))
+        {
+            config_file.close();
+            return;
+        }
+
+        QXmlStreamWriter stream(&config_file);
+        stream.setAutoFormatting(true);
+
+        stream.writeStartDocument();
+        stream.writeStartElement("etalon_angle_settings");
+            stream.writeStartElement("general_settings");
+                stream.writeTextElement("puanson_model", QString::number(static_cast<int>(etalon_puanson_image.getDetailPuansonModel())));
+                stream.writeTextElement("date_time_of_creation", etalon_research_date_time_of_creation.toString(Qt::ISODate));
+                stream.writeTextElement("number_of_angles", QString::number(etalon_research_number_of_angles));
+            stream.writeEndElement(); // general_settings
+        stream.writeEndElement(); // etalon_angle_settings
+        stream.writeEndDocument();
+
+        config_file.close();
+
+        etalon_research_active_angle = 1;
+    }
+
+    // 1. Диалоговое окно для выбора источника изображения ракурса эталона
+    DetailAngleSourceDialog etalon_angle_source_dialog(ImageType_e::ETALON_IMAGE, etalon_research_active_angle);
+
+    etalon_angle_source_dialog.setModal(false);
+    etalon_angle_source_dialog.setFixedSize(etalon_angle_source_dialog.size());
+
+    etalon_angle_source_dialog.exec();
+
+    switch(etalon_angle_source_dialog.result())
+    {
+    case PHOTO_SHOOTING_DIALOG_RESULT:
+        main_window->menuImageWorkEtalonShootAndLoadActionTriggered();
+        break;
+    case LOADING_FROM_FILE_DIALOG_RESULT:
+        main_window->menuImageWorkEtalonLoadActionTriggered();
+        break;
+    case CLOSE_DIALOG_RESULT:
+    default:
+        PuansonChecker::getInstance()->cancelEtalonResearch();
+        QMessageBox::information(main_window, "Исследование завершено", "Результат исследования: \"Отменено пользователем\"");
+        break;
+    }
+}
+
+void PuansonChecker::researchCurrentAngle(quint8 angle)
+{
+    if(angle == 0)
+    {
+        CurrentResearchCreationDialog current_research_creation_dialog;
+
+        current_research_creation_dialog.setModal(false);
+        current_research_creation_dialog.setFixedSize(current_research_creation_dialog.size());
+
+        current_research_creation_dialog.exec();
+
+        switch(current_research_creation_dialog.result())
+        {
+        case QDialog::Accepted:
+            break;
+        case QDialog::Rejected:
+        default:
+            return;
+            break;
+        }
+
+        if(!current_research_folder_path.isEmpty())
+        {qDebug() << "current_research_folder_path: " << current_research_folder_path;
+            QDir(current_research_folder_path).removeRecursively();
+            QDir().mkdir(current_research_folder_path);
+
+            const QString xml_config_filename = "current_research_configuration.xml";
+            QFile config_file(current_research_folder_path + "/" + xml_config_filename);
+
+            if(!config_file.open(QIODevice::WriteOnly))
+            {
+                config_file.close();
+                return;
+            }
+
+            QXmlStreamWriter stream(&config_file);
+            stream.setAutoFormatting(true);
+
+            stream.writeStartDocument();
+            stream.writeStartElement("current_angle_settings");
+                stream.writeStartElement("general_settings");
+                    stream.writeTextElement("puanson_model", QString::number(static_cast<int>(etalon_puanson_image.getDetailPuansonModel())));
+                    stream.writeTextElement("date_time_of_creation", current_research_date_time_of_creation.toString(Qt::ISODate));
+                    stream.writeTextElement("number_of_angles", QString::number(etalon_research_number_of_angles));
+                stream.writeEndElement(); // general_settings
+            stream.writeEndElement(); // current_angle_settings
+            stream.writeEndDocument();
+
+            config_file.close();
+        }
+
+        current_puanson_image.setCurrentDetailSuitable(true);
+        current_research_active_angle = 1;
+    }
+    else
+        current_research_active_angle = angle;
+
+    // 1. Загрузка необходимого ракурса эталона
+    if(current_research_active_angle != etalon_research_active_angle)
+    {
+        switch(current_research_active_angle)
+        {
+        case 1:
+            main_window->menuEtalonAngleSetActive1ActionTriggered();
+            break;
+        case 2:
+            main_window->menuEtalonAngleSetActive2ActionTriggered();
+            break;
+        case 3:
+            main_window->menuEtalonAngleSetActive3ActionTriggered();
+            break;
+        case 4:
+            main_window->menuEtalonAngleSetActive4ActionTriggered();
+            break;
+        case 5:
+            main_window->menuEtalonAngleSetActive5ActionTriggered();
+            break;
+        case 6:
+            main_window->menuEtalonAngleSetActive6ActionTriggered();
+            break;
+        }
+    }
+    else
+    {
+        main_window->loadImageFinished(ImageType_e::ETALON_IMAGE);
+    }
+}
+
+bool PuansonChecker::loadEtalonResearch(const QString &etalon_research_folder_path)
+{
+    QDir research_dir(etalon_research_folder_path);
+    const QString xml_config_filename = "etalon_research_configuration.xml";
+    bool bad_research = false;
+
+    PuansonModel puanson_model;
+    QDateTime date_time_of_creation;
+    quint8 number_of_angles = 0;
+
+    if(research_dir.exists(xml_config_filename))
+    {
+        QFile config_file(etalon_research_folder_path + "/" + xml_config_filename);
+
+        if(!config_file.open(QIODevice::ReadOnly))
+        {
+            qDebug() << "Load research error: Configuration file opening error";
+            return false;
+        }
+
+        QXmlStreamReader xml(&config_file);
+        quint8 loaded_parameters = 0;
+
+        while (!xml.atEnd() && !xml.hasError())
+        {
+            QXmlStreamReader::TokenType token = xml.readNext();
+            if (token == QXmlStreamReader::StartDocument)
+                continue;
+
+            if (token == QXmlStreamReader::StartElement)
+            {
+                if (xml.name() == "etalon_angle_settings")
+                    continue;
+
+                if (xml.name() == "general_settings")
+                {
+                    xml.readNext();
+
+                    while (!(xml.tokenType() == QXmlStreamReader::EndElement && xml.name() == "general_settings"))
+                    {
+                        if (xml.tokenType() == QXmlStreamReader::StartElement)
+                        {
+                            if (xml.name() == "puanson_model")
+                            {
+                                xml.readNext();
+                                puanson_model = static_cast<PuansonModel>(xml.text().toString().toInt());
+                                loaded_parameters++;
+                            }
+                            if (xml.name() == "date_time_of_creation")
+                            {
+                                xml.readNext();
+                                date_time_of_creation = QDateTime::fromString(xml.text().toString(), Qt::ISODate);
+                                loaded_parameters++;
+                            }
+                            else if (xml.name() == "number_of_angles")
+                            {
+                                xml.readNext();
+                                number_of_angles = xml.text().toUInt();
+                                loaded_parameters++;
+                            }
+                        }
+                        xml.readNext();
+                    }
+                }
+            }
+        }
+
+        config_file.close();
+
+        if(loaded_parameters == 3)
+        {
+            for(int angle = 1; angle <= number_of_angles; angle++)
+            {
+                if(!research_dir.exists(QString("angle_") + QString::number(angle)) &&
+                        QFile::exists(research_dir.absolutePath() + "/" + QString("angle_") + QString::number(angle) + "/" + "original_image.nef") &&
+                        QFile::exists(research_dir.absolutePath() + "/" + QString("angle_") + QString::number(angle) + "/" + "contours_image.jpg") &&
+                        QFile::exists(research_dir.absolutePath() + "/" + QString("angle_") + QString::number(angle) + "/" + "etalon_angle_configuration.xml"))
+                {
+                    bad_research = true;
+                    break;
+                }
+            }
+        }
+        else
+            bad_research = true;
+    }
+    else
+        bad_research = true;
+
+    if(!bad_research)
+    {
+        setEtalonResearchSettings(etalon_research_folder_path, puanson_model, date_time_of_creation, number_of_angles);
+        completeEtalonResearch();
+    }
+
+    return !bad_research;
 }

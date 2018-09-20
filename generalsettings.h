@@ -7,13 +7,10 @@ class GeneralSettings
 {
     QString xml_configuration_file;
 
-    quint16 externalToleranceMkmArray[NUMBER_OF_ANGLES];
-    quint16 internalToleranceMkmArray[NUMBER_OF_ANGLES];
+    quint16 externalToleranceMkmArray[PUANSON_IMAGE_MAX_ANGLE];
+    quint16 internalToleranceMkmArray[PUANSON_IMAGE_MAX_ANGLE];
 
-    quint32 referencePointDistancesMkmArray[NUMBER_OF_ANGLES];
-
-    QString left_bottom_reference_point_etalon_filename;
-    QString right_top_reference_point_etalon_filename;
+    quint32 referencePointDistancesMkmArray[PUANSON_IMAGE_MAX_ANGLE];
 
 public:
     GeneralSettings(const QString &config_file);
@@ -22,13 +19,10 @@ public:
     bool saveSettingsToConfigFile();
 
     void setToleranceFields(const quint16 ext_tolerance_px_array[], const quint16 int_tolerance_px_array[]);
-    void getToleranceFields(quint16 ext_tolerance_array[], quint16 int_tolerance_array[]);
+    void getToleranceFields(quint16 ext_tolerance_array[], quint16 int_tolerance_array[]) const;
 
     void setReferencePointDistancesMkm(const quint32 distance_array[]);
-    void getReferencePointDistancesMkm(quint32 distance_array[]);
-
-    void setReferencePointEtalonFilenames(const QString &_left_bottom_reference_point_etalon_filename, const QString &_right_top_reference_point_etalon_filename);
-    void getReferencePointEtalonFilenames(QString &_left_bottom_reference_point_etalon_filename, QString &_right_top_reference_point_etalon_filename);
+    void getReferencePointDistancesMkm(quint32 distance_array[]) const;
 };
 
 #endif // GENERALSETTINGS_H
