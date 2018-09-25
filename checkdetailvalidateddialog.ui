@@ -103,6 +103,9 @@ p, li { white-space: pre-wrap; }
    </property>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>checkResultTextEdit</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

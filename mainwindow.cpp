@@ -101,7 +101,36 @@ void MainWindow::loadImageFinished(const ImageType_e image_type)
             switch(angle_source)
             {
             case PHOTO_SHOOTING_DIALOG_RESULT:
-                menuImageWorkCurrentShootAndLoadActionTriggered();
+                if(PuansonChecker::getInstance()->useMachineForDetailMovement())
+                {
+                    if(PuansonChecker::getInstance()->getMachine()->moveToAnglePosition(PuansonChecker::getInstance()->getActiveEtalonResearchAngle()))
+                    {
+                        menuImageWorkCurrentShootAndLoadActionTriggered();
+                    }
+                    else
+                    {
+                        qint32 reply;
+
+                        QMessageBox question(this);
+                        question.setWindowTitle("Внимание");
+                        question.setText("Невозможно поместить деталь в нужную позицию с помощью станка. Отменить исследование или продолжить в ручном режиме?");
+                        question.addButton("Отменить", QMessageBox::RejectRole);
+                        question.addButton("Продолжить в ручном режиме", QMessageBox::ApplyRole);
+                        reply = question.exec();
+
+                        if(reply == QMessageBox::ApplyRole)
+                        {
+                            QMessageBox::information(this, "Информационное сообщение", "Поместите деталь в нужную позицию и нажмите \"OK\"");
+                            menuImageWorkCurrentShootAndLoadActionTriggered();
+                        }
+                        else
+                        {
+                            PuansonChecker::getInstance()->cancelCurrentResearch();
+                            QMessageBox::information(this, "Исследование завершено", "Результат исследования: \"Отменено пользователем\"");
+                        }
+                    }
+                }
+
                 break;
             case LOADING_FROM_FILE_DIALOG_RESULT:
                 menuImageWorkCurrentLoadActionTriggered();
@@ -169,10 +198,15 @@ void MainWindow::loadImageFinished(const ImageType_e image_type)
                             qRound(ui->graphicsView->scene()->width() / 4.0),
                             qRound(ui->graphicsView->scene()->height() / 4.0));
 
-                    PuansonChecker::getInstance()->findMeasurementContourPoints(analysis_rect);
-                    PuansonChecker::getInstance()->measurementPointsSettingMode();
-
-                    PuansonChecker::getInstance()->activateContoursWindow();
+                    if(PuansonChecker::getInstance()->findMeasurementContourPoints(analysis_rect))
+                    {
+                        PuansonChecker::getInstance()->measurementPointsSettingMode();
+                        PuansonChecker::getInstance()->activateContoursWindow();
+                    }
+                    else
+                    {
+                        currentDetailResearchGotoNextAngle();
+                    }
                 }
                 else if(previous_dialog_result == PASS_TO_NEXT_ANGLE_CURRENT_DIALOG_RESULT)
                 {
@@ -335,8 +369,6 @@ void MainWindow::menuEtalonLoadResearchActionTriggered()
     if(etalon_research_folder_path.isEmpty())
         return;
 
-    PuansonChecker::getInstance()->loadEtalonResearch(etalon_research_folder_path);
-
     if(PuansonChecker::getInstance()->loadEtalonResearch(etalon_research_folder_path))
     {
         PuansonChecker::getInstance()->setActiveEtalonResearchAngle(1);
@@ -476,19 +508,7 @@ void MainWindow::menuEtalonAngleSetActive6ActionTriggered()
 
 void MainWindow::menuEtalonResearchPropertiesActionTriggered()
 {
-    QString etalon_research_folder_path;
-    PuansonModel research_puanson_model;
-    QDateTime research_date_time_of_creation;
-    quint8 research_number_of_angles;
-
-    quint32 diameter_1_dimension, diameter_2_dimension, diameter_3_dimension, diameter_4_dimension, diameter_5_dimension, diameter_6_dimension, diameter_7_dimension, diameter_8_dimension, diameter_9_dimension, groove_width_dimension, groove_depth_dimension;
-    quint32 needle_rounding_radius, skirt_rounding_radius, skirt_bottom_rounding_radius;
-
-    PuansonChecker::getInstance()->getEtalonResearchSettings(etalon_research_folder_path, research_puanson_model, research_date_time_of_creation, research_number_of_angles);
-    PuansonChecker::getInstance()->getEtalon().getDetailDimensions(diameter_1_dimension, diameter_2_dimension, diameter_3_dimension, diameter_4_dimension, diameter_5_dimension, diameter_6_dimension, diameter_7_dimension, diameter_8_dimension, diameter_9_dimension, groove_width_dimension, groove_depth_dimension, needle_rounding_radius, skirt_rounding_radius, skirt_bottom_rounding_radius);
-
-    EtalonResearchPropertiesDialog etalon_research_properties_dialog(etalon_research_folder_path, research_puanson_model, research_date_time_of_creation, research_number_of_angles);
-    etalon_research_properties_dialog.setEtalonDimensions(diameter_1_dimension, diameter_2_dimension, diameter_3_dimension, diameter_4_dimension, diameter_5_dimension, diameter_6_dimension, diameter_7_dimension, diameter_8_dimension, diameter_9_dimension, groove_width_dimension, groove_depth_dimension);
+    EtalonResearchPropertiesDialog etalon_research_properties_dialog(PuansonChecker::getInstance()->getLoadedResearch());
 
     etalon_research_properties_dialog.setModal(false);
     etalon_research_properties_dialog.setFixedSize(etalon_research_properties_dialog.size());
@@ -763,21 +783,7 @@ void MainWindow::menuImageWorkCurrentLoadActionTriggered()
         if(PuansonChecker::getInstance()->getActiveCurrentResearchAngle() != 0)
         {
             PuansonChecker::getInstance()->cancelCurrentResearch();
-            //QMessageBox::information(this, "Исследование завершено", "Результат исследования: \"Отменено пользователем\"");
-
-            EtalonDetailDimensions current_detail_dimensions;
-            PuansonChecker::getInstance()->getCurrent().getDetailDimensions(current_detail_dimensions);
-
-            EtalonDetailDimensions ideal_detail_dimensions;
-            PuansonChecker::getInstance()->getCurrent().getIdealDimensions(ideal_detail_dimensions);
-
-            // Вывод результата и протокола
-            CurrentResearchResultAndProtocolDialog current_research_result_and_protocol_dialog(current_detail_dimensions, ideal_detail_dimensions);
-
-            current_research_result_and_protocol_dialog.setModal(false);
-            current_research_result_and_protocol_dialog.setFixedSize(current_research_result_and_protocol_dialog.size());
-
-            current_research_result_and_protocol_dialog.exec();
+            QMessageBox::information(this, "Исследование завершено", "Результат исследования: \"Отменено пользователем\"");
         }
 
         return;
@@ -929,7 +935,7 @@ void MainWindow::drawIdealContour(const QPoint &_ideal_origin_point, const qreal
         ideal_rotation_angle = _ideal_rotation_angle;
     }
 
-    QPainterPath ideal_path = PuansonChecker::getInstance()->getEtalon().drawIdealContour(QRect(2, 2, ui->graphicsView->scene()->width() - 2, ui->graphicsView->scene()->height() - 2), ideal_origin_point, ideal_rotation_angle, true);
+    QPainterPath ideal_path = PuansonChecker::getInstance()->getEtalon().drawIdealContour(QRect(2, 2, qRound(ui->graphicsView->scene()->width() - 2), qRound(ui->graphicsView->scene()->height() - 2)), ideal_origin_point, ideal_rotation_angle, true);
 
     ui->graphicsView->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform | QPainter::HighQualityAntialiasing);
 
@@ -1378,8 +1384,8 @@ bool MainWindow::wheelEvent(bool control_modifier, int delta)
        case CalibrationMode_e::REFERENCE_POINT_1_AREA:
             if(control_modifier)
             {
-                auto_search_area_reference_point_1_rect_size.setWidth(auto_search_area_reference_point_1_rect_size.width() + delta / 120.0 / 1.0);
-                auto_search_area_reference_point_1_rect_size.setHeight(auto_search_area_reference_point_1_rect_size.height() + delta / 120.0 / 1.0);
+                auto_search_area_reference_point_1_rect_size.setWidth(qRound(auto_search_area_reference_point_1_rect_size.width() + delta / 120.0 / 1.0));
+                auto_search_area_reference_point_1_rect_size.setHeight(qRound(auto_search_area_reference_point_1_rect_size.height() + delta / 120.0 / 1.0));
 
                 ui->graphicsView->scene()->removeItem(reference_point_1_auto_search_area_ideal_item);
                 ui->graphicsView->scene()->update();
@@ -1394,8 +1400,8 @@ bool MainWindow::wheelEvent(bool control_modifier, int delta)
        case CalibrationMode_e::REFERENCE_POINT_2_AREA:
             if(control_modifier)
             {
-                auto_search_area_reference_point_2_rect_size.setWidth(auto_search_area_reference_point_2_rect_size.width() + delta / 120.0 / 1.0);
-                auto_search_area_reference_point_2_rect_size.setHeight(auto_search_area_reference_point_2_rect_size.height() + delta / 120.0 / 1.0);
+                auto_search_area_reference_point_2_rect_size.setWidth(qRound(auto_search_area_reference_point_2_rect_size.width() + delta / 120.0 / 1.0));
+                auto_search_area_reference_point_2_rect_size.setHeight(qRound(auto_search_area_reference_point_2_rect_size.height() + delta / 120.0 / 1.0));
 
                 ui->graphicsView->scene()->removeItem(reference_point_2_auto_search_area_ideal_item);
                 ui->graphicsView->scene()->update();

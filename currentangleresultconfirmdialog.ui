@@ -66,6 +66,12 @@
    </property>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>researchThisAngleAgainButton</tabstop>
+  <tabstop>setPointsForMeasurementsButton</tabstop>
+  <tabstop>passToNextAngleButton</tabstop>
+  <tabstop>cancelResearchButton</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

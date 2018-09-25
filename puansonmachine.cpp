@@ -4,8 +4,6 @@
 #include <QDebug>
 
 #if defined(Q_OS_WIN)
-using namespace ::MachineController;
-
 template<class T, class D> auto make_unique(T* p, D&& d) {
     return std::unique_ptr<T, typename std::remove_reference<D>::type>(p, std::forward<D>(d));
 }
@@ -52,7 +50,7 @@ PuansonMachine::PuansonMachine(QObject *parent) : QObject(parent)
                     throw;
                 }
             }
-            catch(const MachineController::Exception &)
+            catch(const MachineControllerSpace::Exception &)
             {
                 return;
             }
@@ -75,7 +73,7 @@ PuansonMachine::PuansonMachine(QObject *parent) : QObject(parent)
                     throw;
                 }
             }
-            catch(const MachineController::Exception &)
+            catch(const MachineControllerSpace::Exception &)
             {
                 return;
             }
@@ -107,20 +105,23 @@ bool PuansonMachine::moveToAnglePosition(const quint8 new_angle)
         {
             try
             {
-                controller->MoveTo(angles_position_map[new_angle].x(), angles_position_map[new_angle].y());
-                controller->WaitCompletion();
+                try
+                {
+                    controller->MoveTo(angles_position_map[new_angle].x(), angles_position_map[new_angle].y());
+                    controller->WaitCompletion();
+                }
+                catch(const IncompleteTransfer &ex)
+                {
+                    qDebug() << "USB transfer error transfered bytes: " << ex.cbActual << " expected bytes: " << ex.cbExpected;
+                    throw;
+                }
+                catch(const Win32Error &ex)
+                {
+                    qDebug() << "Error code: " << ex.ErrorCode;
+                    throw;
+                }
             }
-            catch(const IncompleteTransfer &ex)
-            {
-                qDebug() << "USB transfer error transfered bytes: " << ex.cbActual << " expected bytes: " << ex.cbExpected;
-                throw;
-            }
-            catch(const Win32Error &ex)
-            {
-                qDebug() << "Error code: " << ex.ErrorCode;
-                throw;
-            }
-            catch(const MachineController::Exception &)
+            catch(const MachineControllerSpace::Exception &)
             {
                 return false;
             }

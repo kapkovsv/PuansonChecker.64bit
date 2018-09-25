@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>651</width>
-    <height>687</height>
+    <height>752</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -101,7 +101,7 @@
     </property>
     <property name="font">
      <font>
-      <pointsize>10</pointsize>
+      <pointsize>8</pointsize>
      </font>
     </property>
     <property name="text">
@@ -177,7 +177,7 @@
     </property>
     <property name="font">
      <font>
-      <pointsize>10</pointsize>
+      <pointsize>8</pointsize>
      </font>
     </property>
     <property name="text">
@@ -659,9 +659,9 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>467</x>
-     <y>647</y>
-     <width>166</width>
+     <x>10</x>
+     <y>715</y>
+     <width>631</width>
      <height>26</height>
     </rect>
    </property>
@@ -778,7 +778,59 @@
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
+  <widget class="QCheckBox" name="useMachineForDetailMovementCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>680</y>
+     <width>611</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Использовать станок для помещения детали в нужную позицию ракурса</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="imageSourcePhotoShootingOnlyCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>645</y>
+     <width>611</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>В качестве получения изображений использовать только фотосъёмку</string>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+  </widget>
  </widget>
+ <tabstops>
+  <tabstop>saveFolderPathLineEdit</tabstop>
+  <tabstop>chooseSaveFolderPathPushButton</tabstop>
+  <tabstop>puansonModelComboBox</tabstop>
+  <tabstop>creationDateTimeEdit</tabstop>
+  <tabstop>idealPuansonAndDimensionsGraphicsView</tabstop>
+  <tabstop>dimensionDiameter1SpinBox</tabstop>
+  <tabstop>dimensionDiameter2SpinBox</tabstop>
+  <tabstop>dimensionDiameter3SpinBox</tabstop>
+  <tabstop>dimensionDiameter4SpinBox</tabstop>
+  <tabstop>dimensionDiameter5SpinBox</tabstop>
+  <tabstop>dimensionDiameter6SpinBox</tabstop>
+  <tabstop>dimensionDiameter7SpinBox</tabstop>
+  <tabstop>dimensionDiameter8SpinBox</tabstop>
+  <tabstop>dimensionDiameter9SpinBox</tabstop>
+  <tabstop>dimensionRadius1SpinBox</tabstop>
+  <tabstop>dimensionRadius2SpinBox</tabstop>
+  <tabstop>dimensionRadius3SpinBox</tabstop>
+  <tabstop>dimensionGrooveWidthSpinBox</tabstop>
+  <tabstop>dimensionGrooveDepthSpinBox</tabstop>
+  <tabstop>imageSourcePhotoShootingOnlyCheckBox</tabstop>
+  <tabstop>useMachineForDetailMovementCheckBox</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

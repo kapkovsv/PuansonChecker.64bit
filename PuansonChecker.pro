@@ -31,7 +31,8 @@ SOURCES += main.cpp \
     etalonresearchcreationdialog.cpp \
     currentresearchcreationdialog.cpp \
     currentresearchresultandprotocoldialog.cpp \
-    puansonmachine.cpp
+    puansonmachine.cpp \
+    puansonresearch.cpp
 
 win64 {
 SOURCES += nikon/CallBack.cpp \
@@ -72,7 +73,8 @@ HEADERS  += mainwindow.h \
     MachineController/STLink.h \
     MachineController/STLinkConsts.h \
     MachineController/UsbDefs.h \
-    MachineController/mach_controller.h
+    MachineController/mach_controller.h \
+    puansonresearch.h
 
 FORMS    += mainwindow.ui \
     currentform.ui \

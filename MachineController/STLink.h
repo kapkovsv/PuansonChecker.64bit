@@ -4,6 +4,7 @@
 
 struct STLink {
 	WINUSB_INTERFACE_HANDLE hUsbIface;
+	enum { cAllRegs = 21 };
 	void ReadDescriptors() {
 		UsbDeviceDescriptor DevDescr;
 		ULONG cbTransferred;
@@ -74,7 +75,7 @@ struct STLink {
 	void DfuPrepareBlockWrite(uint32_t Address, uint8_t SubCommand) {
 		uint8_t data[5];
 		data[0] = SubCommand;
-        (uint32_t&)data[1] = Address;
+		(uint32_t&)data[1] = Address;
 		uint16_t checksum = 0;
 		for ( int i = 0; i < sizeof data; ++i )
 			checksum += data[i];
@@ -178,7 +179,7 @@ struct STLink {
 		UsbSendReceive(cmd, sizeof cmd, &Status, sizeof Status);
 		return Status;
 	}
-	void ReadAllRegs(uint32_t(&Values)[21]) {
+	void ReadAllRegs(uint32_t(&Values)[cAllRegs]) {
 		uint8_t cmd[0x10] = { STLINK_DEBUG_COMMAND, STLINK_DEBUG_READALLREGS };
 		UsbSendReceive(cmd, sizeof cmd, Values, sizeof Values);
 	}

@@ -21,7 +21,7 @@ class EtalonAngleResultConfirmDialog : public QDialog
 
 public:
     explicit EtalonAngleResultConfirmDialog(quint8 etalon_research_active_angle, QWidget *parent = 0);
-    ~EtalonAngleResultConfirmDialog();
+    ~EtalonAngleResultConfirmDialog() Q_DECL_OVERRIDE;
 
 public slots:
     void returnToSettingReferencePointsSearchAreasButtonPressed();

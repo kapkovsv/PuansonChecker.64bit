@@ -10,7 +10,7 @@
 #include <cstdio>
 
 const QString logFilePath = "debug.log";
-bool logToFile = true;
+static bool logToFile = true;
 
 void customMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {

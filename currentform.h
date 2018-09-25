@@ -24,11 +24,10 @@ class CurrentFormGraphicsScene : public QGraphicsScene
     int previousX;
     int previousY;
 
-    bool left_button_down;
-
     CurrentForm *window;
     QMenu scene_context_menu;
 
+    bool left_button_down;
 public:
     CurrentFormGraphicsScene(CurrentForm *owner_window);
 
@@ -48,7 +47,7 @@ class CurrentForm : public QWidget, public ImageWindow
 
 public:
     explicit CurrentForm(PuansonChecker *checker);
-    ~CurrentForm();
+    ~CurrentForm() Q_DECL_OVERRIDE;
 
     void moveImage(const qreal dx, const qreal dy) Q_DECL_OVERRIDE;
     void drawImage(const QImage &img);
@@ -107,7 +106,7 @@ class CurrentImageGraphicsView : public ImageGraphicsView
 public:
     CurrentImageGraphicsView(QWidget *parent = Q_NULLPTR):ImageGraphicsView(parent), current_rotate_angle(0.0) { }
     CurrentImageGraphicsView(QGraphicsScene *scene, QWidget *parent = Q_NULLPTR):ImageGraphicsView(scene, parent) { }
-    ~CurrentImageGraphicsView(){ }
+    ~CurrentImageGraphicsView() Q_DECL_OVERRIDE { }
 
     void wheelEvent(QWheelEvent *event) Q_DECL_OVERRIDE
     {

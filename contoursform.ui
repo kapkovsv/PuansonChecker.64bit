@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>685</width>
+    <width>735</width>
     <height>589</height>
    </rect>
   </property>
@@ -109,6 +109,14 @@
    <header>imagewindow.h</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>etalonContourCheckBox</tabstop>
+  <tabstop>cannyThres1SpinBox</tabstop>
+  <tabstop>cannyThres2SpinBox</tabstop>
+  <tabstop>combineImagesByReferencePointsButton</tabstop>
+  <tabstop>helpButton</tabstop>
+  <tabstop>graphicsView</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

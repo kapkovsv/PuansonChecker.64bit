@@ -38,7 +38,7 @@ void ContoursForm::mousePressEvent(const QPoint &p)
 {
     if(calibration_mode == CalibrationMode_e::MANUAL_SETTING_REFERENCE_POINTS)
     {
-        QPoint new_point;
+        QPointF new_point;
 
         for(Measurement &measurement : measurements)
         {
@@ -49,7 +49,7 @@ void ContoursForm::mousePressEvent(const QPoint &p)
                 else if(p.x() <= (measurement.measurement_line.x1() < measurement.measurement_line.x2() ? measurement.measurement_line.x1() : measurement.measurement_line.x2()))
                     new_point = measurement.measurement_line.x1() < measurement.measurement_line.x2() ? measurement.measurement_line.p1() : measurement.measurement_line.p2();
                 else
-                    new_point = QPoint(p.x(), (p.x() - measurement.measurement_line.x1()) * (static_cast<qreal>(measurement.measurement_line.y2() - measurement.measurement_line.y1()) / (measurement.measurement_line.x2() - measurement.measurement_line.x1())) + measurement.measurement_line.y1());
+                    new_point = QPointF(p.x(), (p.x() - measurement.measurement_line.x1()) * (static_cast<qreal>(measurement.measurement_line.y2() - measurement.measurement_line.y1()) / (measurement.measurement_line.x2() - measurement.measurement_line.x1())) + measurement.measurement_line.y1());
 
                 if(!measurement.current_detail_position_is_set && qSqrt((measurement.current_detail_point - p).x() * (measurement.current_detail_point - p).x() + (measurement.current_detail_point - p).y() * (measurement.current_detail_point - p).y()) <= MEASUREMENT_POINT_CONTOUR_RADIUS)
                 {
@@ -105,9 +105,9 @@ void ContoursForm::mouseMoveEvent(QMouseEvent *event)
 {
     if(calibration_mode == CalibrationMode_e::MANUAL_SETTING_REFERENCE_POINTS)
     {
-        QPoint new_point;
+        QPointF new_point;
         QPoint nearest_contour_point;
-        QPoint max_distance_from_measurement_point;
+        QPointF max_distance_from_measurement_point;
 
         for(Measurement &measurement : measurements)
         {
@@ -121,7 +121,7 @@ void ContoursForm::mouseMoveEvent(QMouseEvent *event)
                 else if(event->x() <= (measurement.measurement_line.x1() < max_distance_from_measurement_point.x() ? measurement.measurement_line.x1() : max_distance_from_measurement_point.x()))
                     new_point = measurement.measurement_line.x1() < max_distance_from_measurement_point.x() ? measurement.measurement_line.p1() : max_distance_from_measurement_point;
                 else
-                    new_point = QPoint(event->x(), (event->x() - measurement.measurement_line.x1()) * (static_cast<qreal>(measurement.measurement_line.dy()) / (measurement.measurement_line.dx())) + measurement.measurement_line.y1());
+                    new_point = QPointF(event->x(), (event->x() - measurement.measurement_line.x1()) * (static_cast<qreal>(measurement.measurement_line.dy()) / (measurement.measurement_line.dx())) + measurement.measurement_line.y1());
 
                 // Проверка на то, что новая точка не выходит за границы области анализа изображения
                 if(new_point.x() < qRound((ui->graphicsView->scene()->width() - ui->graphicsView->scene()->width() / 4.0) / 2.0))
@@ -149,7 +149,7 @@ void ContoursForm::mouseMoveEvent(QMouseEvent *event)
 
                 if(measurement.active_point == &measurement.outer_tolerance_etalon_point)   /* Outer tolerance etalon detail contour point */
                 {
-                    nearest_contour_point = PuansonChecker::getInstance()->findNearestContourPoint(ContourPoints_e::OUTER_TOLERANCE_ETALON_CONTOUR_POINT, new_point, measurement.measurement_line, 10);
+                    nearest_contour_point = PuansonChecker::getInstance()->findNearestContourPoint(ContourPoints_e::OUTER_TOLERANCE_ETALON_CONTOUR_POINT, new_point.toPoint(), measurement.measurement_line, 10);
                     if(!nearest_contour_point.isNull())
                         new_point = nearest_contour_point;
 
@@ -158,7 +158,7 @@ void ContoursForm::mouseMoveEvent(QMouseEvent *event)
                 }
                 else                                                                        /* Current detail contour point */
                 {
-                    nearest_contour_point = PuansonChecker::getInstance()->findNearestContourPoint(ContourPoints_e::CURRENT_DEATIL_CONTOUR_POINT, new_point, measurement.measurement_line, 10);
+                    nearest_contour_point = PuansonChecker::getInstance()->findNearestContourPoint(ContourPoints_e::CURRENT_DEATIL_CONTOUR_POINT, new_point.toPoint(), measurement.measurement_line, 10);
                     if(!nearest_contour_point.isNull())
                         new_point = nearest_contour_point;
 
@@ -215,7 +215,7 @@ void ContoursForm::mouseDoubleClickEvent(const QPoint &p)
             for(const Measurement &measurement : measurements)
             {
                 etalon_detail_point = QPointF(measurement.measurement_line.dx(), measurement.measurement_line.dy()) * (PuansonChecker::getInstance()->getEtalon().getToleranceExtFieldPx() / QLineF(measurement.measurement_line).length()) + measurement.outer_tolerance_etalon_point;
-                current_detail_point_deviation_px = qRound(QLineF(etalon_detail_point, measurement.current_detail_point).length());
+                current_detail_point_deviation_px = static_cast<qint16>(qRound(QLineF(etalon_detail_point, measurement.current_detail_point).length()));
 
                 // Если расстояние от точки контура текущей детали до противоположного конца линии меньше,чем такое же расстояние от точки эталона, то отклонение отрицательное
                 if(QLineF(measurement.measurement_line.p2(), measurement.current_detail_point).length() < QLineF(measurement.measurement_line.p2(), etalon_detail_point).length())
@@ -341,13 +341,13 @@ void ContoursForm::etalonContourCheckBoxStateChanged(int state)
 
 void ContoursForm::cannyThres1SpinBoxValueChanged()
 {
-    PuansonChecker::getInstance()->setCannyThreshold1(ui->cannyThres1SpinBox->value());
+    PuansonChecker::getInstance()->setCannyThreshold1(static_cast<quint16>(ui->cannyThres1SpinBox->value()));
     PuansonChecker::getInstance()->updateContoursImage();
 }
 
 void ContoursForm::cannyThres2SpinBoxValueChanged()
 {
-    PuansonChecker::getInstance()->setCannyThreshold2(ui->cannyThres2SpinBox->value());
+    PuansonChecker::getInstance()->setCannyThreshold2(static_cast<quint16>(ui->cannyThres2SpinBox->value()));
     PuansonChecker::getInstance()->updateContoursImage();
 }
 

@@ -3,10 +3,10 @@
 #include "MachineController.h"
 
 #ifndef PRINTF
-#define PRINTF ::MachineController::Noop
+#define PRINTF ::MachineControllerSpace::Noop
 #endif
 
-namespace MachineController {
+namespace MachineControllerSpace {
 
 #include "STLink.h"
 #include "mach_controller.h"
@@ -14,6 +14,18 @@ namespace MachineController {
 	void Noop();
 	template<class... T> void Noop(T... t) {
 	}
+
+	template<unsigned Value, unsigned I = (32 >> 1)> struct Log2 {
+		enum { Bit = Value >= 1 << I ? I : 0 };
+		enum { NextValue = Value >= 1 << I ? Value >> I : Value };
+		enum { Result = Bit + Log2<NextValue, (I >> 1)>::Result };
+	};
+	template<unsigned Value> struct Log2<Value, 0> {
+		enum { Result = 0 };
+	};
+	template<unsigned I> struct Log2<0, I> {
+		enum { Result = 32 };
+	};
 
 	template<class F> struct OnLeave_ {
 		F f;
@@ -51,8 +63,8 @@ namespace MachineController {
 
 #define CONCAT_(x, y) x ## y
 #define CONCAT(x, y) CONCAT_(x, y)
-#define ON_LEAVE auto CONCAT(OnLeave_, __LINE__) = OnLeaveHelper() + [&]
-#define ON_LEAVE2(f) auto CONCAT(OnLeave_, __LINE__) = OnLeave([&] { f });
+#define ON_LEAVE auto CONCAT(OnLeave_, __COUNTER__) = OnLeaveHelper() + [&]
+#define ON_LEAVE2(f) auto CONCAT(OnLeave_, __COUNTER__) = OnLeave([&] { f });
 
 	template<class F> OnLeave_<F> OnLeave(const F& f, bool engage = true) {
 		return OnLeave_<F>(f, engage);
@@ -92,10 +104,13 @@ namespace MachineController {
 	class MachineControllerImpl : public MachineController, protected STLink, CodeDownloader {
 	protected:
 		enum { cbBlock = 0x200 };
-        enum { ERAM = 0x20002000, ExchangeAddr = ERAM - sizeof(ExchangeData) };
+        enum { EndOfRAM = 0x20002000, ExchangeAddr = EndOfRAM - sizeof(ExchangeData) };
+		enum { StackBase = 0x20000000, cbStack = 0x200 };
+		enum { bVerifyWrite = 1 };
+		enum { bCheckMcuState = 1 };
 		HANDLE hDevice;
 		ExchangeData exchange;
-		int ReferencePoint[2];
+		int ReferencePos[2];
 
 	private:
 		void InitDownload(uint32_t CodeBase);
@@ -103,7 +118,6 @@ namespace MachineController {
 		void CompleteDownload(uint32_t Address, uint32_t EntryPoint);
 
 	public:
-        MachineControllerImpl() { }
 		MachineControllerImpl(LPCSTR path);
 		virtual ~MachineControllerImpl();
 		virtual void FindReferencePos(uint8_t AxesMask);
@@ -124,6 +138,7 @@ namespace MachineController {
 		void WriteState(int iAxis) {
 			WriteMemory32(ExchangeAddr + FIELD_OFFSET(ExchangeData, axis[iAxis].state), sizeof exchange.axis[iAxis].state, &exchange.axis[iAxis].state);
 		}
+		void CheckMcuState(bool& bInIsr);
 	};
 
 }

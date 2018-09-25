@@ -335,9 +335,11 @@ bool PhotoCamera::NikonSDKModuleLoad()
     }
 
     nikon_sdk_module_loaded = true;
-#endif // defined(Q_OS_WIN)
 
     return true;
+#else
+    return false;
+#endif // defined(Q_OS_WIN)
 }
 
 bool PhotoCamera::NikonSDKModuleUnload()
@@ -386,8 +388,8 @@ PhotoCamera::PhotoCamera()
     connection_status = false;
 
 #if defined(Q_OS_WIN)
-    pRefMod = Q_NULLPTR, pRefSrc = Q_NULLPTR, pRefItm = Q_NULLPTR, pRefDat = Q_NULLPTR;
-    ulModID = 0, ulSrcID = 0;
+    pRefMod = Q_NULLPTR; pRefSrc = Q_NULLPTR; pRefItm = Q_NULLPTR; pRefDat = Q_NULLPTR;
+    ulModID = 0; ulSrcID = 0;
 #endif // defined(Q_OS_WIN)
 
     error_message = "";
@@ -397,10 +399,10 @@ PhotoCamera::PhotoCamera()
     {
         res = Connect();
         if(res == false)
-            qDebug() << "Connect error";
+            qDebug() << "Camera connect error";
     }
     else
-        qDebug() << "Module load error";
+        qDebug() << "Nikon camera module load error";
 }
 
 PhotoCamera::~PhotoCamera()
@@ -409,11 +411,11 @@ PhotoCamera::~PhotoCamera()
 
     res = Disconnect();
     if(res == false)
-        qDebug() << "Disconnect error";
+        qDebug() << "Camera disconnect error";
 
     res = NikonSDKModuleUnload();
     if(res == false)
-        qDebug() << "Module unload error";
+        qDebug() << "Nikon camera module unload error";
 }
 
 bool PhotoCamera::CaptureImage()

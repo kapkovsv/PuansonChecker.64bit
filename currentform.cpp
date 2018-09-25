@@ -5,7 +5,7 @@
 #include <QMessageBox>
 
 CurrentFormGraphicsScene::CurrentFormGraphicsScene(CurrentForm *owner_window):
-    previousX(0), previousY(0), left_button_down(false), window(owner_window), scene_context_menu(window)
+    previousX(0), previousY(0), window(owner_window), scene_context_menu(window), left_button_down(false)
 {
     QAction *viewing_mode_action;
     QAction *editing_mode_action;
@@ -82,10 +82,7 @@ void CurrentFormGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEve
                     if(__y != mouseEvent->screenPos().y())
                         __y = mouseEvent->screenPos().y();
 
-                    qreal dx = __x - previousX;
-                    qreal dy = __y - previousY;
-
-                    PuansonChecker::getInstance()->moveImages(dx, dy);
+                    PuansonChecker::getInstance()->moveImages(__x - previousX, __y - previousY);
                     previousX = __x;
                     previousY = __y;
                 }

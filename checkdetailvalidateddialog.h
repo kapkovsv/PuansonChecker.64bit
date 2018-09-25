@@ -13,7 +13,7 @@ class CheckDetailValidatedDialog : public QDialog
 
 public:
     explicit CheckDetailValidatedDialog(bool check_result, QWidget *parent = 0);
-    ~CheckDetailValidatedDialog();
+    ~CheckDetailValidatedDialog() Q_DECL_OVERRIDE;
 
 private:
     Ui::CheckDetailValidatedDialog *ui;

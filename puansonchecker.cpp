@@ -92,16 +92,19 @@ PuansonChecker::PuansonChecker(const QApplication *app)
     quint16 ext_tolerance_mkm_array[PUANSON_IMAGE_MAX_ANGLE];
     quint16 int_tolerance_mkm_array[PUANSON_IMAGE_MAX_ANGLE];
 
-    quint32 reference_points_distance_array[PUANSON_IMAGE_MAX_ANGLE];
+    quint32 reference_points_distance;
 
     general_settings->getToleranceFields(ext_tolerance_mkm_array, int_tolerance_mkm_array);
-    general_settings->getReferencePointDistancesMkm(reference_points_distance_array);
+    general_settings->getReferencePointDistanceMkm(reference_points_distance);
 
-    for(int angle = 1; angle <= PUANSON_IMAGE_MAX_ANGLE; angle++)
-    {
+//    for(int angle = 1; angle <= PUANSON_IMAGE_MAX_ANGLE; angle++)
+//    {
         getEtalon().setToleranceFields(ext_tolerance_mkm_array[/*angle - 1*/0], int_tolerance_mkm_array[/*angle - 1*/0]);
-        getEtalon().setReferencePointDistanceMkm(reference_points_distance_array[/*angle - 1*/0]);
-    }
+        getEtalon().setReferencePointDistanceMkm(reference_points_distance);
+//    }
+
+    QMap<quint8, QPoint> detail_photo_shooting_positions = general_settings->getDetailPhotoShootingPositions();
+    machine->setAnglePositions(detail_photo_shooting_positions);
 
     ignore_scroll_move_image = false;
 
@@ -264,13 +267,13 @@ bool PuansonChecker::loadEtalonImage(const quint8 angle, const QString &path, co
 
             quint16 ext_tolerance_mkm_array[PUANSON_IMAGE_MAX_ANGLE];
             quint16 int_tolerance_mkm_array[PUANSON_IMAGE_MAX_ANGLE];
-            quint32 reference_points_distance_array[PUANSON_IMAGE_MAX_ANGLE];
+            quint32 reference_points_distance;
 
             general_settings->getToleranceFields(ext_tolerance_mkm_array, int_tolerance_mkm_array);
-            general_settings->getReferencePointDistancesMkm(reference_points_distance_array);
+            general_settings->getReferencePointDistanceMkm(reference_points_distance);
 
             etalon_puanson_image_ptr->setToleranceFields(ext_tolerance_mkm_array[loading_etalon_angle - 1], int_tolerance_mkm_array[loading_etalon_angle - 1]);
-            etalon_puanson_image_ptr->setReferencePointDistanceMkm(reference_points_distance_array[loading_etalon_angle - 1]);
+            etalon_puanson_image_ptr->setReferencePointDistanceMkm(reference_points_distance);
 
             if(/*contours_path.isEmpty()*/true)
             {
@@ -318,9 +321,9 @@ bool PuansonChecker::getCurrentContour(QImage &img)
     if(current_contour.empty())
         return false;
 
-    img = QImage((const unsigned char*)(current_contour.data),
+    img = QImage(reinterpret_cast<const unsigned char*>(current_contour.data),
                   current_contour.cols, current_contour.rows,
-                  current_contour.step, QImage::Format_RGB888).rgbSwapped();
+                  static_cast<qint32>(current_contour.step), QImage::Format_RGB888).rgbSwapped();
 
     return true;
 }
@@ -337,9 +340,9 @@ bool PuansonChecker::getEtalonContour(QImage &img)
     if(etalon_puanson_image.imageContour().empty())
         return false;
 
-    img = QImage((const unsigned char*)(etalon_puanson_image.imageContour().data),
+    img = QImage(reinterpret_cast<const unsigned char*>(etalon_puanson_image.imageContour().data),
                   etalon_puanson_image.imageContour().cols, etalon_puanson_image.imageContour().rows,
-                  etalon_puanson_image.imageContour().step, QImage::Format_Grayscale8);
+                  static_cast<qint32>(etalon_puanson_image.imageContour().step), QImage::Format_Grayscale8);
 
     return true;
 }
@@ -400,7 +403,8 @@ QPointF PuansonChecker::findReferencePoint(const ReferencePointType_e reference_
 
     for(upper_level_y = 1; upper_level_y < gray_image_reference_point_area.rows; upper_level_y += 5)
     {
-        incoming_point = Point(0, 0), outcoming_point = Point(0, 0);
+        incoming_point = Point();
+        outcoming_point = Point();
 
         for(int x = 0; x < gray_image_reference_point_area.cols; x++)
         {
@@ -415,7 +419,7 @@ QPointF PuansonChecker::findReferencePoint(const ReferencePointType_e reference_
             }
         }
 
-        upper_point = Point(0, 0);
+        upper_point = Point();
 
         if(incoming_point != Point(0, 0) && outcoming_point != Point(0, 0))
         {
@@ -440,7 +444,9 @@ QPointF PuansonChecker::findReferencePoint(const ReferencePointType_e reference_
 
     for(left_level_x = 1; left_level_x < gray_image_reference_point_area.cols; left_level_x += 5)
     {
-        incoming_point = Point(), outcoming_point = Point();
+        incoming_point = Point();
+        outcoming_point = Point();
+
         for(int y = 0; y < gray_image_reference_point_area.rows; y++)
         {
             point_color = gray_image_reference_point_area.at<uchar>(y, left_level_x);
@@ -500,21 +506,21 @@ QPointF PuansonChecker::findReferencePoint(const ReferencePointType_e reference_
         circle(gray_image_reference_point_area, pt, 5, Scalar(250, 250, 250), 1);
     }
 
-    double A_vertical = (static_cast<double>(vertical_points.size() * vertical_sum_xy) - vertical_sum_x * vertical_sum_y) / (static_cast<double>(vertical_points.size() * vertical_sum_x2) - vertical_sum_x * vertical_sum_x);
-    double B_vertical = static_cast<double>(vertical_sum_y - A_vertical * vertical_sum_x) / vertical_points.size();
+    double A_vertical = (static_cast<double>(static_cast<qint32>(vertical_points.size()) * vertical_sum_xy) - vertical_sum_x * vertical_sum_y) / (static_cast<double>(static_cast<qint32>(vertical_points.size()) * vertical_sum_x2) - vertical_sum_x * vertical_sum_x);
+    double B_vertical = static_cast<double>(vertical_sum_y - A_vertical * vertical_sum_x) / static_cast<qint32>(vertical_points.size());
 
-    double A_horizontal = (static_cast<double>(horizontal_points.size() * horizontal_sum_xy) - horizontal_sum_x * horizontal_sum_y) / (horizontal_points.size() * horizontal_sum_x2 - horizontal_sum_x * horizontal_sum_x);
-    double B_horizontal = static_cast<double>(horizontal_sum_y - A_horizontal * horizontal_sum_x) / horizontal_points.size();
+    double A_horizontal = (static_cast<double>(static_cast<qint32>(horizontal_points.size()) * horizontal_sum_xy) - horizontal_sum_x * horizontal_sum_y) / (static_cast<qint32>(horizontal_points.size()) * horizontal_sum_x2 - horizontal_sum_x * horizontal_sum_x);
+    double B_horizontal = static_cast<double>(horizontal_sum_y - A_horizontal * horizontal_sum_x) / static_cast<quint32>(horizontal_points.size());
     // ------------------
 
     // Горизонтальная и вертикальная прямые
-    Point p1(0, B_horizontal);
-    Point p2(gray_image_reference_point_area.cols - 1, A_horizontal * (gray_image_reference_point_area.cols - 1) + B_horizontal);
+    Point p1(0, qRound(B_horizontal));
+    Point p2(qRound(gray_image_reference_point_area.cols - 1.0), qRound(A_horizontal * (gray_image_reference_point_area.cols - 1.0) + B_horizontal));
 
     //line(gray_image_reference_point_area, p1, p2, Scalar(250, 250, 250));
 
-    p1 = Point(- B_vertical / A_vertical, 0);
-    p2 = Point(((gray_image_reference_point_area.rows - 1) - B_vertical) / A_vertical, gray_image_reference_point_area.rows - 1);
+    p1 = Point(- qRound(B_vertical / A_vertical), 0);
+    p2 = Point(qRound(((gray_image_reference_point_area.rows - 1.0) - B_vertical) / A_vertical), qRound(gray_image_reference_point_area.rows - 1.0));
 
     //line(gray_image_reference_point_area, p1, p2, Scalar(250, 250, 250));
     // ------------------
@@ -961,13 +967,13 @@ void PuansonChecker::shootAndLoadEtalonImage()
         {
             quint16 ext_tolerance_mkm_array[PUANSON_IMAGE_MAX_ANGLE];
             quint16 int_tolerance_mkm_array[PUANSON_IMAGE_MAX_ANGLE];
-            quint32 reference_points_distance_array[PUANSON_IMAGE_MAX_ANGLE];
+            quint32 reference_points_distance;
 
             general_settings->getToleranceFields(ext_tolerance_mkm_array, int_tolerance_mkm_array);
-            general_settings->getReferencePointDistancesMkm(reference_points_distance_array);
+            general_settings->getReferencePointDistanceMkm(reference_points_distance);
 
             etalon_puanson_image_ptr->setToleranceFields(ext_tolerance_mkm_array[loading_etalon_angle - 1], int_tolerance_mkm_array[loading_etalon_angle - 1]);
-            etalon_puanson_image_ptr->setReferencePointDistanceMkm(reference_points_distance_array[loading_etalon_angle - 1]);
+            etalon_puanson_image_ptr->setReferencePointDistanceMkm(reference_points_distance);
 
             //etalon_puanson_image_ptr->setImageContour(getContour(*etalon_puanson_image_ptr));
         }
@@ -1004,11 +1010,12 @@ class ParallelDrawContours : public ParallelLoopBody
 {
 public:
     ParallelDrawContours(PuansonImage &puanson_image, Mat &image_contour, const vector<vector<Point> > &contours_vector, const quint16 contours_per_thread,
-                     const vector<Vec4i> &hierarchy, const bool draw_etalon_contour_flag, const quint32 ext_tolerance, quint32 int_tolerance)
-                : p_puanson_image(&puanson_image), image_type(puanson_image.getImageType()), image_contour_ref(image_contour),
-                  detail_contours(contours_vector), contours_per_thread(contours_per_thread),
-                  contours_hierarchy(hierarchy), draw_etalon_contour_flag(draw_etalon_contour_flag),
-                  external_tolerance(ext_tolerance), internal_tolerance(int_tolerance)
+                     const vector<Vec4i> &hierarchy, const bool draw_etalon_contour_flag/*, const quint32 ext_tolerance, quint32 int_tolerance*/)
+                : p_puanson_image(&puanson_image), image_contour_ref(image_contour),
+                  detail_contours(contours_vector), contours_hierarchy(hierarchy),
+                  contours_per_thread(contours_per_thread), draw_etalon_contour_flag(draw_etalon_contour_flag),
+                  image_type(puanson_image.getImageType())/*,
+                  external_tolerance(ext_tolerance), internal_tolerance(int_tolerance)*/
     { }
 
     virtual void operator()(const Range& range) const
@@ -1036,7 +1043,7 @@ public:
         vector<vector<Point> > inner_contours = detail_contours;
 
         // Внутренняя точка
-        int j; // Индекс
+        qint32 j; // Индекс
 
 //        qDebug() << "in " << __PRETTY_FUNCTION__ << " PointOfOrigin: " << p_puanson_image->getIdealContourPointOfOrigin() << " RotationAngle: " << p_puanson_image->getIdealContourRotationAngle();
 //        qDebug() << "image type: " << (p_puanson_image->getImageType() == ImageType_e::ETALON_IMAGE ? "ETALON" : "CURRENT");
@@ -1104,14 +1111,14 @@ public:
 
 private:
     PuansonImage *p_puanson_image;
-    ImageType_e image_type;
     Mat &image_contour_ref;
     vector<vector<Point>> detail_contours;
-    quint16 contours_per_thread;
     vector<Vec4i> contours_hierarchy;
+    quint16 contours_per_thread;
     bool draw_etalon_contour_flag;
-    quint32 external_tolerance;
-    quint32 internal_tolerance;
+    ImageType_e image_type;
+    /*quint32 external_tolerance;
+    quint32 internal_tolerance;*/
 
     Point _top;
     Point _right;
@@ -1157,8 +1164,8 @@ private:
     Point poly_points[4];
 
     // Левый нижний угол
-    poly_points[0] = Point(0, gray_image.rows * 0.3);
-    poly_points[1] = Point(gray_image.cols * 0.5, gray_image.rows);
+    poly_points[0] = Point(0, qRound(gray_image.rows * 0.3));
+    poly_points[1] = Point(qRound(gray_image.cols * 0.5), gray_image.rows);
     poly_points[2] = Point(0, gray_image.rows);
 
     fillConvexPoly(gray_roi, poly_points, 3, Scalar(gray_image.at<uchar>(poly_points[0])));
@@ -1169,8 +1176,8 @@ private:
     //////////////////////
 
     // Правый верхний угол
-    poly_points[0] = Point(gray_image.cols * 0.7, 0);
-    poly_points[1] = Point(gray_image.cols, gray_image.rows * 0.3);
+    poly_points[0] = Point(qRound(gray_image.cols * 0.7), 0);
+    poly_points[1] = Point(gray_image.cols, qRound(gray_image.rows * 0.3));
     poly_points[2] = Point(gray_image.cols, 0);
 
     fillConvexPoly(gray_roi, poly_points, 3, Scalar(gray_image.at<uchar>(poly_points[0])));
@@ -1715,16 +1722,15 @@ private:
     if(puanson_image.isIdealContourSet())
     {
         const quint16 contours_per_thread = 10; // Количество контуров, обрабатываемых одним потоком
-
         quint16 ext_tolerance_px, int_tolerance_px;
 
         puanson_image.getToleranceFields(ext_tolerance_px, int_tolerance_px);
 
         //qDebug() << "this " << this << "before parallel_for_ " << QTime::currentTime();
 
-        parallel_for_(Range(0, detail_contours.size() / contours_per_thread),
+        parallel_for_(Range(0, static_cast<qint32>(detail_contours.size() / contours_per_thread)),
                       ParallelDrawContours(puanson_image, image_contour, detail_contours, contours_per_thread, contours_hierarchy,
-                                           draw_etalon_contour_flag, ext_tolerance_px, int_tolerance_px));
+                                           draw_etalon_contour_flag/*, ext_tolerance_px, int_tolerance_px*/));
 
         //qDebug() << "this " << this << "after parallel_for_ " << QTime::currentTime();
 
@@ -1782,9 +1788,9 @@ void PuansonChecker::drawContoursImage()
         checkDetail(bad_points);
     }
 
-    QImage img(QImage((const unsigned char*)(contours_image.data),
+    QImage img(QImage(reinterpret_cast<const unsigned char*>(contours_image.data),
                   contours_image.cols, contours_image.rows,
-                  contours_image.step, QImage::Format_RGB888).rgbSwapped());
+                  static_cast<qint32>(contours_image.step), QImage::Format_RGB888).rgbSwapped());
 
     // Рисование реперных точек
     QPoint etalon_reference_point_1, etalon_reference_point_2;
@@ -1840,7 +1846,7 @@ void PuansonChecker::drawContoursImage()
     }
 }
 
-void PuansonChecker::shiftCurrentImage(const qreal dx, const qreal dy)
+void PuansonChecker::shiftCurrentImage(const float dx, const float dy)
 {
     using namespace cv;
 
@@ -1871,8 +1877,8 @@ void PuansonChecker::shiftCurrentImage(const qreal dx, const qreal dy)
 
         warp_mat.release();
 
-        current_reference_point1 += QPoint(dx, dy);
-        current_reference_point2 += QPoint(dx, dy);
+        current_reference_point1 += QPoint(qRound(dx), qRound(dy));
+        current_reference_point2 += QPoint(qRound(dx), qRound(dy));
 
         getCurrent().setReferencePoints(current_reference_point1, current_reference_point2);
     }
@@ -1944,13 +1950,13 @@ bool PuansonChecker::combineImagesByReferencePoints()
         getCurrent().getReferencePoints(current_reference_point1, current_reference_point2);
 
         // Сдвиг изображения текущей детали для совмещения изображений по первой реперной точке
-        qreal shift_dx, shift_dy;
+        float shift_dx, shift_dy;
 
         shift_dx = (etalon_reference_point1-current_reference_point1).x();
         shift_dy = (etalon_reference_point1-current_reference_point1).y();
 
         shiftCurrentImage(shift_dx, shift_dy);
-        current_puanson_image_transform.translate(shift_dx, shift_dy);
+        current_puanson_image_transform.translate(static_cast<qreal>(shift_dx), static_cast<qreal>(shift_dy));
         ///////////////////////////////////////////////////////////////////////////////////////
 
         getCurrent().getReferencePoints(current_reference_point1, current_reference_point2);
@@ -2019,8 +2025,8 @@ QPoint PuansonChecker::findNearestContourPoint(const ContourPoints_e contour_poi
 
         const qreal normal_vector_len = 2.0;
         cv::Vec3b current_point_color;
-        qint16 current_x = -1, current_y = -1, next_y = -1;
-        qint16 dx, dy;
+        qint32 current_x = -1, current_y = -1, next_y = -1;
+        qint32 dx, dy;
 
         dx = neighborhood_line.dx();
         dy = neighborhood_line.dy();
@@ -2101,7 +2107,7 @@ QPoint PuansonChecker::findNearestContourPoint(const ContourPoints_e contour_poi
         break;
     }
 
-    quint16 line_len = QLineF(measurement_line).length();
+    qint32 line_len = qRound(QLineF(measurement_line).length());
     QPointF measurement_line_ort = QPointF(measurement_line.dx(), measurement_line.dy()) / line_len;
 
     // Поиск точек контура вверх по линии измерений
@@ -2120,9 +2126,10 @@ bool PuansonChecker::findMeasurementContourPoints(const QRect &analysis_rect)
 {
     using namespace std;
 
-    bool ret_val = false;
-
     QVector<QLine> measurement_lines = getEtalon().getMeasurementLines(analysis_rect);
+
+    if(measurement_lines.isEmpty())
+        return false;
 
     bool up_dir_flag;
     int current_x = -1, current_y = -1, next_y = -1;
@@ -2309,7 +2316,7 @@ bool PuansonChecker::findMeasurementContourPoints(const QRect &analysis_rect)
         contours_window->drawMeasurementLineAndPoints(measurement_line, outer_point, current_detail_point);
     }
 
-    return ret_val;
+    return true;
 }
 
 void PuansonChecker::measurementPointsSettingMode()
@@ -2471,13 +2478,28 @@ void PuansonChecker::researchEtalonAngle(quint8 angle)
         stream.setAutoFormatting(true);
 
         stream.writeStartDocument();
-        stream.writeStartElement("etalon_angle_settings");
+        stream.writeStartElement("puanson_research_settings");
             stream.writeStartElement("general_settings");
                 stream.writeTextElement("puanson_model", QString::number(static_cast<int>(etalon_puanson_image.getDetailPuansonModel())));
                 stream.writeTextElement("date_time_of_creation", etalon_research_date_time_of_creation.toString(Qt::ISODate));
                 stream.writeTextElement("number_of_angles", QString::number(etalon_research_number_of_angles));
             stream.writeEndElement(); // general_settings
-        stream.writeEndElement(); // etalon_angle_settings
+
+            stream.writeStartElement("detail_measurements");
+                stream.writeTextElement("diameter_1", QString::number(loaded_research.getDetailDimensions().diameter_1_dimension));
+                stream.writeTextElement("diameter_2", QString::number(loaded_research.getDetailDimensions().diameter_2_dimension));
+                stream.writeTextElement("diameter_3", QString::number(loaded_research.getDetailDimensions().diameter_3_dimension));
+                stream.writeTextElement("diameter_4", QString::number(loaded_research.getDetailDimensions().diameter_4_dimension));
+                stream.writeTextElement("diameter_5", QString::number(loaded_research.getDetailDimensions().diameter_5_dimension));
+                stream.writeTextElement("diameter_6", QString::number(loaded_research.getDetailDimensions().diameter_6_dimension));
+                stream.writeTextElement("diameter_7", QString::number(loaded_research.getDetailDimensions().diameter_7_dimension));
+                stream.writeTextElement("diameter_8", QString::number(loaded_research.getDetailDimensions().diameter_8_dimension));
+                stream.writeTextElement("diameter_9", QString::number(loaded_research.getDetailDimensions().diameter_9_dimension));
+                stream.writeTextElement("groove_width", QString::number(loaded_research.getDetailDimensions().groove_width_dimension));
+                stream.writeTextElement("groove_depth", QString::number(loaded_research.getDetailDimensions().groove_depth_dimension));
+            stream.writeEndElement(); // detail_measurements
+
+        stream.writeEndElement(); // puanson_research_settings
         stream.writeEndDocument();
 
         config_file.close();
@@ -2496,7 +2518,35 @@ void PuansonChecker::researchEtalonAngle(quint8 angle)
     switch(etalon_angle_source_dialog.result())
     {
     case PHOTO_SHOOTING_DIALOG_RESULT:
-        main_window->menuImageWorkEtalonShootAndLoadActionTriggered();
+        if(PuansonChecker::getInstance()->useMachineForDetailMovement())
+        {
+            if(PuansonChecker::getInstance()->getMachine()->moveToAnglePosition(etalon_research_active_angle))
+            {
+                main_window->menuImageWorkEtalonShootAndLoadActionTriggered();
+            }
+            else
+            {
+                qint32 reply;
+
+                QMessageBox question(main_window);
+                question.setWindowTitle("Внимание");
+                question.setText("Невозможно поместить деталь в нужную позицию с помощью станка. Отменить исследование или продолжить в ручном режиме?");
+                question.addButton("Отменить", QMessageBox::RejectRole);
+                question.addButton("Продолжить в ручном режиме", QMessageBox::ApplyRole);
+                reply = question.exec();
+
+                if (reply == QMessageBox::ApplyRole)
+                {
+                    QMessageBox::information(main_window, "Информационное сообщение", "Поместите деталь в нужную позицию и нажмите \"OK\"");
+                    main_window->menuImageWorkEtalonShootAndLoadActionTriggered();
+                }
+                else
+                {
+                    PuansonChecker::getInstance()->cancelEtalonResearch();
+                    QMessageBox::information(main_window, "Исследование завершено", "Результат исследования: \"Отменено пользователем\"");
+                }
+            }
+        }
         break;
     case LOADING_FROM_FILE_DIALOG_RESULT:
         main_window->menuImageWorkEtalonLoadActionTriggered();
@@ -2531,7 +2581,7 @@ void PuansonChecker::researchCurrentAngle(quint8 angle)
         }
 
         if(!current_research_folder_path.isEmpty())
-        {qDebug() << "current_research_folder_path: " << current_research_folder_path;
+        {
             QDir(current_research_folder_path).removeRecursively();
             QDir().mkdir(current_research_folder_path);
 
@@ -2603,9 +2653,11 @@ bool PuansonChecker::loadEtalonResearch(const QString &etalon_research_folder_pa
     const QString xml_config_filename = "etalon_research_configuration.xml";
     bool bad_research = false;
 
-    PuansonModel puanson_model;
+    PuansonModel puanson_model = PuansonModel::PUANSON_MODEL_660;
     QDateTime date_time_of_creation;
     quint8 number_of_angles = 0;
+
+    EtalonDetailDimensions detail_dimensions;
 
     if(research_dir.exists(xml_config_filename))
     {
@@ -2628,7 +2680,7 @@ bool PuansonChecker::loadEtalonResearch(const QString &etalon_research_folder_pa
 
             if (token == QXmlStreamReader::StartElement)
             {
-                if (xml.name() == "etalon_angle_settings")
+                if (xml.name() == "puanson_research_settings")
                     continue;
 
                 if (xml.name() == "general_settings")
@@ -2645,7 +2697,7 @@ bool PuansonChecker::loadEtalonResearch(const QString &etalon_research_folder_pa
                                 puanson_model = static_cast<PuansonModel>(xml.text().toString().toInt());
                                 loaded_parameters++;
                             }
-                            if (xml.name() == "date_time_of_creation")
+                            else if (xml.name() == "date_time_of_creation")
                             {
                                 xml.readNext();
                                 date_time_of_creation = QDateTime::fromString(xml.text().toString(), Qt::ISODate);
@@ -2654,7 +2706,85 @@ bool PuansonChecker::loadEtalonResearch(const QString &etalon_research_folder_pa
                             else if (xml.name() == "number_of_angles")
                             {
                                 xml.readNext();
-                                number_of_angles = xml.text().toUInt();
+                                number_of_angles = static_cast<quint8>(xml.text().toUInt());
+                                loaded_parameters++;
+                            }
+                        }
+                        xml.readNext();
+                    }
+                }
+                else if (xml.name() == "detail_measurements")
+                {
+                    xml.readNext();
+
+                    while (!(xml.tokenType() == QXmlStreamReader::EndElement && xml.name() == "detail_measurements"))
+                    {
+                        if (xml.tokenType() == QXmlStreamReader::StartElement)
+                        {
+                            if (xml.name() == "diameter_1")
+                            {
+                                xml.readNext();
+                                detail_dimensions.diameter_1_dimension = xml.text().toString().toInt();
+                                loaded_parameters++;
+                            }
+                            else if (xml.name() == "diameter_2")
+                            {
+                                xml.readNext();
+                                detail_dimensions.diameter_2_dimension = xml.text().toString().toInt();
+                                loaded_parameters++;
+                            }
+                            else if (xml.name() == "diameter_3")
+                            {
+                                xml.readNext();
+                                detail_dimensions.diameter_3_dimension = xml.text().toString().toInt();
+                                loaded_parameters++;
+                            }
+                            else if (xml.name() == "diameter_4")
+                            {
+                                xml.readNext();
+                                detail_dimensions.diameter_4_dimension = xml.text().toString().toInt();
+                                loaded_parameters++;
+                            }
+                            else if (xml.name() == "diameter_5")
+                            {
+                                xml.readNext();
+                                detail_dimensions.diameter_5_dimension = xml.text().toString().toInt();
+                                loaded_parameters++;
+                            }
+                            else if (xml.name() == "diameter_6")
+                            {
+                                xml.readNext();
+                                detail_dimensions.diameter_6_dimension = xml.text().toString().toInt();
+                                loaded_parameters++;
+                            }
+                            else if (xml.name() == "diameter_7")
+                            {
+                                xml.readNext();
+                                detail_dimensions.diameter_7_dimension = xml.text().toString().toInt();
+                                loaded_parameters++;
+                            }
+                            else if (xml.name() == "diameter_8")
+                            {
+                                xml.readNext();
+                                detail_dimensions.diameter_8_dimension = xml.text().toString().toInt();
+                                loaded_parameters++;
+                            }
+                            else if (xml.name() == "diameter_9")
+                            {
+                                xml.readNext();
+                                detail_dimensions.diameter_9_dimension = xml.text().toString().toInt();
+                                loaded_parameters++;
+                            }
+                            else if (xml.name() == "groove_width")
+                            {
+                                xml.readNext();
+                                detail_dimensions.groove_width_dimension = xml.text().toString().toInt();
+                                loaded_parameters++;
+                            }
+                            else if (xml.name() == "groove_depth")
+                            {
+                                xml.readNext();
+                                detail_dimensions.groove_depth_dimension = xml.text().toString().toInt();
                                 loaded_parameters++;
                             }
                         }
@@ -2666,7 +2796,7 @@ bool PuansonChecker::loadEtalonResearch(const QString &etalon_research_folder_pa
 
         config_file.close();
 
-        if(loaded_parameters == 3)
+        if(loaded_parameters == 3 + 11)
         {
             for(int angle = 1; angle <= number_of_angles; angle++)
             {
@@ -2689,6 +2819,7 @@ bool PuansonChecker::loadEtalonResearch(const QString &etalon_research_folder_pa
     if(!bad_research)
     {
         setEtalonResearchSettings(etalon_research_folder_path, puanson_model, date_time_of_creation, number_of_angles);
+        loaded_research.setDetailDimensions(detail_dimensions);
         completeEtalonResearch();
     }
 

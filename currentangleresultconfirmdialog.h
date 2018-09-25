@@ -21,7 +21,7 @@ class CurrentAngleResultConfirmDialog : public QDialog
 
 public:
     explicit CurrentAngleResultConfirmDialog(quint8 etalon_research_active_angle, QWidget *parent = 0);
-    ~CurrentAngleResultConfirmDialog();
+    ~CurrentAngleResultConfirmDialog() Q_DECL_OVERRIDE;
 
 public slots:
     void researchThisAngleAgainButtonPressed();

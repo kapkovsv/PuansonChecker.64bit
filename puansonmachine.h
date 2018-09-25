@@ -10,8 +10,11 @@
 
 #if defined(Q_OS_WIN)
 #include <windows.h>
+
+#include <cmath>
 #include "MachineController/MachineController.h"
 
+using namespace ::MachineControllerSpace;
 #define IMAGE_PATH "mach_controller.elf"
 #endif // Q_OS_WIN
 
@@ -53,7 +56,7 @@ public slots:
 
 private:
 #if defined(Q_OS_WIN)
-    std::unique_ptr<MachineController::MachineController> controller;
+    std::unique_ptr<MachineControllerSpace::MachineController> controller;
 #endif // Q_OS_WIN
     QMap<quint8, QPoint> angles_position_map;
     quint8 current_angle = 1;

@@ -10,5 +10,4 @@ struct ExchangeData {
 		int32_t d;
 		int32_t minSlack;
 	} axis[2];
-	uint32_t data[0x10];
 };

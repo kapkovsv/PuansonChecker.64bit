@@ -23,11 +23,14 @@ CurrentResearchCreationDialog::CurrentResearchCreationDialog(QWidget *parent) :
 
     PuansonChecker::getInstance()->getCurrentResearchSettings(current_research_folder_path, current_research_date_time_of_creation, current_detail_angle_source_photo_shooting_only);
 
+    current_research_date_time_of_creation = QDateTime::currentDateTime();
+
     ui->saveFolderPathLineEdit->setText(current_research_folder_path);
     ui->creationDateTimeEdit->setDateTime(current_research_date_time_of_creation);
     ui->imageSourcePhotoShootingOnlyCheckBox->setChecked(current_detail_angle_source_photo_shooting_only);
 
-    ui->creationDateTimeEdit->setDateTime(QDateTime::currentDateTime());
+    ui->useMachineForDetailMovementCheckBox->setChecked(PuansonChecker::getInstance()->useMachineForDetailMovement());
+    ui->imageSourcePhotoShootingOnlyCheckBox->setChecked(PuansonChecker::getInstance()->isImageSourcePhotoShootingOnly());
 }
 
 CurrentResearchCreationDialog::~CurrentResearchCreationDialog()
@@ -65,6 +68,9 @@ void CurrentResearchCreationDialog::currentResearchCreationDialogAccepted()
         current_research_folder_path = "";
 
     PuansonChecker::getInstance()->setCurrentResearchSettings(current_research_folder_path, creation_date_time, current_detail_angle_source_photo_shooting_only);
+
+    PuansonChecker::getInstance()->setImageSourcePhotoShootingOnly(ui->imageSourcePhotoShootingOnlyCheckBox->isChecked());
+    PuansonChecker::getInstance()->setMachineForDetailMovement(ui->useMachineForDetailMovementCheckBox->isChecked());
 
     accept();
 }

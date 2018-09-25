@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>591</width>
-    <height>554</height>
+    <width>426</width>
+    <height>590</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,10 +16,10 @@
   <widget class="QDialogButtonBox" name="settingsButtonBox">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>510</y>
-     <width>551</width>
-     <height>32</height>
+     <x>15</x>
+     <y>545</y>
+     <width>401</width>
+     <height>41</height>
     </rect>
    </property>
    <property name="orientation">
@@ -32,113 +32,548 @@
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="QGroupBox" name="toleranceGroupBox">
+  <widget class="QGroupBox" name="CameraGroupBox">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>10</y>
-     <width>331</width>
-     <height>200</height>
+     <y>100</y>
+     <width>405</width>
+     <height>110</height>
     </rect>
    </property>
    <property name="title">
-    <string>Допуск</string>
+    <string>Фотокамера</string>
    </property>
-   <widget class="QSpinBox" name="angle2IntSpinBox">
+   <widget class="QPushButton" name="cameraConnectButton">
     <property name="geometry">
      <rect>
-      <x>170</x>
-      <y>74</y>
+      <x>20</x>
+      <y>35</y>
+      <width>101</width>
+      <height>26</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Подключиться</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="cameraDisconnectButton">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>70</y>
+      <width>101</width>
+      <height>26</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Отключиться</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="cameraConnectionStatusLabel">
+    <property name="geometry">
+     <rect>
+      <x>140</x>
+      <y>40</y>
+      <width>246</width>
+      <height>56</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="wordWrap">
+     <bool>true</bool>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="calibrationGroupBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>5</y>
+     <width>405</width>
+     <height>96</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Калибровка</string>
+   </property>
+   <widget class="QLabel" name="calibrationReferencePointsDistanceMkmLabel">
+    <property name="geometry">
+     <rect>
+      <x>145</x>
+      <y>60</y>
+      <width>27</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>мкм</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="calibrationReferencePointsDistanceSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>60</x>
+      <y>60</y>
       <width>73</width>
-      <height>22</height>
+      <height>21</height>
      </rect>
     </property>
     <property name="minimum">
      <number>1</number>
     </property>
     <property name="maximum">
-     <number>10000</number>
+     <number>200000</number>
+    </property>
+    <property name="value">
+     <number>100000</number>
     </property>
    </widget>
-   <widget class="QSpinBox" name="angle4ExtSpinBox">
+   <widget class="QLabel" name="calibrationReferencePointsDistanceLabel">
     <property name="geometry">
      <rect>
-      <x>79</x>
-      <y>134</y>
-      <width>73</width>
-      <height>22</height>
+      <x>18</x>
+      <y>30</y>
+      <width>181</width>
+      <height>21</height>
      </rect>
     </property>
-    <property name="minimum">
-     <number>1</number>
+    <property name="font">
+     <font>
+      <italic>true</italic>
+     </font>
     </property>
-    <property name="maximum">
-     <number>10000</number>
+    <property name="text">
+     <string>Расстояние между реперами</string>
     </property>
-   </widget>
-   <widget class="QSpinBox" name="angle3IntSpinBox">
-    <property name="geometry">
-     <rect>
-      <x>170</x>
-      <y>104</y>
-      <width>73</width>
-      <height>22</height>
-     </rect>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
     </property>
-    <property name="minimum">
-     <number>1</number>
-    </property>
-    <property name="maximum">
-     <number>10000</number>
+    <property name="wordWrap">
+     <bool>true</bool>
     </property>
    </widget>
-   <widget class="QLabel" name="angle1Label">
+  </widget>
+  <widget class="QGroupBox" name="angleSettingsGroupBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>210</y>
+     <width>406</width>
+     <height>331</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Настройки ракурсов</string>
+   </property>
+   <widget class="QLabel" name="angle1SettingsLabel">
     <property name="geometry">
      <rect>
-      <x>15</x>
-      <y>44</y>
-      <width>51</width>
-      <height>16</height>
+      <x>20</x>
+      <y>95</y>
+      <width>60</width>
+      <height>30</height>
      </rect>
     </property>
     <property name="text">
      <string>Ракурс 1</string>
     </property>
    </widget>
-   <widget class="QLabel" name="angle3Label">
+   <widget class="QLabel" name="angle2SettingsLabel">
     <property name="geometry">
      <rect>
-      <x>15</x>
-      <y>104</y>
-      <width>51</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Ракурс 3</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle2Label">
-    <property name="geometry">
-     <rect>
-      <x>15</x>
-      <y>74</y>
-      <width>50</width>
-      <height>16</height>
+      <x>19</x>
+      <y>135</y>
+      <width>60</width>
+      <height>30</height>
      </rect>
     </property>
     <property name="text">
      <string>Ракурс 2</string>
     </property>
    </widget>
-   <widget class="QSpinBox" name="angle4IntSpinBox">
+   <widget class="QLabel" name="angle3SettingsLabel">
     <property name="geometry">
      <rect>
-      <x>170</x>
-      <y>134</y>
-      <width>73</width>
+      <x>19</x>
+      <y>175</y>
+      <width>60</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Ракурс 3</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="angle4SettingsLabel">
+    <property name="geometry">
+     <rect>
+      <x>18</x>
+      <y>215</y>
+      <width>60</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Ракурс 4</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="angle5SettingsLabel">
+    <property name="geometry">
+     <rect>
+      <x>18</x>
+      <y>255</y>
+      <width>60</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Ракурс 5</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="angle6SettingsLabel">
+    <property name="geometry">
+     <rect>
+      <x>18</x>
+      <y>295</y>
+      <width>60</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Ракурс 6</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="angleSettingsPhotoShootingPosLabel">
+    <property name="geometry">
+     <rect>
+      <x>85</x>
+      <y>30</y>
+      <width>126</width>
+      <height>36</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="text">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Позиция детали для фотосъёмки&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+    <property name="wordWrap">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle1PosXSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>85</x>
+      <y>100</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="maximum">
+     <number>999999</number>
+    </property>
+    <property name="value">
+     <number>0</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="anglePosXLabel">
+    <property name="geometry">
+     <rect>
+      <x>110</x>
+      <y>70</y>
+      <width>16</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="text">
+     <string>x</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle1PosYSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>100</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="maximum">
+     <number>999999</number>
+    </property>
+    <property name="value">
+     <number>0</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="anglePosYLabel">
+    <property name="geometry">
+     <rect>
+      <x>175</x>
+      <y>70</y>
+      <width>16</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="text">
+     <string>y</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle2PosXSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>85</x>
+      <y>140</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="maximum">
+     <number>999999</number>
+    </property>
+    <property name="value">
+     <number>0</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle2PosYSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>140</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="maximum">
+     <number>999999</number>
+    </property>
+    <property name="value">
+     <number>0</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle3PosXSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>85</x>
+      <y>180</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="maximum">
+     <number>999999</number>
+    </property>
+    <property name="value">
+     <number>0</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle3PosYSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>180</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="maximum">
+     <number>999999</number>
+    </property>
+    <property name="value">
+     <number>0</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle4PosXSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>85</x>
+      <y>220</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="maximum">
+     <number>999999</number>
+    </property>
+    <property name="value">
+     <number>0</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle4PosYSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>220</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="maximum">
+     <number>999999</number>
+    </property>
+    <property name="value">
+     <number>0</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle5PosXSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>85</x>
+      <y>260</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="maximum">
+     <number>999999</number>
+    </property>
+    <property name="value">
+     <number>0</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle5PosYSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>260</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="maximum">
+     <number>999999</number>
+    </property>
+    <property name="value">
+     <number>0</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle6PosXSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>85</x>
+      <y>300</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="maximum">
+     <number>999999</number>
+    </property>
+    <property name="value">
+     <number>0</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle6PosYSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>300</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="maximum">
+     <number>999999</number>
+    </property>
+    <property name="value">
+     <number>0</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle5ExtSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>224</x>
+      <y>260</y>
+      <width>50</width>
       <height>22</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
     </property>
     <property name="minimum">
      <number>1</number>
@@ -147,11 +582,11 @@
      <number>10000</number>
     </property>
    </widget>
-   <widget class="QComboBox" name="angle2ComboBox">
+   <widget class="QComboBox" name="angle4ComboBox">
     <property name="geometry">
      <rect>
-      <x>260</x>
-      <y>74</y>
+      <x>340</x>
+      <y>219</y>
       <width>40</width>
       <height>22</height>
      </rect>
@@ -167,30 +602,123 @@
      </property>
     </item>
    </widget>
-   <widget class="QSpinBox" name="angle1IntSpinBox">
+   <widget class="QLabel" name="toleranceUnitsLabel">
     <property name="geometry">
      <rect>
-      <x>170</x>
-      <y>44</y>
-      <width>73</width>
+      <x>333</x>
+      <y>70</y>
+      <width>56</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="text">
+     <string>Единицы</string>
+    </property>
+    <property name="scaledContents">
+     <bool>false</bool>
+    </property>
+    <property name="wordWrap">
+     <bool>true</bool>
+    </property>
+    <property name="buddy">
+     <cstring>toleranceUnitsLabel</cstring>
+    </property>
+   </widget>
+   <widget class="QLabel" name="externalToleranceLabel">
+    <property name="geometry">
+     <rect>
+      <x>225</x>
+      <y>70</y>
+      <width>51</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="text">
+     <string>Внешн.</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="angle2ComboBox">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>139</y>
+      <width>40</width>
       <height>22</height>
      </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>мкм</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>px</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QSpinBox" name="angle4ExtSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>224</x>
+      <y>220</y>
+      <width>50</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
     </property>
     <property name="minimum">
      <number>1</number>
     </property>
     <property name="maximum">
      <number>10000</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="internalToleranceLabel">
+    <property name="geometry">
+     <rect>
+      <x>280</x>
+      <y>70</y>
+      <width>46</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="text">
+     <string>Внутр.</string>
     </property>
    </widget>
    <widget class="QSpinBox" name="angle1ExtSpinBox">
     <property name="geometry">
      <rect>
-      <x>79</x>
-      <y>44</y>
-      <width>73</width>
+      <x>224</x>
+      <y>100</y>
+      <width>50</width>
       <height>22</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
     </property>
     <property name="minimum">
      <number>1</number>
@@ -199,24 +727,178 @@
      <number>10000</number>
     </property>
    </widget>
-   <widget class="QLabel" name="angle4Label">
+   <widget class="QSpinBox" name="angle5IntSpinBox">
     <property name="geometry">
      <rect>
-      <x>15</x>
-      <y>134</y>
-      <width>51</width>
-      <height>16</height>
+      <x>280</x>
+      <y>259</y>
+      <width>50</width>
+      <height>22</height>
      </rect>
     </property>
-    <property name="text">
-     <string>Ракурс 4</string>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="minimum">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <number>10000</number>
     </property>
    </widget>
-   <widget class="QComboBox" name="angle4ComboBox">
+   <widget class="QSpinBox" name="angle2ExtSpinBox">
     <property name="geometry">
      <rect>
-      <x>260</x>
-      <y>134</y>
+      <x>224</x>
+      <y>140</y>
+      <width>50</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="minimum">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <number>10000</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle4IntSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>280</x>
+      <y>219</y>
+      <width>50</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="minimum">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <number>10000</number>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="angle5ComboBox">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>259</y>
+      <width>40</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>мкм</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>px</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QSpinBox" name="angle2IntSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>280</x>
+      <y>139</y>
+      <width>50</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="minimum">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <number>10000</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle3IntSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>280</x>
+      <y>179</y>
+      <width>50</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="minimum">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <number>10000</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle3ExtSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>224</x>
+      <y>180</y>
+      <width>50</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="minimum">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <number>10000</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle1IntSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>280</x>
+      <y>99</y>
+      <width>50</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="minimum">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <number>10000</number>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="angle1ComboBox">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>99</y>
       <width>40</width>
       <height>22</height>
      </rect>
@@ -235,8 +917,8 @@
    <widget class="QComboBox" name="angle3ComboBox">
     <property name="geometry">
      <rect>
-      <x>260</x>
-      <y>104</y>
+      <x>340</x>
+      <y>179</y>
       <width>40</width>
       <height>22</height>
      </rect>
@@ -252,14 +934,43 @@
      </property>
     </item>
    </widget>
-   <widget class="QSpinBox" name="angle3ExtSpinBox">
+   <widget class="QLabel" name="angleSettingsTolerancesLabel">
     <property name="geometry">
      <rect>
-      <x>79</x>
-      <y>104</y>
-      <width>73</width>
+      <x>235</x>
+      <y>30</y>
+      <width>126</width>
+      <height>36</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="text">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Допуски&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+    <property name="wordWrap">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="angle6IntSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>280</x>
+      <y>299</y>
+      <width>50</width>
       <height>22</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
     </property>
     <property name="minimum">
      <number>1</number>
@@ -268,14 +979,19 @@
      <number>10000</number>
     </property>
    </widget>
-   <widget class="QSpinBox" name="angle2ExtSpinBox">
+   <widget class="QSpinBox" name="angle6ExtSpinBox">
     <property name="geometry">
      <rect>
-      <x>79</x>
-      <y>74</y>
-      <width>73</width>
+      <x>224</x>
+      <y>300</y>
+      <width>50</width>
       <height>22</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>8</pointsize>
+     </font>
     </property>
     <property name="minimum">
      <number>1</number>
@@ -284,11 +1000,11 @@
      <number>10000</number>
     </property>
    </widget>
-   <widget class="QComboBox" name="angle1ComboBox">
+   <widget class="QComboBox" name="angle6ComboBox">
     <property name="geometry">
      <rect>
-      <x>260</x>
-      <y>44</y>
+      <x>340</x>
+      <y>299</y>
       <width>40</width>
       <height>22</height>
      </rect>
@@ -303,928 +1019,44 @@
       <string>px</string>
      </property>
     </item>
-   </widget>
-   <widget class="QLabel" name="externalToleranceLabel">
-    <property name="geometry">
-     <rect>
-      <x>80</x>
-      <y>18</y>
-      <width>51</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <italic>true</italic>
-     </font>
-    </property>
-    <property name="text">
-     <string>Внешний</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="internalToleranceLabel">
-    <property name="geometry">
-     <rect>
-      <x>170</x>
-      <y>18</y>
-      <width>71</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <italic>true</italic>
-     </font>
-    </property>
-    <property name="text">
-     <string>Внутренний</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="toleranceUnitsLabel">
-    <property name="geometry">
-     <rect>
-      <x>260</x>
-      <y>10</y>
-      <width>61</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <italic>true</italic>
-     </font>
-    </property>
-    <property name="text">
-     <string>Единицы измерения</string>
-    </property>
-    <property name="scaledContents">
-     <bool>false</bool>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle5Label">
-    <property name="geometry">
-     <rect>
-      <x>15</x>
-      <y>165</y>
-      <width>51</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Ракурс 5</string>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="angle5ExtSpinBox">
-    <property name="geometry">
-     <rect>
-      <x>79</x>
-      <y>165</y>
-      <width>73</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>1</number>
-    </property>
-    <property name="maximum">
-     <number>10000</number>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="angle5ComboBox">
-    <property name="geometry">
-     <rect>
-      <x>260</x>
-      <y>165</y>
-      <width>40</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <item>
-     <property name="text">
-      <string>мкм</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>px</string>
-     </property>
-    </item>
-   </widget>
-   <widget class="QSpinBox" name="angle5IntSpinBox">
-    <property name="geometry">
-     <rect>
-      <x>170</x>
-      <y>165</y>
-      <width>73</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>1</number>
-    </property>
-    <property name="maximum">
-     <number>10000</number>
-    </property>
-   </widget>
-  </widget>
-  <widget class="QGroupBox" name="CameraGroupBox">
-   <property name="geometry">
-    <rect>
-     <x>350</x>
-     <y>10</y>
-     <width>231</width>
-     <height>201</height>
-    </rect>
-   </property>
-   <property name="title">
-    <string>Фотокамера</string>
-   </property>
-   <widget class="QPushButton" name="cameraConnectButton">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>170</y>
-      <width>101</width>
-      <height>23</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Подключиться</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="cameraDisconnectButton">
-    <property name="geometry">
-     <rect>
-      <x>120</x>
-      <y>170</y>
-      <width>101</width>
-      <height>23</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Отключиться</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="cameraConnectionStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>17</x>
-      <y>19</y>
-      <width>201</width>
-      <height>71</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-  </widget>
-  <widget class="QGroupBox" name="calibrationGroupBox">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>213</y>
-     <width>571</width>
-     <height>280</height>
-    </rect>
-   </property>
-   <property name="title">
-    <string>Калибровка</string>
-   </property>
-   <widget class="QLabel" name="angle1CalibrationRatioStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>202</x>
-      <y>46</y>
-      <width>101</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle1DistanceMkmLabel">
-    <property name="geometry">
-     <rect>
-      <x>165</x>
-      <y>46</y>
-      <width>27</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>мкм</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="angle1DistanceSpinBox">
-    <property name="geometry">
-     <rect>
-      <x>80</x>
-      <y>46</y>
-      <width>73</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>1</number>
-    </property>
-    <property name="maximum">
-     <number>200000</number>
-    </property>
-    <property name="value">
-     <number>100000</number>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle1CalibLabel">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>46</y>
-      <width>51</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Ракурс 1</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle2CalibLabel">
-    <property name="geometry">
-     <rect>
-      <x>19</x>
-      <y>86</y>
-      <width>51</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Ракурс 2</string>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="angle2DistanceSpinBox">
-    <property name="geometry">
-     <rect>
-      <x>79</x>
-      <y>86</y>
-      <width>73</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>1</number>
-    </property>
-    <property name="maximum">
-     <number>200000</number>
-    </property>
-    <property name="value">
-     <number>100000</number>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle2CalibrationRatioStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>202</x>
-      <y>86</y>
-      <width>101</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle2DistanceMkmLabel">
-    <property name="geometry">
-     <rect>
-      <x>165</x>
-      <y>86</y>
-      <width>27</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>мкм</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle3CalibrationRatioStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>202</x>
-      <y>126</y>
-      <width>101</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle3DistanceMkmLabel">
-    <property name="geometry">
-     <rect>
-      <x>165</x>
-      <y>126</y>
-      <width>27</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>мкм</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle3CalibLabel">
-    <property name="geometry">
-     <rect>
-      <x>19</x>
-      <y>126</y>
-      <width>51</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Ракурс 3</string>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="angle3DistanceSpinBox">
-    <property name="geometry">
-     <rect>
-      <x>79</x>
-      <y>126</y>
-      <width>73</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>1</number>
-    </property>
-    <property name="maximum">
-     <number>200000</number>
-    </property>
-    <property name="value">
-     <number>100000</number>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle4CalibLabel">
-    <property name="geometry">
-     <rect>
-      <x>18</x>
-      <y>166</y>
-      <width>51</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Ракурс 4</string>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="angle4DistanceSpinBox">
-    <property name="geometry">
-     <rect>
-      <x>78</x>
-      <y>166</y>
-      <width>73</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>1</number>
-    </property>
-    <property name="maximum">
-     <number>200000</number>
-    </property>
-    <property name="value">
-     <number>100000</number>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle4DistanceMkmLabel">
-    <property name="geometry">
-     <rect>
-      <x>165</x>
-      <y>166</y>
-      <width>27</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>мкм</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle4CalibrationRatioStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>202</x>
-      <y>166</y>
-      <width>101</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle5CalibrationRatioStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>202</x>
-      <y>206</y>
-      <width>101</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="angle5DistanceSpinBox">
-    <property name="geometry">
-     <rect>
-      <x>78</x>
-      <y>206</y>
-      <width>73</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>1</number>
-    </property>
-    <property name="maximum">
-     <number>200000</number>
-    </property>
-    <property name="value">
-     <number>100000</number>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle5DistanceMkmLabel">
-    <property name="geometry">
-     <rect>
-      <x>165</x>
-      <y>206</y>
-      <width>27</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>мкм</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle5CalibLabel">
-    <property name="geometry">
-     <rect>
-      <x>18</x>
-      <y>206</y>
-      <width>51</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Ракурс 5</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="distanceLabel">
-    <property name="geometry">
-     <rect>
-      <x>80</x>
-      <y>10</y>
-      <width>111</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <italic>true</italic>
-     </font>
-    </property>
-    <property name="text">
-     <string>Расстояние между реперами</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="calibrationRatioLabel">
-    <property name="geometry">
-     <rect>
-      <x>202</x>
-      <y>10</y>
-      <width>101</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <italic>true</italic>
-     </font>
-    </property>
-    <property name="text">
-     <string>Текущее соотношение</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="calibrationRatioLabel_2">
-    <property name="geometry">
-     <rect>
-      <x>312</x>
-      <y>10</y>
-      <width>76</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <italic>true</italic>
-     </font>
-    </property>
-    <property name="text">
-     <string>Реперные точки</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="calibrationRatioLabel_3">
-    <property name="geometry">
-     <rect>
-      <x>400</x>
-      <y>10</y>
-      <width>157</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <italic>true</italic>
-     </font>
-    </property>
-    <property name="text">
-     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Идеальный контур&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle1ReferencePointsStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>312</x>
-      <y>46</y>
-      <width>76</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle2ReferencePointsStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>312</x>
-      <y>86</y>
-      <width>76</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle3ReferencePointsStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>312</x>
-      <y>126</y>
-      <width>76</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle4ReferencePointsStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>312</x>
-      <y>166</y>
-      <width>76</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle5ReferencePointsStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>312</x>
-      <y>206</y>
-      <width>76</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle5SkeletonPointsStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>400</x>
-      <y>206</y>
-      <width>157</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle4SkeletonPointsStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>400</x>
-      <y>166</y>
-      <width>157</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle3SkeletonPointsStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>400</x>
-      <y>126</y>
-      <width>157</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle2SkeletonPointsStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>400</x>
-      <y>86</y>
-      <width>157</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle1SkeletonPointsStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>400</x>
-      <y>46</y>
-      <width>157</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="angle6DistanceSpinBox">
-    <property name="geometry">
-     <rect>
-      <x>78</x>
-      <y>246</y>
-      <width>73</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>1</number>
-    </property>
-    <property name="maximum">
-     <number>200000</number>
-    </property>
-    <property name="value">
-     <number>100000</number>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle6SkeletonPointsStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>400</x>
-      <y>246</y>
-      <width>157</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle6CalibLabel">
-    <property name="geometry">
-     <rect>
-      <x>18</x>
-      <y>246</y>
-      <width>51</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Ракурс 6</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle6ReferencePointsStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>312</x>
-      <y>246</y>
-      <width>76</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle6DistanceMkmLabel">
-    <property name="geometry">
-     <rect>
-      <x>165</x>
-      <y>246</y>
-      <width>27</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>мкм</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="angle6CalibrationRatioStatusLabel">
-    <property name="geometry">
-     <rect>
-      <x>202</x>
-      <y>246</y>
-      <width>101</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
    </widget>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>calibrationReferencePointsDistanceSpinBox</tabstop>
+  <tabstop>cameraConnectButton</tabstop>
+  <tabstop>cameraDisconnectButton</tabstop>
+  <tabstop>angle1PosXSpinBox</tabstop>
+  <tabstop>angle1PosYSpinBox</tabstop>
+  <tabstop>angle1ExtSpinBox</tabstop>
+  <tabstop>angle1IntSpinBox</tabstop>
+  <tabstop>angle1ComboBox</tabstop>
+  <tabstop>angle2PosXSpinBox</tabstop>
+  <tabstop>angle2PosYSpinBox</tabstop>
+  <tabstop>angle2ExtSpinBox</tabstop>
+  <tabstop>angle2IntSpinBox</tabstop>
+  <tabstop>angle2ComboBox</tabstop>
+  <tabstop>angle3PosXSpinBox</tabstop>
+  <tabstop>angle3PosYSpinBox</tabstop>
+  <tabstop>angle3ExtSpinBox</tabstop>
+  <tabstop>angle3IntSpinBox</tabstop>
+  <tabstop>angle3ComboBox</tabstop>
+  <tabstop>angle4PosXSpinBox</tabstop>
+  <tabstop>angle4PosYSpinBox</tabstop>
+  <tabstop>angle4ExtSpinBox</tabstop>
+  <tabstop>angle4IntSpinBox</tabstop>
+  <tabstop>angle4ComboBox</tabstop>
+  <tabstop>angle5PosXSpinBox</tabstop>
+  <tabstop>angle5PosYSpinBox</tabstop>
+  <tabstop>angle5ExtSpinBox</tabstop>
+  <tabstop>angle5IntSpinBox</tabstop>
+  <tabstop>angle5ComboBox</tabstop>
+  <tabstop>angle6PosXSpinBox</tabstop>
+  <tabstop>angle6PosYSpinBox</tabstop>
+  <tabstop>angle6ExtSpinBox</tabstop>
+  <tabstop>angle6IntSpinBox</tabstop>
+  <tabstop>angle6ComboBox</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

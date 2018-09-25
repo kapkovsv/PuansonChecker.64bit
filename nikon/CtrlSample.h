@@ -162,6 +162,7 @@ LPRefObj	GetRefChildPtr_ID( LPRefObj pRefParent, SLONG lIDChild );
 
 extern LPMAIDEntryPointProc	g_pMAIDEntryPoint;
 extern UCHAR	g_bFileRemoved;
+extern ULONG	g_ulCameraType;	// CameraType
 extern BOOL		g_bFirstCall;	// used in ProgressProc, and DoDeleteDramImage
 extern HINSTANCE	g_hInstModule;
 

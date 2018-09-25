@@ -36,7 +36,7 @@ class ContoursForm : public QWidget, public ImageWindow
         QPoint outer_tolerance_etalon_point;
         QGraphicsEllipseItem *outer_tolerance_etalon_point_item = Q_NULLPTR;
 
-        QPoint *active_point = NULL;
+        QPoint *active_point = Q_NULLPTR;
 
         bool current_detail_position_is_set = false;
         bool outer_tolerance_etalon_detail_position_is_set = false;
@@ -46,7 +46,7 @@ class ContoursForm : public QWidget, public ImageWindow
 
 public:
     explicit ContoursForm(PuansonChecker *checker);
-    ~ContoursForm();
+    ~ContoursForm() Q_DECL_OVERRIDE;
 
     void moveImage(const qreal dx, const qreal dy) Q_DECL_OVERRIDE;
     void drawIdealContour(const QPainterPath &ideal_path, const QPainterPath &ideal_measurements_path);

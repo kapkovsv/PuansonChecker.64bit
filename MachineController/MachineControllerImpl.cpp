@@ -1,64 +1,64 @@
 #include "StdAfx.h"
 #include "MachineControllerImpl.h"
 
-namespace MachineController {
+namespace MachineControllerSpace {
+#include "McuRegs.h"
 
 	typedef uint32_t u_int32_t;
 	typedef uint16_t u_int16_t;
-	typedef uint8_t  u_int8_t;
+    typedef uint8_t  u_int8_t;
 
-#include "sys\elf32.h"
+#include "MachineController\sys\elf32.h"
 
 	// {DBCE1CD9-A320-4B51-A365-A0C3F3C5FB29}
 	const GUID guidSTLink = { 0xDBCE1CD9, 0xA320, 0x4B51, { 0xA3, 0x65, 0xA0, 0xC3, 0xF3, 0xC5, 0xFB, 0x29 } };
 
-    void LoadElf(CodeDownloader* pDownloader, LPCSTR Path, uint32_t cbBlock) {
+	void LoadElf(CodeDownloader* pDownloader, LPCSTR Path, uint32_t cbBlock) {
 		enum { cbHeaders = 0x200 };
-        const bool bOptimizeSectionRead = true;
+		const bool bOptimizeSectionRead = true;
 		//static_assert((cbBlock & cbBlock - 1) == 0, "Must be power of 2");
 		HANDLE hFile = CreateFile(Path, FILE_READ_ACCESS, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
-        CheckFileOpen(hFile);
-        BOOL bResult;
+		CheckFileOpen(hFile);
+		BOOL bResult;
 		auto OnLeave1 = OnLeave([&] { bResult = CloseHandle(hFile); });
 		ULONG cbTransferred;
-        uint8_t Headers[cbHeaders];
+		uint8_t Headers[cbHeaders];
 		bResult = ReadFile(hFile, Headers, cbHeaders, &cbTransferred, 0);
 		CheckFileRead(bResult, cbHeaders, cbTransferred);
 		Elf32_Ehdr* pEhdr = (Elf32_Ehdr*)Headers;
 		static_assert(sizeof *pEhdr <= sizeof Headers, "Insufficient buffer size");
 		Elf32_Phdr* pPhdr = (Elf32_Phdr*)(Headers + pEhdr->e_phoff);
-        Elf32_Addr paddrPrev = 0;
+		Elf32_Addr paddrPrev = 0;
 		auto cProgHeaders = pEhdr->e_phnum;
 		Elf32_Size ProgHeaderEndOffset = pEhdr->e_phoff + pEhdr->e_phentsize * cProgHeaders;
 		if ( ProgHeaderEndOffset > sizeof Headers )
 			throw ElfFormatException();
-        uint32_t CodeBase = (uint32_t)-1;
+		uint32_t CodeBase = (uint32_t)-1;
 		std::vector<Elf32_Phdr*> ProgHeaders;
-        ProgHeaders.reserve(cProgHeaders);
+		ProgHeaders.reserve(cProgHeaders);
 		//DbgPrint("%X-%X %X(%X) %d\n", pEhdr->e_phoff, ProgHeaderEndOffset, pEhdr->e_phentsize, sizeof *pPhdr, pEhdr->e_phnum);
 		//DbgPrint("\nT FiOfs VirtAddr PhisAddr FiSz MeSz F Algn\n");
 		for ( int i = 0; i < cProgHeaders; ++i, (uint8_t*&)pPhdr += pEhdr->e_phentsize ) {
 			//DbgPrint("%d %05X %08X %08X %04X %04X %X %4X\n", pPhdr->p_type, pPhdr->p_offset, pPhdr->p_vaddr, pPhdr->p_paddr, pPhdr->p_filesz, pPhdr->p_memsz, pPhdr->p_flags, pPhdr->p_align);
-            ProgHeaders.push_back(pPhdr);
-			if ( paddrPrev > pPhdr->p_paddr ) {
-				//throw ElfFormatException();
-			}
+			ProgHeaders.push_back(pPhdr);
+			if ( paddrPrev > pPhdr->p_paddr )
+				throw ElfFormatException();
 			if ( pPhdr->p_filesz > 0 && pPhdr->p_paddr < CodeBase )
 				CodeBase = pPhdr->p_paddr;
 			paddrPrev = pPhdr->p_paddr + pPhdr->p_memsz;
-        }
+		}
 		//DbgPrint("\n");
-        sort(ProgHeaders.begin(), ProgHeaders.end(), [](Elf32_Phdr* x, Elf32_Phdr* y) { return x->p_paddr < y->p_paddr; });
-        if ( CodeBase == (uint32_t)-1 )
-            throw ElfFormatException();
-        pDownloader->InitDownload(CodeBase);
+		sort(ProgHeaders.begin(), ProgHeaders.end(), [](Elf32_Phdr* x, Elf32_Phdr* y) { return x->p_paddr < y->p_paddr; });
+		if ( CodeBase == (uint32_t)-1 )
+			throw ElfFormatException();
+		pDownloader->InitDownload(CodeBase);
 		//pPhdr = (Elf32_Phdr*)(Headers + pEhdr->e_phoff);
 		pPhdr = ProgHeaders.front();
 		uint8_t* pBuf = new uint8_t[cbBlock];
 		ON_LEAVE{ delete[] pBuf; };
-        Elf32_Addr bufPhysAddr = 0;
+		Elf32_Addr bufPhysAddr = 0;
 		auto Write = [&] { pDownloader->DownloadBlock(bufPhysAddr, pBuf); };
-        Elf32_Size cBufBytes = 0;
+		Elf32_Size cBufBytes = 0;
 		for ( int i = 0; i < cProgHeaders; ) {
 			if ( pPhdr->p_filesz > 0 && pPhdr->p_type == PT_LOAD && (pPhdr->p_flags & 8) == 0 ) {
 				if ( cBufBytes > 0 && pPhdr->p_paddr - bufPhysAddr >= cbBlock ) {
@@ -106,14 +106,14 @@ namespace MachineController {
 				//++i, (uint8_t*&)pPhdr += pEhdr->e_phentsize;
 				pPhdr = ++i < cProgHeaders ? ProgHeaders[i] : 0;
 			}
-        }
+		}
 		if ( cBufBytes > 0 ) {
 			memset(pBuf + cBufBytes, 0, cbBlock - cBufBytes);
 			Write();
 			bufPhysAddr += cbBlock;
-        }
+		}
 		OnLeave1();
-        pDownloader->CompleteDownload(bufPhysAddr, pEhdr->e_entry);
+		pDownloader->CompleteDownload(bufPhysAddr, pEhdr->e_entry);
 	}
 
 	void Noop() {
@@ -156,7 +156,7 @@ namespace MachineController {
 		return new DeviceEnumeratorImpl(guid);
 	}
 
-	MachineControllerImpl::MachineControllerImpl(LPCSTR path) {
+    MachineControllerImpl::MachineControllerImpl(LPCSTR path) {
 		hDevice = CreateFile(path, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0);
 		if ( hDevice == INVALID_HANDLE_VALUE )
 			throw FileOpenException();
@@ -171,16 +171,16 @@ namespace MachineController {
 		b = WinUsb_SetPipePolicy(hUsbIface, 0x81, PIPE_TRANSFER_TIMEOUT, sizeof TransferTimeout, &TransferTimeout);
 		UCHAR AllowPartialReads = 0;
 		b = WinUsb_SetPipePolicy(hUsbIface, 0x81, ALLOW_PARTIAL_READS, sizeof AllowPartialReads, &AllowPartialReads);
-		ReferencePoint[1] = ReferencePoint[0] = 0;
+		ReferencePos[1] = ReferencePos[0] = 0;
 		OnLeave2.Disengage();
 		OnLeave1.Disengage();
 	}
-	MachineControllerImpl::~MachineControllerImpl() {
+    MachineControllerImpl::~MachineControllerImpl() {
 		BOOL b;
 		b = WinUsb_Free(hUsbIface);
 		b = CloseHandle(hDevice);
 	}
-	void MachineControllerImpl::InitDownload(uint32_t CodeBase) {
+    void MachineControllerImpl::InitDownload(uint32_t CodeBase) {
 		uint16_t Status;
 		uint16_t Mode1;
 		GetCurrentMode(Mode1);
@@ -188,28 +188,44 @@ namespace MachineController {
 			ExitDFUMode();
 		EnterSWDDebugMode();
 		Status = DriveNrst(0);
-		//Status = ResetSys();
-		Status = WriteDebug32(0xE000EDFC, 0x01000401); // DEMCR = DWTENA | VC_HARDERR | VC_CORERESET
+		Status = WriteDebug32(DHCSR, DHCSR_DBGKEY | DHCSR_C_DEBUGEN);
+		Status = WriteDebug32(DEMCR, DEMCR_DWTENA | DEMCR_VC_HARDERR | DEMCR_VC_CORERESET);
 		Status = DriveNrst(1);
+		Sleep(10);
 	}
-	void MachineControllerImpl::DownloadBlock(uint32_t Address, uint8_t* pBlock) {
+    void MachineControllerImpl::DownloadBlock(uint32_t Address, uint8_t* pBlock) {
+		uint8_t Buf[cbBlock];
 		WriteMemory32(Address, cbBlock, pBlock);
 		uint16_t Status = GetStatus();
-		if ( Status != 0x80 )
-			Noop();
+		if ( Status != 0x81 )
+			throw StlinkStateError();
+		if ( bVerifyWrite ) {
+			ReadMemory32(Address, cbBlock, Buf);
+			if ( memcmp(pBlock, Buf, cbBlock) != 0 )
+				throw StlinkWriteError();
+		}
 	}
-	void MachineControllerImpl::CompleteDownload(uint32_t Address, uint32_t EntryPoint) {
+    void MachineControllerImpl::CompleteDownload(uint32_t Address, uint32_t EntryPoint) {
 		uint16_t Status = GetStatus();
-		uint32_t Buf[0x1C0];
-		ReadMemory32(0x20000400, sizeof Buf, Buf);
-		uint32_t Regs[21];
-		ReadAllRegs(Regs);
+
+		uint32_t dhcsr;
+		ReadDebug32(DHCSR, dhcsr);
+		if ( !(dhcsr & DHCSR_S_HALT) )
+			throw StlinkStateError();
+
 		Status = WriteReg(15, EntryPoint);
+
+		if ( bVerifyWrite ) {
+			uint32_t pc;
+			ReadReg(15, pc);
+			if ( (pc | 1) != EntryPoint )
+				throw StlinkWriteError();
+		}
 
 		WriteData();
 		Status = Run();
 	}
-	void MachineControllerImpl::FindReferencePos(uint8_t AxesMask) {
+    void MachineControllerImpl::FindReferencePos(uint8_t AxesMask) {
 		for ( int i = 0; i < 2; ++i ) {
 			if ( AxesMask & 1 << i ) {
 				exchange.axis[i].targetPos = exchange.axis[i].pos;
@@ -222,21 +238,21 @@ namespace MachineController {
 		WaitCompletion();
 		for ( int i = 0; i < 2; ++i ) {
 			if ( AxesMask & 1 << i ) {
-				ReferencePoint[i] = exchange.axis[i].pos;
+				ReferencePos[i] = exchange.axis[i].pos;
 				exchange.axis[i].findReference = 0;
 			}
 		}
 	}
-	void MachineControllerImpl::MoveTo(int x, int y) {
-		exchange.axis[0].targetPos = ReferencePoint[0] + x;
-		exchange.axis[1].targetPos = ReferencePoint[1] + y;
+    void MachineControllerImpl::MoveTo(int x, int y) {
+		exchange.axis[0].targetPos = ReferencePos[0] + x;
+		exchange.axis[1].targetPos = ReferencePos[1] + y;
 		exchange.axis[0].cSteps = 1 << 31;
 		exchange.axis[1].cSteps = 1 << 31;
 		exchange.axis[0].state = 1;
 		exchange.axis[1].state = 1;
 		WriteData();
 	}
-	void MachineControllerImpl::MoveBy(int x, int y) {
+    void MachineControllerImpl::MoveBy(int x, int y) {
 		exchange.axis[0].targetPos = exchange.axis[0].pos;
 		exchange.axis[1].targetPos = exchange.axis[1].pos;
 		exchange.axis[0].cSteps = x;
@@ -245,19 +261,43 @@ namespace MachineController {
 		exchange.axis[1].state = 1;
 		WriteData();
 	}
-	void MachineControllerImpl::WaitCompletion() {
+    void MachineControllerImpl::WaitCompletion() {
+		uint32_t cSpins = 0;
+		uint32_t cInIsr = 0;
 		do {
+			++cSpins;
+			if ( bCheckMcuState ) {
+				bool bInIsr;
+				CheckMcuState(bInIsr);
+				cInIsr += bInIsr;
+			}
 			ReadData();
 			PRINTF("%8d %8d  \r", exchange.axis[0].pos, exchange.axis[1].pos);
 		} while ( exchange.axis[0].state != 0 || exchange.axis[1].state != 0 );
 		PRINTF("%8d %8d %5d   %8d %8d %5d\r\n", exchange.axis[0].pos, exchange.axis[0].d, exchange.axis[0].minSlack, exchange.axis[1].pos, exchange.axis[1].d, exchange.axis[1].minSlack);
 	}
     void MachineControllerImpl::LoadElf(LPCSTR path) {
-		::MachineController::LoadElf(this, path, cbBlock);
+        ::MachineControllerSpace::LoadElf(this, path, cbBlock);
+	}
+    void MachineControllerImpl::CheckMcuState(bool& bInIsr) {
+		uint32_t PcSample;
+		uint32_t dhcsr, dfsr, icsr;
+		ReadDebug32(DHCSR, dhcsr);
+		ReadDebug32(DFSR, dfsr);
+		ReadDebug32(ICSR, icsr);
+		bInIsr = (icsr & ICSR_VECTACTIVE) != 0;
+		if ( dhcsr & (DHCSR_S_RESET_ST | DHCSR_S_HALT | DHCSR_S_SLEEP | DHCSR_S_LOOKUP) ) {
+			auto Regs = std::make_unique<uint32_t[]>(cAllRegs);
+            auto Stack = std::make_unique<uint32_t[]>(cbStack / sizeof(uint32_t));
+			ReadDebug32(DWT_PCSR, PcSample);
+			ReadAllRegs(*(uint32_t(*)[cAllRegs])Regs.get());
+			ReadMemory32(StackBase, cbStack, Stack.get());
+			throw McuStateException(dhcsr, dfsr, icsr, PcSample, std::move(Regs), std::move(Stack));
+		}
 	}
 
-	MachineController* CreateMachineController(LPSTR devicePath) {
-		return new MachineControllerImpl(devicePath);
+    MachineController* CreateMachineController(LPSTR devicePath) {
+        return new MachineControllerImpl(devicePath);
 	}
 
 }

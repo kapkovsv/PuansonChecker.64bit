@@ -65,10 +65,9 @@ class ImageGraphicsScene : public QGraphicsScene
     int previousX;
     int previousY;
 
-    bool mouse_button_down;
-
     ImageWindow *window;
 
+    bool mouse_button_down;
 public:
     ImageGraphicsScene(ImageWindow *owner_window);
 
@@ -163,7 +162,7 @@ public:
         setHorizontalScrollBar(new ImageGraphicsScrollBar(this));
     }
 
-    virtual ~ImageGraphicsView()
+    virtual ~ImageGraphicsView() Q_DECL_OVERRIDE
     {
         delete verticalScrollBar();
         delete horizontalScrollBar();

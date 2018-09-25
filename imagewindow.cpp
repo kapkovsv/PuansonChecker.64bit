@@ -18,7 +18,7 @@ ImageWindow::~ImageWindow()
 
 ImageGraphicsScene::ImageGraphicsScene(ImageWindow *owner_window):
     QGraphicsScene(),
-    previousX(0), previousY(0), mouse_button_down(false), window(owner_window)
+    previousX(0), previousY(0), window(owner_window), mouse_button_down(false)
 {
 }
 
@@ -38,10 +38,7 @@ void ImageGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
                 if(y != mouseEvent->screenPos().y())
                     y = mouseEvent->screenPos().y();
 
-                qreal dx = x - previousX;
-                qreal dy = y - previousY;
-
-                PuansonChecker::getInstance()->moveImages(dx, dy);
+                PuansonChecker::getInstance()->moveImages(x - previousX, y - previousY);
                 previousX = x;
                 previousY = y;
             }

@@ -71,6 +71,12 @@
    </property>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>returnToSettingReferencePointsSearchAreasButton</tabstop>
+  <tabstop>returnToIdealContourImposeButton</tabstop>
+  <tabstop>passToNextAngleButton</tabstop>
+  <tabstop>cancelResearchButton</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

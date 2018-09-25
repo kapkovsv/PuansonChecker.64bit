@@ -14,7 +14,6 @@
 #include "maid3d1.h"
 #include "CtrlSample.h"
 
-extern ULONG	g_ulCameraType;	// CameraType
 #define VIDEO_SIZE_BLOCK  0x500000		// movie data read block size : 5MB
 
 //------------------------------------------------------------------------------------------------

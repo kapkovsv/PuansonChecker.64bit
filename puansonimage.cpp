@@ -653,7 +653,7 @@ bool PuansonImage::findP0(const QPointF &center, const qreal R, QPointF &start_p
 
     if(!p0.isNull())
     {
-        if(alpha != 0)
+        if(alpha != 0.0)
             sign = alpha > 0 ? 1 : -1;
         else
             sign = Phi > 0 ? 1 : -1;
@@ -1112,7 +1112,7 @@ void PuansonImage::drawIdealContour(const PuansonModel detail_research_puanson_m
 
         if(draw_measurements)
         {
-            idealContourMeasurementsPath.addText(point0 + ideal_contour_point_of_origin + QPoint(_scale * 1000, 0) * ratio, QFont("Noto Sans", 5, QFont::Thin), "R2");
+            idealContourMeasurementsPath.addText(point0 + ideal_contour_point_of_origin + QPoint(qRound(_scale * 1000), 0) * ratio, QFont("Noto Sans", 5, QFont::Thin), "R2");
         }
 
         new_point = ideal_contour_point_of_origin + _point1;
@@ -1221,7 +1221,7 @@ void PuansonImage::drawIdealContour(const PuansonModel detail_research_puanson_m
     const qreal line_4_y = _scale * 0;
 
     const qreal line_5_x = _scale * ideal_etalon_dimensions.diameter_6_dimension / 2.0;
-    const qreal line_5_y = _scale * -static_cast<qreal>(ideal_etalon_dimensions.skirt_bottom_part_lenght - ideal_etalon_dimensions.skirt_bottom_rounding_radius);
+    const qreal line_5_y = _scale * -static_cast<qreal>(static_cast<quint32>(ideal_etalon_dimensions.skirt_bottom_part_lenght) - ideal_etalon_dimensions.skirt_bottom_rounding_radius);
 
     point1 = QPointF(line_1_x, line_1_y) * ratio;
     point2 = QPointF(line_4_x, line_4_y) * ratio;
@@ -1604,7 +1604,7 @@ QPainterPath PuansonImage::drawIdealContour(const QRect &r, const QPointF &_poin
     const qreal line_4_y = _scale * 0;
 
     const qreal line_5_x = _scale * ideal_etalon_dimensions.diameter_6_dimension / 2.0;
-    const qreal line_5_y = _scale * -static_cast<qreal>(ideal_etalon_dimensions.skirt_bottom_part_lenght - ideal_etalon_dimensions.skirt_bottom_rounding_radius);
+    const qreal line_5_y = _scale * -static_cast<qreal>(static_cast<quint32>(ideal_etalon_dimensions.skirt_bottom_part_lenght) - ideal_etalon_dimensions.skirt_bottom_rounding_radius);
 
     point1 = QPointF(line_1_x, line_1_y) * ratio;
     point2 = QPointF(line_4_x, line_4_y) * ratio;
@@ -1757,7 +1757,7 @@ bool PuansonImage::findNearestIdealLineNormalVector(const QPoint &pt, QLine &las
             if(L < nearest_line_distance)
             {
                 nearest_arc = *it;
-                nearest_line_distance = L;
+                nearest_line_distance = static_cast<quint16>(qRound(L));
                 internalToleranceNormalVector = QPoint(qRound((pt.x() - it->Center().x()) / ll * (internalToleranceMkm + SHIFT) / calibration_ratio), qRound((pt.y() - it->Center().y()) / ll * (internalToleranceMkm + SHIFT) / calibration_ratio));
                 externalToleranceNormalVector = QPoint(-qRound((pt.x() - it->Center().x()) / ll * (externalToleranceMkm + SHIFT) / calibration_ratio), -qRound((pt.y() - it->Center().y()) / ll * (externalToleranceMkm + SHIFT)  / calibration_ratio));
             }
@@ -1772,7 +1772,7 @@ bool PuansonImage::findNearestIdealLineNormalVector(const QPoint &pt, QLine &las
 
     if(!last_line.isNull() &&
             (
-                ((current_line_distance = pointDistanceToLine(pt, last_line)) < nearest_line_distance) &&
+                ((current_line_distance = static_cast<quint16>(pointDistanceToLine(pt, last_line))) < nearest_line_distance) &&
                 (current_line_distance < NEAREST_LINE_MAX_DISTANCE) &&
                 ((pt.x() >= qMin(last_line.x1(), last_line.x2()) - D) && (pt.x() <= qMax(last_line.x1(), last_line.x2()) + D) &&
                  (pt.y() >= qMin(last_line.y1(), last_line.y2()) - D) && (pt.y() <= qMax(last_line.y1(), last_line.y2()) + D))
@@ -1797,7 +1797,7 @@ bool PuansonImage::findNearestIdealLineNormalVector(const QPoint &pt, QLine &las
 
     for(line_it = idealSkeletonLines.begin(); line_it != idealSkeletonLines.end(); line_it++, inner_it++, outer_it++)
     {
-        current_line_distance = pointDistanceToLine(pt, *line_it);
+        current_line_distance = static_cast<quint16>(pointDistanceToLine(pt, *line_it));
 
         if(current_line_distance < nearest_line_distance && ((pt.x() >= qMin(line_it->x1(), line_it->x2()) - D) && (pt.x() <= qMax(line_it->x1(), line_it->x2()) + D) &&
                                                              (pt.y() >= qMin(line_it->y1(), line_it->y2()) - D) && (pt.y() <= qMax(line_it->y1(), line_it->y2()) + D)))
@@ -1833,7 +1833,7 @@ bool PuansonImage::getQImage(QImage &img) const
     if(image.empty())
         return false;
 
-    img = QImage((const unsigned char*)(image.data),
+    img = QImage(reinterpret_cast<const unsigned char *>(image.data),
                   image.cols, image.rows,
                   static_cast<int>(image.step), QImage::Format_RGB888).rgbSwapped();
 
@@ -1868,7 +1868,7 @@ void PuansonImage::setReferencePoints(const QPoint &p1, const QPoint &p2)
     reference_point2 = p2;
 
     QPoint distance_vector_px = reference_point2 - reference_point1;
-    reference_point_distance_px = qSqrt(distance_vector_px.x()*distance_vector_px.x() + distance_vector_px.y()*distance_vector_px.y());
+    reference_point_distance_px = static_cast<quint32>(qRound(qSqrt(distance_vector_px.x()*distance_vector_px.x() + distance_vector_px.y()*distance_vector_px.y())));
 
     calculateCalibrationRatio();
 }
@@ -1877,7 +1877,7 @@ void PuansonImage::calculateDetailDimensionsFromDeviations(const PuansonImage& e
 {
     for(quint8 i = 0; i < diameter_dimensions.size(); i++)
     {
-        diameter_dimensions[i].measurement_actual_diameter = etalon_image.diameter_dimensions[i].measurement_actual_diameter + (diameter_dimensions[i].right_side_deviation + diameter_dimensions[i].left_side_deviation);
+        diameter_dimensions[i].measurement_actual_diameter = etalon_image.diameter_dimensions[i].measurement_actual_diameter + static_cast<quint16>(diameter_dimensions[i].right_side_deviation + diameter_dimensions[i].left_side_deviation);
     }
 }
 

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>671</width>
+    <width>676</width>
     <height>589</height>
    </rect>
   </property>
@@ -208,6 +208,12 @@
    <header>currentform.h</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>helpButton</tabstop>
+  <tabstop>setReferencePointsManuallyButton</tabstop>
+  <tabstop>setReferencePointsAutomaticButton</tabstop>
+  <tabstop>shotAndLoadButton</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

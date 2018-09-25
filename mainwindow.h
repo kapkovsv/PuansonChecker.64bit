@@ -26,7 +26,7 @@ private:
     void drawReferenceAndInnerSkeletonPoints();
 public:
     explicit MainWindow();
-    ~MainWindow();
+    ~MainWindow() Q_DECL_OVERRIDE;
 
     void drawImage(const QImage &img);
     void drawIdealContour(const QPoint &_ideal_origin_point = QPoint(), const qreal _ideal_rotation_angle = 0.0);
@@ -34,7 +34,7 @@ public:
     void drawReferencePoints(const QPoint &reference_point1, const QPoint &reference_point2);
     void drawReferencePointAutoSearchArea(const ReferencePointType_e reference_point_type, const QRect &search_area_rect = QRect());
 
-    void moveImage(const qreal dx, const qreal dy);
+    void moveImage(const qreal dx, const qreal dy) Q_DECL_OVERRIDE;
     void setImageCursor(const QCursor &cursor) Q_DECL_OVERRIDE;
     void setWindowStatus(const QString &status);
     void setCalibrationMode(CalibrationMode_e mode);

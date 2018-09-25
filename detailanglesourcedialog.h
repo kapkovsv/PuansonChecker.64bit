@@ -21,7 +21,7 @@ class DetailAngleSourceDialog : public QDialog
 
 public:
     explicit DetailAngleSourceDialog(ImageType_e image_type, quint8 etalon_research_active_angle, QWidget *parent = 0);
-    ~DetailAngleSourceDialog();
+    ~DetailAngleSourceDialog() Q_DECL_OVERRIDE;
 
 public slots:
     void loadingFromFileButtonPressed();

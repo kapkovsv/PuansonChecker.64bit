@@ -35,19 +35,22 @@ EtalonResearchCreationDialog::EtalonResearchCreationDialog(QWidget *parent) :
     quint32 diameter_1_dimension, diameter_2_dimension, diameter_3_dimension, diameter_4_dimension, diameter_5_dimension, diameter_6_dimension, diameter_7_dimension, diameter_8_dimension, diameter_9_dimension, groove_width_dimension, groove_depth_dimension;
     quint32 needle_rounding_radius, skirt_rounding_radius, skirt_bottom_rounding_radius;
 
-    PuansonChecker::getInstance()->getEtalon().getDetailDimensions(diameter_1_dimension, diameter_2_dimension, diameter_3_dimension, diameter_4_dimension, diameter_5_dimension, diameter_6_dimension, diameter_7_dimension, diameter_8_dimension, diameter_9_dimension, groove_width_dimension, groove_depth_dimension, needle_rounding_radius, skirt_rounding_radius, skirt_bottom_rounding_radius);
+    PuansonChecker::getInstance()->getEtalon().getIdealDimensions(diameter_1_dimension, diameter_2_dimension, diameter_3_dimension, diameter_4_dimension, diameter_5_dimension, diameter_6_dimension, diameter_7_dimension, diameter_8_dimension, diameter_9_dimension, groove_width_dimension, groove_depth_dimension, needle_rounding_radius, skirt_rounding_radius, skirt_bottom_rounding_radius);
 
-    ui->dimensionDiameter1SpinBox->setValue(diameter_1_dimension);
-    ui->dimensionDiameter2SpinBox->setValue(diameter_2_dimension);
-    ui->dimensionDiameter3SpinBox->setValue(diameter_3_dimension);
-    ui->dimensionDiameter4SpinBox->setValue(diameter_4_dimension);
-    ui->dimensionDiameter5SpinBox->setValue(diameter_5_dimension);
-    ui->dimensionDiameter6SpinBox->setValue(diameter_6_dimension);
-    ui->dimensionDiameter7SpinBox->setValue(diameter_7_dimension);
-    ui->dimensionDiameter8SpinBox->setValue(diameter_8_dimension);
-    ui->dimensionDiameter9SpinBox->setValue(diameter_9_dimension);
-    ui->dimensionGrooveWidthSpinBox->setValue(groove_width_dimension);
-    ui->dimensionGrooveDepthSpinBox->setValue(groove_depth_dimension);
+    ui->dimensionDiameter1SpinBox->setValue(static_cast<qint32>(diameter_1_dimension));
+    ui->dimensionDiameter2SpinBox->setValue(static_cast<qint32>(diameter_2_dimension));
+    ui->dimensionDiameter3SpinBox->setValue(static_cast<qint32>(diameter_3_dimension));
+    ui->dimensionDiameter4SpinBox->setValue(static_cast<qint32>(diameter_4_dimension));
+    ui->dimensionDiameter5SpinBox->setValue(static_cast<qint32>(diameter_5_dimension));
+    ui->dimensionDiameter6SpinBox->setValue(static_cast<qint32>(diameter_6_dimension));
+    ui->dimensionDiameter7SpinBox->setValue(static_cast<qint32>(diameter_7_dimension));
+    ui->dimensionDiameter8SpinBox->setValue(static_cast<qint32>(diameter_8_dimension));
+    ui->dimensionDiameter9SpinBox->setValue(static_cast<qint32>(diameter_9_dimension));
+    ui->dimensionGrooveWidthSpinBox->setValue(static_cast<qint32>(groove_width_dimension));
+    ui->dimensionGrooveDepthSpinBox->setValue(static_cast<qint32>(groove_depth_dimension));
+
+    ui->useMachineForDetailMovementCheckBox->setChecked(PuansonChecker::getInstance()->useMachineForDetailMovement());
+    ui->imageSourcePhotoShootingOnlyCheckBox->setChecked(PuansonChecker::getInstance()->isImageSourcePhotoShootingOnly());
 
     updateIdealPuansonAndDimensionsGraphicsView(current_etalon_model);
 }
@@ -96,53 +99,66 @@ void EtalonResearchCreationDialog::etalonResearchCreationDialogAccepted()
 
     PuansonModel puanson_model = static_cast<PuansonModel>(ui->puansonModelComboBox->currentText().toInt());
     QDateTime creation_date_time = ui->creationDateTimeEdit->dateTime();
-    quint32 diameter_1_dimension = ui->dimensionDiameter1SpinBox->value();
-    quint32 diameter_2_dimension = ui->dimensionDiameter2SpinBox->value();
-    quint32 diameter_3_dimension = ui->dimensionDiameter3SpinBox->value();
-    quint32 diameter_4_dimension = ui->dimensionDiameter4SpinBox->value();
-    quint32 diameter_5_dimension = ui->dimensionDiameter5SpinBox->value();
-    quint32 diameter_6_dimension = ui->dimensionDiameter6SpinBox->value();
-    quint32 diameter_7_dimension = ui->dimensionDiameter7SpinBox->value();
-    quint32 diameter_8_dimension = ui->dimensionDiameter8SpinBox->value();
-    quint32 diameter_9_dimension = ui->dimensionDiameter9SpinBox->value();
 
-    quint32 groove_width_dimension = ui->dimensionGrooveWidthSpinBox->value();
-    quint32 groove_depth_dimension = ui->dimensionGrooveDepthSpinBox->value();
-
-    quint32 needle_rounding_radius = ui->dimensionRadius1SpinBox->value();
-    quint32 skirt_rounding_radius = ui->dimensionRadius2SpinBox->value();
-    quint32 skirt_bottom_rounding_radius = ui->dimensionRadius3SpinBox->value();
-
+    PuansonChecker::getInstance()->getEtalon().setEtalonResearchPuansonModel(puanson_model);
     PuansonChecker::getInstance()->setEtalonResearchSettings(etalon_research_folder_path, puanson_model, creation_date_time, NUMBER_OF_ETALON_ANGLES);
-    PuansonChecker::getInstance()->getEtalon().setDetailDimensions(diameter_1_dimension, diameter_2_dimension, diameter_3_dimension, diameter_4_dimension, diameter_5_dimension, diameter_6_dimension, diameter_7_dimension, diameter_8_dimension, diameter_9_dimension, groove_width_dimension, groove_depth_dimension, needle_rounding_radius, skirt_rounding_radius, skirt_bottom_rounding_radius);
+
+    EtalonDetailDimensions etalon_dimensions;
+
+    etalon_dimensions.diameter_1_dimension = ui->dimensionDiameter1SpinBox->value();
+    etalon_dimensions.diameter_2_dimension = ui->dimensionDiameter2SpinBox->value();
+    etalon_dimensions.diameter_3_dimension = ui->dimensionDiameter3SpinBox->value();
+    etalon_dimensions.diameter_4_dimension = ui->dimensionDiameter4SpinBox->value();
+    etalon_dimensions.diameter_5_dimension = ui->dimensionDiameter5SpinBox->value();
+    etalon_dimensions.diameter_6_dimension = ui->dimensionDiameter6SpinBox->value();
+    etalon_dimensions.diameter_7_dimension = ui->dimensionDiameter7SpinBox->value();
+    etalon_dimensions.diameter_8_dimension = ui->dimensionDiameter8SpinBox->value();
+    etalon_dimensions.diameter_9_dimension = ui->dimensionDiameter9SpinBox->value();
+
+    etalon_dimensions.groove_width_dimension = ui->dimensionGrooveWidthSpinBox->value();
+    etalon_dimensions.groove_depth_dimension = ui->dimensionGrooveDepthSpinBox->value();
+
+    etalon_dimensions.needle_rounding_radius = static_cast<quint32>(ui->dimensionRadius1SpinBox->value());
+    etalon_dimensions.skirt_rounding_radius = static_cast<quint32>(ui->dimensionRadius2SpinBox->value());
+    etalon_dimensions.skirt_bottom_rounding_radius = static_cast<quint32>(ui->dimensionRadius3SpinBox->value());
+
+    PuansonChecker::getInstance()->getLoadedResearch().setDetailDimensions(etalon_dimensions);
+    PuansonChecker::getInstance()->getEtalon().setDetailDimensions(static_cast<quint32>(etalon_dimensions.diameter_1_dimension), static_cast<quint32>(etalon_dimensions.diameter_2_dimension), static_cast<quint32>(etalon_dimensions.diameter_3_dimension), static_cast<quint32>(etalon_dimensions.diameter_4_dimension), static_cast<quint32>(etalon_dimensions.diameter_5_dimension), static_cast<quint32>(etalon_dimensions.diameter_6_dimension), static_cast<quint32>(etalon_dimensions.diameter_7_dimension), static_cast<quint32>(etalon_dimensions.diameter_8_dimension), static_cast<quint32>(etalon_dimensions.diameter_9_dimension), static_cast<quint32>(etalon_dimensions.groove_width_dimension), static_cast<quint32>(etalon_dimensions.groove_depth_dimension), static_cast<quint32>(etalon_dimensions.needle_rounding_radius), static_cast<quint32>(etalon_dimensions.skirt_rounding_radius), static_cast<quint32>(etalon_dimensions.skirt_bottom_rounding_radius));
+
+    PuansonChecker::getInstance()->setImageSourcePhotoShootingOnly(ui->imageSourcePhotoShootingOnlyCheckBox->isChecked());
+    PuansonChecker::getInstance()->setMachineForDetailMovement(ui->useMachineForDetailMovementCheckBox->isChecked());
 
     accept();
 }
 
 void EtalonResearchCreationDialog::puansonModelComboBoxIndexChanged(const QString &text)
 {
-    quint32 diameter_1_dimension, diameter_2_dimension, diameter_3_dimension, diameter_4_dimension, diameter_5_dimension, diameter_6_dimension, diameter_7_dimension, diameter_8_dimension, diameter_9_dimension, groove_width_dimension, groove_depth_dimension;
-    quint32 needle_rounding_radius, skirt_rounding_radius, skirt_bottom_rounding_radius;
+//    quint32 diameter_1_dimension, diameter_2_dimension, diameter_3_dimension, diameter_4_dimension, diameter_5_dimension, diameter_6_dimension, diameter_7_dimension, diameter_8_dimension, diameter_9_dimension, groove_width_dimension, groove_depth_dimension;
+//    quint32 needle_rounding_radius, skirt_rounding_radius, skirt_bottom_rounding_radius;
+    EtalonDetailDimensions detail_dimensions;
 
-    PuansonChecker::getInstance()->getEtalon().setEtalonResearchPuansonModel(static_cast<PuansonModel>(text.toInt()));
-    PuansonChecker::getInstance()->getEtalon().getDetailDimensions(diameter_1_dimension, diameter_2_dimension, diameter_3_dimension, diameter_4_dimension, diameter_5_dimension, diameter_6_dimension, diameter_7_dimension, diameter_8_dimension, diameter_9_dimension, groove_width_dimension, groove_depth_dimension, needle_rounding_radius, skirt_rounding_radius, skirt_bottom_rounding_radius);
+    memset(&detail_dimensions, 0, sizeof detail_dimensions);
 
-    ui->dimensionDiameter1SpinBox->setValue(diameter_1_dimension);
-    ui->dimensionDiameter2SpinBox->setValue(diameter_2_dimension);
-    ui->dimensionDiameter3SpinBox->setValue(diameter_3_dimension);
-    ui->dimensionDiameter4SpinBox->setValue(diameter_4_dimension);
-    ui->dimensionDiameter5SpinBox->setValue(diameter_5_dimension);
-    ui->dimensionDiameter6SpinBox->setValue(diameter_6_dimension);
-    ui->dimensionDiameter7SpinBox->setValue(diameter_7_dimension);
-    ui->dimensionDiameter8SpinBox->setValue(diameter_8_dimension);
-    ui->dimensionDiameter9SpinBox->setValue(diameter_9_dimension);
+    //PuansonChecker::getInstance()->getEtalon().setEtalonResearchPuansonModel(static_cast<PuansonModel>(text.toInt()));
+    PuansonImage::getIdealDimensions(static_cast<PuansonModel>(text.toInt()), detail_dimensions);
+    //PuansonChecker::getInstance()->getEtalon().getIdealDimensions(diameter_1_dimension, diameter_2_dimension, diameter_3_dimension, diameter_4_dimension, diameter_5_dimension, diameter_6_dimension, diameter_7_dimension, diameter_8_dimension, diameter_9_dimension, groove_width_dimension, groove_depth_dimension, needle_rounding_radius, skirt_rounding_radius, skirt_bottom_rounding_radius);
 
-    ui->dimensionGrooveWidthSpinBox->setValue(groove_width_dimension);
-    ui->dimensionGrooveDepthSpinBox->setValue(groove_depth_dimension);
+    ui->dimensionDiameter1SpinBox->setValue(static_cast<qint32>(detail_dimensions.diameter_1_dimension));
+    ui->dimensionDiameter2SpinBox->setValue(static_cast<qint32>(detail_dimensions.diameter_2_dimension));
+    ui->dimensionDiameter3SpinBox->setValue(static_cast<qint32>(detail_dimensions.diameter_3_dimension));
+    ui->dimensionDiameter4SpinBox->setValue(static_cast<qint32>(detail_dimensions.diameter_4_dimension));
+    ui->dimensionDiameter5SpinBox->setValue(static_cast<qint32>(detail_dimensions.diameter_5_dimension));
+    ui->dimensionDiameter6SpinBox->setValue(static_cast<qint32>(detail_dimensions.diameter_6_dimension));
+    ui->dimensionDiameter7SpinBox->setValue(static_cast<qint32>(detail_dimensions.diameter_7_dimension));
+    ui->dimensionDiameter8SpinBox->setValue(static_cast<qint32>(detail_dimensions.diameter_8_dimension));
+    ui->dimensionDiameter9SpinBox->setValue(static_cast<qint32>(detail_dimensions.diameter_9_dimension));
 
-    ui->dimensionRadius1SpinBox->setValue(needle_rounding_radius);
-    ui->dimensionRadius2SpinBox->setValue(skirt_rounding_radius);
-    ui->dimensionRadius3SpinBox->setValue(skirt_bottom_rounding_radius);
+    ui->dimensionGrooveWidthSpinBox->setValue(static_cast<qint32>(detail_dimensions.groove_width_dimension));
+    ui->dimensionGrooveDepthSpinBox->setValue(static_cast<qint32>(detail_dimensions.groove_depth_dimension));
+
+    ui->dimensionRadius1SpinBox->setValue(static_cast<qint32>(detail_dimensions.needle_rounding_radius));
+    ui->dimensionRadius2SpinBox->setValue(static_cast<qint32>(detail_dimensions.skirt_rounding_radius));
+    ui->dimensionRadius3SpinBox->setValue(static_cast<qint32>(detail_dimensions.skirt_bottom_rounding_radius));
 
     updateIdealPuansonAndDimensionsGraphicsView(static_cast<PuansonModel>(text.toInt()));
 }

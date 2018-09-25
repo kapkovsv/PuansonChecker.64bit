@@ -29,7 +29,7 @@
 #ifndef _SYS_ELF32_H_
 #define _SYS_ELF32_H_ 1
 
-#include "MachineController/sys/elf_common.h"
+#include "MachineController\sys\elf_common.h"
 
 /*
  * ELF definitions common to all 32-bit architectures.

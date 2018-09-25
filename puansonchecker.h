@@ -28,6 +28,7 @@
 #include "puansonimage.h"
 #include "photocamera.h"
 #include "puansonmachine.h"
+#include "puansonresearch.h"
 #include "generalsettings.h"
 
 #define CONFIGURATION_FILE "puanson_checker_config.xml"
@@ -95,6 +96,11 @@ public:
         etalon_puanson_image.setEtalonResearchPuansonModel(_detail_research_puanson_model);
         etalon_research_date_time_of_creation = _etalon_research_date_time_of_creation;
         etalon_research_number_of_angles = _etalon_research_number_of_angles;
+
+        loaded_research = PuansonResearch(_etalon_research_number_of_angles, _detail_research_puanson_model, _etalon_research_date_time_of_creation, _etalon_research_folder_path);
+
+        for(quint8 angle = 1; angle <= etalon_research_number_of_angles; angle++)
+            loaded_research.loadEtalonAngle(angle);
     }
 
     inline void setCurrentResearchSettings(const QString &_current_research_folder_path, const QDateTime &_current_research_date_time_of_creation, const bool _current_detail_angle_source_photo_shooting_only)
@@ -106,8 +112,9 @@ public:
 
     inline void cancelEtalonResearch()
     {
+        /*
         QDir(etalon_research_folder_path).removeRecursively();
-        QDir().mkdir(etalon_research_folder_path);
+        QDir().mkdir(etalon_research_folder_path);*/
         resetEtalonResearchSettings();
     }
 
@@ -118,12 +125,19 @@ public:
             QDir(current_research_folder_path).removeRecursively();
             QDir().mkdir(current_research_folder_path);
         }
+
+        image_source_photo_shooting_only = true;
+        use_machine_for_detail_movement = true;
+
         current_research_active_angle = 0;
     }
 
     inline void resetEtalonResearchSettings()
     {
         setEtalonResearchSettings("", PuansonModel::PUANSON_MODEL_658, QDateTime(), 0);
+
+        image_source_photo_shooting_only = true;
+        use_machine_for_detail_movement = true;
 
         etalon_research_active_angle = 0;
     }
@@ -170,6 +184,9 @@ public:
 
     inline void completeEtalonResearch()
     {
+        image_source_photo_shooting_only = true;
+        use_machine_for_detail_movement = true;
+
         etalon_research_completed = true;
     }
 
@@ -203,6 +220,11 @@ public:
     PuansonImage &getEtalon()
     {
         return etalon_puanson_image;
+    }
+
+    PuansonResearch &getLoadedResearch()
+    {
+        return loaded_research;
     }
 
     quint8 getActiveEtalonResearchAngle() const
@@ -254,7 +276,7 @@ public:
     void shootAndLoadCurrentImage();
     void shootAndLoadEtalonImage();
 
-    void shiftCurrentImage(const qreal dx, const qreal dy);
+    void shiftCurrentImage(const float dx, const float dy);
     void rotateCurrentImage(const double angle);
     bool combineImagesByReferencePoints();
     bool combineImagesByReferencePointsAndDrawBadPoints();
@@ -284,6 +306,26 @@ public:
     void researchCurrentAngle(quint8 angle = 0);
 
     bool loadEtalonResearch(const QString &etalon_research_folder_path);
+
+    inline bool isImageSourcePhotoShootingOnly() const
+    {
+        return image_source_photo_shooting_only;
+    }
+
+    inline void setImageSourcePhotoShootingOnly(const bool new_value)
+    {
+        image_source_photo_shooting_only = new_value;
+    }
+
+    inline bool useMachineForDetailMovement() const
+    {
+        return use_machine_for_detail_movement;
+    }
+
+    inline void setMachineForDetailMovement(const bool new_value)
+    {
+        image_source_photo_shooting_only = new_value;
+    }
     // --------
 
     // Move images
@@ -294,6 +336,13 @@ public:
     bool connectToCamera();
     bool disconnectFromCamera();
     QString getCameraStatus() const;
+    // ------
+
+    // Machine
+    PuansonMachine *getMachine() const
+    {
+        return machine;
+    }
     // ------
 
     // Drawing images
@@ -417,6 +466,15 @@ private:
     // Ракурс эталона
     PuansonImage etalon_puanson_image;      // Активный ракурс эталона
     // -------
+
+    // Флаг получения изображений только с помощью фотоаппарата
+    bool image_source_photo_shooting_only = true;
+
+    // Флаг автоматического изменения позиции детали с помощью станка
+    bool use_machine_for_detail_movement = true;
+
+    // Загруженное исследование
+    PuansonResearch loaded_research;
 
     // Исследование эталона
     QString etalon_research_folder_path;

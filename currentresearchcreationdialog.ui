@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>657</width>
-    <height>176</height>
+    <height>205</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>126</y>
+     <y>160</y>
      <width>621</width>
      <height>32</height>
     </rect>
@@ -92,12 +92,15 @@
     <rect>
      <x>20</x>
      <y>90</y>
-     <width>481</width>
+     <width>616</width>
      <height>24</height>
     </rect>
    </property>
    <property name="text">
     <string>В качестве получения изображений использовать только фотосъёмку</string>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
    </property>
   </widget>
   <widget class="QLabel" name="creationDateTimeLabel">
@@ -135,7 +138,28 @@
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
+  <widget class="QCheckBox" name="useMachineForDetailMovementCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>125</y>
+     <width>616</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Использовать станок для помещения детали в нужную позицию ракурса</string>
+   </property>
+  </widget>
  </widget>
+ <tabstops>
+  <tabstop>saveResearchToDiskCheckBox</tabstop>
+  <tabstop>creationDateTimeEdit</tabstop>
+  <tabstop>saveFolderPathLineEdit</tabstop>
+  <tabstop>chooseSaveFolderPathPushButton</tabstop>
+  <tabstop>imageSourcePhotoShootingOnlyCheckBox</tabstop>
+  <tabstop>useMachineForDetailMovementCheckBox</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
@@ -146,11 +170,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>248</x>
-     <y>254</y>
+     <y>191</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
-     <y>274</y>
+     <y>204</y>
     </hint>
    </hints>
   </connection>
@@ -162,11 +186,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>316</x>
-     <y>260</y>
+     <y>191</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>
-     <y>274</y>
+     <y>204</y>
     </hint>
    </hints>
   </connection>
