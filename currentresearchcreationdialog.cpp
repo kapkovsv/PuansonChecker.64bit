@@ -3,7 +3,6 @@
 
 #include "puansonchecker.h"
 #include <QFileDialog>
-#include <QMessageBox>
 
 CurrentResearchCreationDialog::CurrentResearchCreationDialog(QWidget *parent) :
     QDialog(parent),

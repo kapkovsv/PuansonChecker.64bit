@@ -15,7 +15,7 @@ const qreal PuansonImage::default_calibration_ratio = 4.95613;
 const quint16 PuansonImage::GrooveMeasurements::measurement_depth_radius_mkm = 200U;
 
 PuansonImage::PuansonImage(const ImageType_e _image_type, const Mat &_image, const libraw_processed_image_t *_raw_image, const QString &_filename):
-    image(_image), raw_image(const_cast<libraw_processed_image_t *>(_raw_image)), p_raw_image_reference_counter(new quint16(1)), filename(_filename),
+    image(_image), raw_image(const_cast<libraw_processed_image_t *>(_raw_image), rawImageDelete), filename(_filename),
     image_type(_image_type), empty(false), cropped(false), crop_scale(1.0), reference_point_distance_mkm(0), reference_point_distance_px(0),
     calibration_ratio(0.0), externalToleranceMkm(0), internalToleranceMkm(0), isIdealContourSetFlag(false)
 {
@@ -28,7 +28,7 @@ PuansonImage::PuansonImage(const ImageType_e _image_type, const Mat &_image, con
 }
 
 PuansonImage::PuansonImage():
-    raw_image(Q_NULLPTR), p_raw_image_reference_counter(new quint16(0)), filename(""), image_type(ImageType_e::UNDEFINED_IMAGE),
+    raw_image(Q_NULLPTR, rawImageDelete), filename(""), image_type(ImageType_e::UNDEFINED_IMAGE),
     empty(true), cropped(false), crop_scale(1.0), reference_point_distance_mkm(0), reference_point_distance_px(0),
     calibration_ratio(0.0), externalToleranceMkm(0), internalToleranceMkm(0), isIdealContourSetFlag(false),
     Y_top(0), Y_bottom(0), X_left(0), X_right(0)
@@ -43,14 +43,8 @@ PuansonImage::~PuansonImage()
 
 PuansonImage &PuansonImage::operator=(const PuansonImage &img)
 {
-    release();
-
-    image = img.image;
-    image_contour = img.image_contour;
-    filename = img.filename;
-    image_type = img.image_type;
-    raw_image = img.raw_image;
-    empty = img.empty;
+    // Копирование графической информации
+    operator^=(img);
 
     reference_point1 = img.reference_point1;
     reference_point2 = img.reference_point2;
@@ -63,14 +57,6 @@ PuansonImage &PuansonImage::operator=(const PuansonImage &img)
     internalToleranceMkm = img.internalToleranceMkm;
 
     copyIdealContour(img);
-
-    Y_top = img.Y_top;
-    Y_bottom = img.Y_bottom;
-    X_left = img.X_left;
-    X_right = img.X_right;
-
-    p_raw_image_reference_counter = img.p_raw_image_reference_counter;
-    (*p_raw_image_reference_counter)++;
 
     return *this;
 }
@@ -90,9 +76,6 @@ PuansonImage &PuansonImage::operator^=(const PuansonImage &img)
     Y_bottom = img.Y_bottom;
     X_left = img.X_left;
     X_right = img.X_right;
-
-    p_raw_image_reference_counter = img.p_raw_image_reference_counter;
-    (*p_raw_image_reference_counter)++;
 
     return *this;
 }
@@ -138,40 +121,24 @@ QVector<QLine> IdealInnerSegment::getControlLines(const quint8 step, const QRect
             if(!analysis_rect.isNull())
             {
                 if(new_control_line.y1() > analysis_rect.bottom())
-                {
                     new_control_line.setP1((pt - int_normal_vector * (analysis_rect.bottom() - pt.y()) / qAbs(int_normal_vector.y())).toPoint());
-                }
                 else if(new_control_line.y1() < analysis_rect.top())
-                {
                     new_control_line.setP1((pt - int_normal_vector * (pt.y() - analysis_rect.top()) / qAbs(int_normal_vector.y())).toPoint());
-                }
 
                 if(new_control_line.x1() > analysis_rect.right())
-                {
                     new_control_line.setP1((pt - int_normal_vector * (analysis_rect.right() - pt.x()) / qAbs(int_normal_vector.x())).toPoint());
-                }
                 else if(new_control_line.x1() < analysis_rect.left())
-                {
                     new_control_line.setP1((pt - int_normal_vector * (pt.x() - analysis_rect.left()) / qAbs(int_normal_vector.x())).toPoint());
-                }
 
                 if(new_control_line.y2() > analysis_rect.bottom())
-                {
                     new_control_line.setP2((pt + int_normal_vector * (analysis_rect.bottom() - pt.y()) / qAbs(int_normal_vector.y())).toPoint());
-                }
                 else if(new_control_line.y2() < analysis_rect.top())
-                {
                     new_control_line.setP2((pt + int_normal_vector * (pt.y() - analysis_rect.top()) / qAbs(int_normal_vector.y())).toPoint());
-                }
 
                 if(new_control_line.x2() > analysis_rect.right())
-                {
                     new_control_line.setP2((pt + int_normal_vector * (analysis_rect.right() - pt.x()) / qAbs(int_normal_vector.x())).toPoint());
-                }
                 else if(new_control_line.x2() < analysis_rect.left())
-                {
                     new_control_line.setP2((pt + int_normal_vector * (pt.x() - analysis_rect.left()) / qAbs(int_normal_vector.x())).toPoint());
-                }
             }
 
             control_lines.append(new_control_line);
@@ -199,40 +166,24 @@ QVector<QLine> IdealInnerSegment::getControlLines(const quint8 step, const QRect
             if(!analysis_rect.isNull())
             {
                 if(new_control_line.y1() > analysis_rect.bottom())
-                {
                     new_control_line.setP1((pt - int_normal_vector * (analysis_rect.bottom() - pt.y()) / qAbs(int_normal_vector.y())).toPoint());
-                }
                 else if(new_control_line.y1() < analysis_rect.top())
-                {
                     new_control_line.setP1((pt - int_normal_vector * (pt.y() - analysis_rect.top()) / qAbs(int_normal_vector.y())).toPoint());
-                }
 
                 if(new_control_line.x1() > analysis_rect.right())
-                {
                     new_control_line.setP1((pt - int_normal_vector * (analysis_rect.right() - pt.x()) / qAbs(int_normal_vector.x())).toPoint());
-                }
                 else if(new_control_line.x1() < analysis_rect.left())
-                {
                     new_control_line.setP1((pt - int_normal_vector * (pt.x() - analysis_rect.left()) / qAbs(int_normal_vector.x())).toPoint());
-                }
 
                 if(new_control_line.y2() > analysis_rect.bottom())
-                {
                     new_control_line.setP2((pt + int_normal_vector * (analysis_rect.bottom() - pt.y()) / qAbs(int_normal_vector.y())).toPoint());
-                }
                 else if(new_control_line.y2() < analysis_rect.top())
-                {
                     new_control_line.setP2((pt + int_normal_vector * (pt.y() - analysis_rect.top()) / qAbs(int_normal_vector.y())).toPoint());
-                }
 
                 if(new_control_line.x2() > analysis_rect.right())
-                {
                     new_control_line.setP2((pt + int_normal_vector * (analysis_rect.right() - pt.x()) / qAbs(int_normal_vector.x())).toPoint());
-                }
                 else if(new_control_line.x2() < analysis_rect.left())
-                {
                     new_control_line.setP2((pt + int_normal_vector * (pt.x() - analysis_rect.left()) / qAbs(int_normal_vector.x())).toPoint());
-                }
             }
 
             control_lines.append(new_control_line);
@@ -333,6 +284,23 @@ QVector<QLine> PuansonImage::getMeasurementLines(const QRect &analysis_rect)
         }
     }
 
+    if(analysis_rect.contains(ideal_contour_transform.map(groove_dimensions.top_right_depth_measurement_point.measurement_ideal_point + QPoint(0, 1000) + ideal_contour_point_of_origin.toPoint())))
+    {
+        // Глубина паза
+        measurement_lines.append(ideal_contour_transform.map(QLine(groove_dimensions.top_right_depth_measurement_point.measurement_ideal_point + QPoint(0, 1000) + ideal_contour_point_of_origin.toPoint(), groove_dimensions.top_right_depth_measurement_point.measurement_ideal_point - QPoint(0, 1000) + ideal_contour_point_of_origin.toPoint())));
+        measurement_lines.append(ideal_contour_transform.map(QLine(groove_dimensions.top_left_depth_measurement_point.measurement_ideal_point + QPoint(0, 1000) + ideal_contour_point_of_origin.toPoint(), groove_dimensions.top_left_depth_measurement_point.measurement_ideal_point - QPoint(0, 1000) + ideal_contour_point_of_origin.toPoint())));
+
+        measurement_lines.append(ideal_contour_transform.map(QLine(groove_dimensions.bottom_right_depth_measurement_point.measurement_ideal_point + QPoint(0, 1000) + ideal_contour_point_of_origin.toPoint(), groove_dimensions.top_right_depth_measurement_point.measurement_ideal_point - QPoint(0, 1000) + ideal_contour_point_of_origin.toPoint())));
+        measurement_lines.append(ideal_contour_transform.map(QLine(groove_dimensions.bottom_left_depth_measurement_point.measurement_ideal_point + QPoint(0, 1000) + ideal_contour_point_of_origin.toPoint(), groove_dimensions.top_left_depth_measurement_point.measurement_ideal_point - QPoint(0, 1000) + ideal_contour_point_of_origin.toPoint())));
+
+        // Ширина паза
+        measurement_lines.append(ideal_contour_transform.map(QLine(QPoint(groove_dimensions.top_width_measurement.measurement_actual_width / 2, groove_dimensions.top_width_measurement.measurement_y_position) + QPoint(1000, 0) + ideal_contour_point_of_origin.toPoint(), QPoint(0, groove_dimensions.top_width_measurement.measurement_y_position) + ideal_contour_point_of_origin.toPoint())));
+        measurement_lines.append(ideal_contour_transform.map(QLine(-(QPoint(groove_dimensions.top_width_measurement.measurement_actual_width / 2, groove_dimensions.top_width_measurement.measurement_y_position) + QPoint(1000, 0)) + ideal_contour_point_of_origin.toPoint(), QPoint(0, groove_dimensions.top_width_measurement.measurement_y_position) + ideal_contour_point_of_origin.toPoint())));
+
+        measurement_lines.append(ideal_contour_transform.map(QLine(QPoint(groove_dimensions.bottom_width_measurement.measurement_actual_width / 2, groove_dimensions.bottom_width_measurement.measurement_y_position) + QPoint(1000, 0) + ideal_contour_point_of_origin.toPoint(), QPoint(0, groove_dimensions.bottom_width_measurement.measurement_y_position) - QPoint(1000, 0) + ideal_contour_point_of_origin.toPoint())));
+        measurement_lines.append(ideal_contour_transform.map(QLine(-(QPoint(groove_dimensions.bottom_width_measurement.measurement_actual_width / 2, groove_dimensions.bottom_width_measurement.measurement_y_position) + QPoint(1000, 0)) + ideal_contour_point_of_origin.toPoint(), QPoint(0, groove_dimensions.bottom_width_measurement.measurement_y_position) - QPoint(1000, 0) + ideal_contour_point_of_origin.toPoint())));
+    }
+
     return measurement_lines;
 }
 
@@ -341,6 +309,7 @@ bool PuansonImage::setDeviation(const QPoint &measurement_point, const qint32 de
     bool ret_val = false;
     qreal ratio = 1.0 / calibration_ratio;
 
+    // Диаметры
     for(DiameterDimension &deviation: diameter_dimensions)
     {
         if(measurement_point == ideal_contour_transform.map((ideal_contour_point_of_origin + QPointF(deviation.measurement_ideal_diameter / 2.0, deviation.measurement_y_position) * ratio).toPoint()))
@@ -357,6 +326,29 @@ bool PuansonImage::setDeviation(const QPoint &measurement_point, const qint32 de
 
             break;
         }
+    }
+
+    // Паз
+    if(!ret_val)
+    {
+        // Глубина
+        if(measurement_point == ideal_contour_transform.map(ideal_contour_point_of_origin.toPoint() + groove_dimensions.top_right_depth_measurement_point.measurement_ideal_point + QPoint(0, 1000)))
+            groove_dimensions.top_right_depth_measurement_point.deviation = qRound(deviation_value_px * calibration_ratio);
+        else if(measurement_point == ideal_contour_transform.map(ideal_contour_point_of_origin.toPoint() + groove_dimensions.top_left_depth_measurement_point.measurement_ideal_point + QPoint(0, 1000)))
+            groove_dimensions.top_left_depth_measurement_point.deviation = qRound(deviation_value_px * calibration_ratio);
+        else if(measurement_point == ideal_contour_transform.map(ideal_contour_point_of_origin.toPoint() + groove_dimensions.bottom_right_depth_measurement_point.measurement_ideal_point + QPoint(0, 1000)))
+            groove_dimensions.bottom_right_depth_measurement_point.deviation = qRound(deviation_value_px * calibration_ratio);
+        else if(measurement_point == ideal_contour_transform.map(ideal_contour_point_of_origin.toPoint() + groove_dimensions.bottom_left_depth_measurement_point.measurement_ideal_point + QPoint(0, 1000)))
+            groove_dimensions.bottom_left_depth_measurement_point.deviation = qRound(deviation_value_px * calibration_ratio);
+        // Ширина
+        else if(measurement_point == ideal_contour_transform.map(ideal_contour_point_of_origin.toPoint() + QPoint(groove_dimensions.top_width_measurement.measurement_actual_width / 2, groove_dimensions.top_width_measurement.measurement_y_position) + QPoint(1000, 0)))
+            groove_dimensions.top_width_measurement.right_side_deviation = qRound(deviation_value_px * calibration_ratio);
+        else if(measurement_point == ideal_contour_transform.map(ideal_contour_point_of_origin.toPoint() + -(QPoint(groove_dimensions.top_width_measurement.measurement_actual_width / 2, groove_dimensions.top_width_measurement.measurement_y_position) + QPoint(1000, 0))))
+            groove_dimensions.top_width_measurement.left_side_deviation = qRound(deviation_value_px * calibration_ratio);
+        else if(measurement_point == ideal_contour_transform.map(ideal_contour_point_of_origin.toPoint() + QPoint(groove_dimensions.bottom_width_measurement.measurement_actual_width / 2, groove_dimensions.bottom_width_measurement.measurement_y_position) + QPoint(1000, 0)))
+            groove_dimensions.bottom_width_measurement.right_side_deviation = qRound(deviation_value_px * calibration_ratio);
+        else if(measurement_point == ideal_contour_transform.map(ideal_contour_point_of_origin.toPoint() + -(QPoint(groove_dimensions.bottom_width_measurement.measurement_actual_width / 2, groove_dimensions.bottom_width_measurement.measurement_y_position) + QPoint(1000, 0))))
+            groove_dimensions.bottom_width_measurement.left_side_deviation = qRound(deviation_value_px * calibration_ratio);
     }
 
     return ret_val;
@@ -427,9 +419,7 @@ void PuansonImage::addIdealSkeletonLine(const QPoint &p1, const QPoint &p2, cons
         if(!(pN.x() >= X_left && pN.x() <= X_right) ||
                 !(pN.y() >= qMin(p1.y(), p2.y()) && pN.y() <= qMax(p1.y(), p2.y()) &&
                     (pN.x() >= qMin(p1.x(), p2.x()) && pN.x() <= qMax(p1.x(), p2.x()))))
-        {
             pN = QPoint();
-        }
     }
     if(pN.isNull() && (p1.y() >= Y_top && p2.y() <= Y_top))
     {
@@ -981,7 +971,7 @@ void PuansonImage::drawIdealContour(const PuansonModel detail_research_puanson_m
     if(detail_research_puanson_model == PuansonModel::PUANSON_MODEL_658 || detail_research_puanson_model == PuansonModel::PUANSON_MODEL_660) // Пуансоны-иглы
     {
         line_1_x = _scale * ideal_etalon_dimensions.diameter_5_dimension / 2.0;
-        line_1_y = _scale * 0;
+        line_1_y = _scale * 0.0;
 
         if(detail_research_puanson_model == PuansonModel::PUANSON_MODEL_660)
         {
@@ -1037,7 +1027,7 @@ void PuansonImage::drawIdealContour(const PuansonModel detail_research_puanson_m
 
         /*if(draw_measurements)
         {
-            idealContourMeasurementsPath.addText(point0 + ideal_contour_point_of_origin - QPointF(_scale * 4000.0, _scale * 0.0) * ratio, QFont("Noto Sans", 8), "R2");
+            idealContourMeasurementsPath.addText(point0 + ideal_contour_point_of_origin - QPointF(_scale * 4000.0, _scale * 0.0.0) * ratio, QFont("Noto Sans", 8), "R2");
         }*/
 
         // Скругление 1 конца иглы
@@ -1177,7 +1167,7 @@ void PuansonImage::drawIdealContour(const PuansonModel detail_research_puanson_m
     else if(detail_research_puanson_model == PuansonModel::PUANSON_MODEL_661) // Пуансон-граната
     {
         line_1_x = _scale * ideal_etalon_dimensions.diameter_5_dimension / 2.0;
-        line_1_y = _scale * 0;
+        line_1_y = _scale * 0.0;
         line_2_x = _scale * ideal_etalon_dimensions.diameter_1_dimension / 2.0;
         line_2_y = _scale * ideal_etalon_dimensions.top_part_lenght;
         line_3_x = _scale * -static_cast<qint32>(ideal_etalon_dimensions.diameter_1_dimension / 2.0);
@@ -1215,10 +1205,10 @@ void PuansonImage::drawIdealContour(const PuansonModel detail_research_puanson_m
             idealContourMeasurementsPath.addText(QPointF(-_scale * 800, (line_3_y + _scale * 1500)) * ratio + ideal_contour_point_of_origin, QFont("Noto Sans", 5, QFont::Thin), "d1");
         }
     }
-#if 1
+
     // Нижняя часть
     const qreal line_4_x = _scale * ideal_etalon_dimensions.diameter_6_dimension / 2.0;
-    const qreal line_4_y = _scale * 0;
+    const qreal line_4_y = _scale * 0.0;
 
     const qreal line_5_x = _scale * ideal_etalon_dimensions.diameter_6_dimension / 2.0;
     const qreal line_5_y = _scale * -static_cast<qreal>(static_cast<quint32>(ideal_etalon_dimensions.skirt_bottom_part_lenght) - ideal_etalon_dimensions.skirt_bottom_rounding_radius);
@@ -1430,7 +1420,7 @@ void PuansonImage::drawIdealContour(const PuansonModel detail_research_puanson_m
 
     /*new_point = ideal_contour_point_of_origin + point3;
     idealContourPath.lineTo(new_point);*/
-#endif // 0
+
     idealContourPath = t.map(idealContourPath);
     idealContourPath = idealContourPath.intersected(border_path);
 
@@ -1498,7 +1488,7 @@ QPainterPath PuansonImage::drawIdealContour(const QRect &r, const QPointF &_poin
     if(detail_research_puanson_model == PuansonModel::PUANSON_MODEL_658 || detail_research_puanson_model == PuansonModel::PUANSON_MODEL_660) // Пуансоны-иглы
     {
         line_1_x = _scale * ideal_etalon_dimensions.diameter_5_dimension / 2.0;
-        line_1_y = _scale * 0;
+        line_1_y = _scale * 0.0;
         if(detail_research_puanson_model == PuansonModel::PUANSON_MODEL_660)
         {
             line_2_x = _scale * ideal_etalon_dimensions.diameter_4_dimension / 2.0;
@@ -1507,7 +1497,6 @@ QPainterPath PuansonImage::drawIdealContour(const QRect &r, const QPointF &_poin
         else if(detail_research_puanson_model == PuansonModel::PUANSON_MODEL_658)
         {
             qreal a, b, c, d;
-
             qreal diameter_5_top_part_lenght = 0.0;
 
             a = (static_cast<qreal>(ideal_etalon_dimensions.diameter_4_top_part_lenght) - diameter_5_top_part_lenght) / (static_cast<qreal>(ideal_etalon_dimensions.diameter_4_dimension / 2.0) - static_cast<qreal>(ideal_etalon_dimensions.diameter_5_dimension / 2.0));
@@ -1579,7 +1568,7 @@ QPainterPath PuansonImage::drawIdealContour(const QRect &r, const QPointF &_poin
     else if(detail_research_puanson_model == PuansonModel::PUANSON_MODEL_661) // Пуансон-граната
     {
         line_1_x = _scale * ideal_etalon_dimensions.diameter_5_dimension / 2.0;
-        line_1_y = _scale * 0;
+        line_1_y = _scale * 0.0;
         line_2_x = _scale * ideal_etalon_dimensions.diameter_1_dimension / 2.0;
         line_2_y = _scale * ideal_etalon_dimensions.top_part_lenght;
         line_3_x = _scale * -static_cast<qint32>(ideal_etalon_dimensions.diameter_1_dimension / 2.0);
@@ -1598,10 +1587,10 @@ QPainterPath PuansonImage::drawIdealContour(const QRect &r, const QPointF &_poin
         addIdealSkeletonLine(t.map((point3 + ideal_contour_point_of_origin).toPoint()), t.map((point1 + ideal_contour_point_of_origin).toPoint()), -1);
         addIdealSkeletonLine(t.map((point1 + ideal_contour_point_of_origin).toPoint()), t.map((ideal_contour_point_of_origin).toPoint()), -1, true);
     }
-#if 1
+
     // Нижняя часть
     const qreal line_4_x = _scale * ideal_etalon_dimensions.diameter_6_dimension / 2.0;
-    const qreal line_4_y = _scale * 0;
+    const qreal line_4_y = _scale * 0.0;
 
     const qreal line_5_x = _scale * ideal_etalon_dimensions.diameter_6_dimension / 2.0;
     const qreal line_5_y = _scale * -static_cast<qreal>(static_cast<quint32>(ideal_etalon_dimensions.skirt_bottom_part_lenght) - ideal_etalon_dimensions.skirt_bottom_rounding_radius);
@@ -1704,19 +1693,15 @@ QPainterPath PuansonImage::drawIdealContour(const QRect &r, const QPointF &_poin
     addIdealSkeletonArc(t.map((point0 + ideal_contour_point_of_origin).toPoint()), t.map((_point1 + ideal_contour_point_of_origin).toPoint()), R, qRadiansToDegrees(alpha), -(180.0 - qRadiansToDegrees(phi)), true);
     //addIdealSkeletonLine(t.map((_point2 + ideal_contour_point_of_origin).toPoint()), t.map((point3 + ideal_contour_point_of_origin).toPoint()), -1);
 
-#endif // 0
-
     PuansonImage::drawIdealContour(detail_research_puanson_model, r, ideal_contour_point_of_origin, ideal_contour_rotation_angle, draw_measurements, _scale, calibration_ratio, idealContourPath, idealContourMeasurementsPath);
 
     return idealContourPath;
 }
 
-int PuansonImage::pointDistanceToLine(const QPoint &pt, const QLine &line)
+qint32 PuansonImage::pointDistanceToLine(const QPoint &pt, const QLine &line)
 {
-    int dist  = qRound(std::abs((line.y2() - line.y1()) * pt.x() - (line.x2() - line.x1()) * pt.y() + line.x2() * line.y1() - line.y2() * line.x1())
+    return qRound(qAbs((line.y2() - line.y1()) * pt.x() - (line.x2() - line.x1()) * pt.y() + line.x2() * line.y1() - line.y2() * line.x1())
                    / qSqrt((line.y2() - line.y1()) * (line.y2() - line.y1()) + (line.x2() - line.x1()) * (line.x2() - line.x1())));
-
-    return dist;
 }
 
 bool PuansonImage::findNearestIdealLineNormalVector(const QPoint &pt, QLine &last_line, QPoint &internalToleranceNormalVector, QPoint &externalToleranceNormalVector) const
@@ -1752,7 +1737,7 @@ bool PuansonImage::findNearestIdealLineNormalVector(const QPoint &pt, QLine &las
         {
             L = qAbs(it->R() - ll);
 
-            uint SHIFT = 0;
+            const quint16 SHIFT = 0;
 
             if(L < nearest_line_distance)
             {
@@ -1768,7 +1753,7 @@ bool PuansonImage::findNearestIdealLineNormalVector(const QPoint &pt, QLine &las
     auto line_it = idealSkeletonLines.begin();
     auto inner_it = innerIdealSkeletonNormalVectors.begin();
     auto outer_it = outerIdealSkeletonNormalVectors.begin();
-    int D = 10;
+    const qint32 D = 10;
 
     if(!last_line.isNull() &&
             (
@@ -1846,20 +1831,7 @@ void PuansonImage::release()
 
     image.release();
     image_contour.release();
-    if(p_raw_image_reference_counter != Q_NULLPTR)
-    {
-        if(*p_raw_image_reference_counter > 0)
-            --(*p_raw_image_reference_counter);
-
-        if(*p_raw_image_reference_counter == 0 && raw_image != Q_NULLPTR)
-        {
-            LibRaw::dcraw_clear_mem(raw_image);
-            delete p_raw_image_reference_counter;
-            p_raw_image_reference_counter = Q_NULLPTR;
-
-            raw_image = Q_NULLPTR;
-        }
-    }
+    //raw_image.reset(Q_NULLPTR);
 }
 
 void PuansonImage::setReferencePoints(const QPoint &p1, const QPoint &p2)
@@ -1875,10 +1847,16 @@ void PuansonImage::setReferencePoints(const QPoint &p1, const QPoint &p2)
 
 void PuansonImage::calculateDetailDimensionsFromDeviations(const PuansonImage& etalon_image)
 {
+    // Диаметры
     for(quint8 i = 0; i < diameter_dimensions.size(); i++)
-    {
         diameter_dimensions[i].measurement_actual_diameter = etalon_image.diameter_dimensions[i].measurement_actual_diameter + static_cast<quint16>(diameter_dimensions[i].right_side_deviation + diameter_dimensions[i].left_side_deviation);
-    }
+
+    // Паз
+    groove_dimensions.measurement_actual_left_depth = etalon_image.groove_dimensions.measurement_actual_left_depth + static_cast<quint16>(groove_dimensions.top_left_depth_measurement_point.deviation + groove_dimensions.bottom_left_depth_measurement_point.deviation);
+    groove_dimensions.measurement_actual_right_depth = etalon_image.groove_dimensions.measurement_actual_right_depth + static_cast<quint16>(groove_dimensions.top_right_depth_measurement_point.deviation + groove_dimensions.bottom_right_depth_measurement_point.deviation);
+
+    groove_dimensions.top_width_measurement.measurement_actual_width = etalon_image.groove_dimensions.top_width_measurement.measurement_actual_width + static_cast<quint16>(groove_dimensions.top_width_measurement.right_side_deviation + groove_dimensions.top_width_measurement.left_side_deviation);
+    groove_dimensions.bottom_width_measurement.measurement_actual_width = etalon_image.groove_dimensions.bottom_width_measurement.measurement_actual_width + static_cast<quint16>(groove_dimensions.bottom_width_measurement.right_side_deviation + groove_dimensions.bottom_width_measurement.left_side_deviation);
 }
 
 bool PuansonImage::loadEtalonAngle(const QString &etalon_dir)

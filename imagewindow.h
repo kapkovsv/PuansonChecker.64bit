@@ -8,6 +8,7 @@
 #include <QScrollBar>
 #include <QSlider>
 #include <QKeyEvent>
+#include <QScopedPointer>
 
 #define GRAPHICAL_POINT_RADIUS 12
 
@@ -16,7 +17,7 @@ class PuansonChecker;
 class ImageWindow
 {
 public:
-    explicit ImageWindow();
+    explicit ImageWindow(QGraphicsScene *_scene = Q_NULLPTR);
     virtual ~ImageWindow();
 
     virtual void moveImage(const qreal dx, const qreal dy) = 0;
@@ -48,7 +49,7 @@ public:
     }
 
 protected:
-    QGraphicsScene *scene;
+    QScopedPointer<QGraphicsScene> scene;
     QGraphicsView *graphicsView;
     qreal image_x, image_y;
     // Только для окон эталона и текущей детали
@@ -164,8 +165,6 @@ public:
 
     virtual ~ImageGraphicsView() Q_DECL_OVERRIDE
     {
-        delete verticalScrollBar();
-        delete horizontalScrollBar();
     }
 
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE

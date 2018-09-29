@@ -7,7 +7,7 @@
 
 #include <memory>
 #include <type_traits>
-
+#include <QDebug>
 #if defined(Q_OS_WIN)
 #include <windows.h>
 
@@ -24,6 +24,7 @@ class PuansonMachine : public QObject
 
 public:
     explicit PuansonMachine(QObject *parent = 0);
+    ~PuansonMachine() Q_DECL_OVERRIDE;
 
     bool moveToAnglePosition(const quint8 etalon_research_active_angle);
 

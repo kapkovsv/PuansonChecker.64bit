@@ -6,6 +6,7 @@
 #include <QPoint>
 #include <QImage>
 #include <QtMath>
+#include <QSharedPointer>
 
 #include <QVector2D>
 
@@ -179,7 +180,7 @@ public:
         return inner_path;
     }
 
-    inline bool isUltimate()
+    inline bool isUltimate() const
     {
         return ultimate_flag;
     }
@@ -201,16 +202,16 @@ private:
 struct EtalonDetailDimensions
 {
     qint32 diameter_1_dimension;
-    qint32 diameter_2_dimension; // ? 658
-    qint32 diameter_3_dimension; // ? 658
-    qint32 diameter_4_dimension; // ? 658
+    qint32 diameter_2_dimension;        // Только для 658 модели
+    qint32 diameter_3_dimension;        // Только для 658 модели
+    qint32 diameter_4_dimension;        // Только для 658 модели
     qint32 diameter_5_dimension;
     qint32 diameter_6_dimension;
     qint32 diameter_6_2_dimension;
     qint32 diameter_7_dimension;
     qint32 diameter_7_2_dimension;
     qint32 diameter_8_dimension;
-    qint32 diameter_9_dimension; // ???
+    qint32 diameter_9_dimension;
 
     qint32 skirt_bottom_part_lenght;
     qint32 top_part_lenght;
@@ -221,7 +222,12 @@ struct EtalonDetailDimensions
     qint32 bottom_part_lenght;
 
     qint32 groove_width_dimension;
+    qint32 groove_top_width_dimension;
+    qint32 groove_bottom_width_dimension;
+
     qint32 groove_depth_dimension;
+    qint32 groove_left_depth_dimension;
+    qint32 groove_right_depth_dimension;
 
     quint32 needle_rounding_radius;
     quint32 skirt_rounding_radius;
@@ -250,7 +256,7 @@ class PuansonImage
             // Позиция точки измерения
             QPoint measurement_ideal_point;
             // Отклонение от эталона (мкм)
-            qint16 deviation;
+            qint32 deviation;
         };
 
         struct GrooveWidthMeasurement
@@ -289,8 +295,13 @@ class PuansonImage
     };
 
     Mat image;
-    libraw_processed_image_t *raw_image;
-    quint16 *p_raw_image_reference_counter;
+
+    static void rawImageDelete(libraw_processed_image_t *_raw_image)
+    {
+        LibRaw::dcraw_clear_mem(_raw_image);
+    }
+
+    QSharedPointer<libraw_processed_image_t> raw_image;
     Mat image_contour;
     QString filename;
 
@@ -331,11 +342,11 @@ class PuansonImage
 
     PuansonModel detail_research_puanson_model = PuansonModel::PUANSON_MODEL_660;
 
-    // Габариты эталона(мкм)                                                                             Диаметры                                                   Вертикальные длины                   Размеры        Радиусы
-    //                                                                                                                                                                                                   паза           скругления
-    static constexpr EtalonDetailDimensions puanson_661_dimensions = {   25002, 0, 0, 0, 25700, 14000, 14000, 15000, 15000, 12000, 11000,            3000, 20000, 0, 0, 0, 40000, 16000,               1500, 3000,   0, 0, 500          }; // "Граната"
-    static constexpr EtalonDetailDimensions puanson_660_dimensions = {   1700, 0, 0, 5100, 11000, 8000, 8000, 9000, 9000, 8000, 7000,                3000, 52000, 0, 0, 6000, 40000, 16000,            1500, 3000,   500, 5000, 500     }; // "Игла"
-    static constexpr EtalonDetailDimensions puanson_658_dimensions = {   4000, 4400, 11100, 15500, 23000, 14000, 14000, 15000, 15000, 10000, 9000,   3000, 53000, 42700, 17800, 10800, 40000, 16000,   1500, 3000,   1000, 94500, 500   }; // "Широкая игла"
+    // Габариты эталона(мкм)                                                                             Диаметры                                                   Вертикальные длины                            Размеры паза                 Радиусы
+    //                                                                                                                                                                                                                                         скругления
+    static constexpr EtalonDetailDimensions puanson_661_dimensions = {   25002, 0, 0, 0, 25700, 14000, 14000, 15000, 15000, 12000, 11000,            3000, 20000, 0, 0, 0, 40000, 16000,               1500, 1500, 1500, 3000, 3000, 3000,   0, 0, 500          }; // "Граната"
+    static constexpr EtalonDetailDimensions puanson_660_dimensions = {   1700, 0, 0, 5100, 11000, 8000, 8000, 9000, 9000, 8000, 7000,                3000, 52000, 0, 0, 6000, 40000, 16000,            1500, 1500, 1500, 3000, 3000, 3000,   500, 5000, 500     }; // "Игла"
+    static constexpr EtalonDetailDimensions puanson_658_dimensions = {   4000, 4400, 11100, 15500, 23000, 14000, 14000, 15000, 15000, 10000, 9000,   3000, 53000, 42700, 17800, 10800, 40000, 16000,   1500, 1500, 1500, 3000, 3000, 3000,   1000, 94500, 500   }; // "Широкая игла"
 
     EtalonDetailDimensions ideal_etalon_dimensions = puanson_660_dimensions;
     QVector<DiameterDimension> diameter_dimensions;
@@ -483,7 +494,7 @@ public:
     static void drawIdealContour(const PuansonModel detail_research_puanson_model, const QRect &r, const QPointF &_point_of_origin, const qreal _rotation_angle, bool draw_measurements, const qreal _scale, const qreal calibration_ratio, QPainterPath &idealContourPath, QPainterPath &idealContourMeasurementsPath);
     QPainterPath drawIdealContour(const QRect &r, const QPointF &_point_of_origin, const qreal _rotation_angle, bool draw_measurements = false, const qreal _scale = 1.0);
 
-    static int pointDistanceToLine(const QPoint &pt, const QLine &line);
+    static qint32 pointDistanceToLine(const QPoint &pt, const QLine &line);
     void addIdealSkeletonLine(const QPoint &p1, const QPoint &p2, const int normal_vecror_x_sign, const bool close_flag = false);
     void addIdealSkeletonArc(const QPointF &center, const QPointF &start_point, const qreal R, const qreal alpha, const qreal phi, const bool close_flag = false);
     bool findNearestIdealLineNormalVector(const QPoint &pt, QLine &last_line, QPoint &internalToleranceNormalVector, QPoint &externalToleranceNormalVector) const;
@@ -507,7 +518,7 @@ public:
 
     inline libraw_processed_image_t *getRawImage()
     {
-        return raw_image;
+        return raw_image.data();
     }
 
     void release();
@@ -665,19 +676,22 @@ public:
         diameter_dimensions[10].measurement_ideal_diameter = static_cast<quint32>(ideal_etalon_dimensions.diameter_9_dimension);
         diameter_dimensions[10].measurement_y_position = -(ideal_etalon_dimensions.skirt_bottom_part_lenght + ideal_etalon_dimensions.middle_part_lenght + ideal_etalon_dimensions.bottom_part_lenght);
 
-        groove_dimensions.top_right_depth_measurement_point.measurement_ideal_point = QPoint(ideal_etalon_dimensions.groove_width_dimension / 2, -(ideal_etalon_dimensions.skirt_bottom_part_lenght + ideal_etalon_dimensions.middle_part_lenght + ideal_etalon_dimensions.bottom_part_lenght));
-        groove_dimensions.top_left_depth_measurement_point.measurement_ideal_point = QPoint(-ideal_etalon_dimensions.groove_width_dimension / 2, -(ideal_etalon_dimensions.skirt_bottom_part_lenght + ideal_etalon_dimensions.middle_part_lenght + ideal_etalon_dimensions.bottom_part_lenght));
-        groove_dimensions.bottom_right_depth_measurement_point.measurement_ideal_point = QPoint(ideal_etalon_dimensions.groove_width_dimension / 2, -((ideal_etalon_dimensions.skirt_bottom_part_lenght + ideal_etalon_dimensions.middle_part_lenght + ideal_etalon_dimensions.bottom_part_lenght) - ideal_etalon_dimensions.groove_depth_dimension));
-        groove_dimensions.bottom_left_depth_measurement_point.measurement_ideal_point = QPoint(-ideal_etalon_dimensions.groove_width_dimension / 2, -((ideal_etalon_dimensions.skirt_bottom_part_lenght + ideal_etalon_dimensions.middle_part_lenght + ideal_etalon_dimensions.bottom_part_lenght) - ideal_etalon_dimensions.groove_depth_dimension));
+        groove_dimensions.measurement_actual_right_depth = ideal_etalon_dimensions.groove_depth_dimension;
+        groove_dimensions.measurement_actual_left_depth = ideal_etalon_dimensions.groove_depth_dimension;
+
+        groove_dimensions.top_right_depth_measurement_point.measurement_ideal_point = QPoint(ideal_etalon_dimensions.groove_width_dimension / 2 + 500, -(ideal_etalon_dimensions.skirt_bottom_part_lenght + ideal_etalon_dimensions.middle_part_lenght + ideal_etalon_dimensions.bottom_part_lenght));
+        groove_dimensions.top_left_depth_measurement_point.measurement_ideal_point = QPoint(-(ideal_etalon_dimensions.groove_width_dimension / 2 + 500), -(ideal_etalon_dimensions.skirt_bottom_part_lenght + ideal_etalon_dimensions.middle_part_lenght + ideal_etalon_dimensions.bottom_part_lenght));
+
+        groove_dimensions.bottom_right_depth_measurement_point.measurement_ideal_point = QPoint(ideal_etalon_dimensions.groove_width_dimension / 2 - 500, -((ideal_etalon_dimensions.skirt_bottom_part_lenght + ideal_etalon_dimensions.middle_part_lenght + ideal_etalon_dimensions.bottom_part_lenght) - ideal_etalon_dimensions.groove_depth_dimension));
+        groove_dimensions.bottom_left_depth_measurement_point.measurement_ideal_point = QPoint(-(ideal_etalon_dimensions.groove_width_dimension / 2 - 500), -((ideal_etalon_dimensions.skirt_bottom_part_lenght + ideal_etalon_dimensions.middle_part_lenght + ideal_etalon_dimensions.bottom_part_lenght) - ideal_etalon_dimensions.groove_depth_dimension));
 
         groove_dimensions.measurement_ideal_depth = static_cast<quint32>(ideal_etalon_dimensions.groove_depth_dimension);
 
-        groove_dimensions.measurement_ideal_width = static_cast<quint32>(ideal_etalon_dimensions.groove_width_dimension);
+        groove_dimensions.top_width_measurement.measurement_actual_width = static_cast<quint32>(ideal_etalon_dimensions.groove_width_dimension);
         groove_dimensions.top_width_measurement.measurement_y_position = -((ideal_etalon_dimensions.skirt_bottom_part_lenght + ideal_etalon_dimensions.middle_part_lenght + ideal_etalon_dimensions.bottom_part_lenght) - 500);
 
-        groove_dimensions.measurement_ideal_width = static_cast<quint32>(ideal_etalon_dimensions.groove_width_dimension);
+        groove_dimensions.bottom_width_measurement.measurement_actual_width = static_cast<quint32>(ideal_etalon_dimensions.groove_width_dimension);
         groove_dimensions.bottom_width_measurement.measurement_y_position = -((ideal_etalon_dimensions.skirt_bottom_part_lenght + ideal_etalon_dimensions.middle_part_lenght + ideal_etalon_dimensions.bottom_part_lenght) - (ideal_etalon_dimensions.groove_depth_dimension - 500));
-
     }
 
     void calculateDetailDimensionsFromDeviations(const PuansonImage& etalon_image);
@@ -748,8 +762,8 @@ public:
         _diameter_8_dimension = diameter_dimensions[9].measurement_actual_diameter;
         _diameter_9_dimension = diameter_dimensions[10].measurement_actual_diameter;
 
-        _groove_width_dimension = groove_dimensions.measurement_ideal_width;
-        _groove_depth_dimension = groove_dimensions.measurement_ideal_depth;
+        _groove_width_dimension = groove_dimensions.top_width_measurement.measurement_actual_width;
+        _groove_depth_dimension = groove_dimensions.measurement_actual_right_depth;
 
         _needle_rounding_radius = ideal_etalon_dimensions.needle_rounding_radius;
         _skirt_rounding_radius = ideal_etalon_dimensions.skirt_rounding_radius;
@@ -771,7 +785,12 @@ public:
         detail_dimensions.diameter_9_dimension = static_cast<qint32>(diameter_dimensions[10].measurement_actual_diameter);
 
         detail_dimensions.groove_width_dimension = static_cast<qint32>(groove_dimensions.measurement_ideal_width);
+        detail_dimensions.groove_top_width_dimension = static_cast<qint32>(groove_dimensions.top_width_measurement.measurement_actual_width);
+        detail_dimensions.groove_bottom_width_dimension = static_cast<qint32>(groove_dimensions.bottom_width_measurement.measurement_actual_width);
+
         detail_dimensions.groove_depth_dimension = static_cast<qint32>(groove_dimensions.measurement_ideal_depth);
+        detail_dimensions.groove_right_depth_dimension = static_cast<qint32>(groove_dimensions.measurement_actual_right_depth);
+        detail_dimensions.groove_left_depth_dimension = static_cast<qint32>(groove_dimensions.measurement_actual_left_depth);
 
         detail_dimensions.needle_rounding_radius = ideal_etalon_dimensions.needle_rounding_radius;
         detail_dimensions.skirt_rounding_radius = ideal_etalon_dimensions.skirt_rounding_radius;

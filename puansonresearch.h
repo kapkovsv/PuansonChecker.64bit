@@ -27,6 +27,7 @@ class PuansonResearch
 public:
     PuansonResearch() = default;
     PuansonResearch(const quint8 number_of_angles, const PuansonModel detail_puanson_model, const QDateTime date_time_of_creation, const QString &folder_path);
+    ~PuansonResearch();
 
     inline quint8 getNumberOfAngles() const
     {

@@ -309,7 +309,7 @@ void MainWindow::drawImage(const QImage &img)
     scene->addPixmap(QPixmap::fromImage(img));
     scene->setSceneRect(0, 0, img.width(), img.height());
 
-    ui->graphicsView->setScene(scene);
+    ui->graphicsView->setScene(scene.data());
 }
 
 void MainWindow::setWindowStatus(const QString &status)
@@ -519,21 +519,16 @@ void MainWindow::menuEtalonResearchPropertiesActionTriggered()
 void MainWindow::menuCurrentResearchActionTriggered()
 {
     if(PuansonChecker::getInstance()->isEtalonResearchLoaded())
-    {
         PuansonChecker::getInstance()->researchCurrentAngle();
-    }
     else
-        QMessageBox::information(this, "Внимание!", "Перед исследованием текущей детали необходимо загрузить исследование эталона");
+        QMessageBox::warning(this, "Внимание!", "Перед исследованием текущей детали необходимо загрузить исследование эталона");
 }
 
 void MainWindow::menuImageWorkSetLeftBottomReferencePointSearchAreaActionTriggered()
 {
     if(!PuansonChecker::getInstance()->isEtalonImageLoaded())
     {
-        QMessageBox msgBox;
-        msgBox.setText("Изображение эталонной детали не загружено!");
-        msgBox.exec();
-
+        QMessageBox::warning(this, "Внимание", "Изображение эталонной детали не загружено!");
         return;
     }
 
@@ -554,10 +549,7 @@ void MainWindow::menuImageWorkSetRightTopReferencePointSearchAreaActionTriggered
 {
     if(!PuansonChecker::getInstance()->isEtalonImageLoaded())
     {
-        QMessageBox msgBox;
-        msgBox.setText("Изображение эталонной детали не загружено!");
-        msgBox.exec();
-
+        QMessageBox::warning(this, "Внимание", "Изображение эталонной детали не загружено!");
         return;
     }
 
@@ -578,13 +570,13 @@ void MainWindow::menuImageWorkSaveResultTriggered()
 {
     if(PuansonChecker::getInstance()->getEtalon().isEmpty())
     {
-        QMessageBox::information(this, "Внимание!", "Невозможно сохранить результирующее изображение контуров - не загружено изображение ракурса эталона");
+        QMessageBox::warning(this, "Внимание!", "Невозможно сохранить результирующее изображение контуров - не загружено изображение ракурса эталона");
         return;
     }
 
     if(PuansonChecker::getInstance()->getCurrent().isEmpty())
     {
-        QMessageBox::information(this, "Внимание!", "Невозможно сохранить результирующее изображение контуров - не загружено изображение текущей детали");
+        QMessageBox::warning(this, "Внимание!", "Невозможно сохранить результирующее изображение контуров - не загружено изображение текущей детали");
         return;
     }
 
@@ -608,13 +600,13 @@ void MainWindow::menuImageWorkSaveResultTriggered()
 
     if(result_image_path.isEmpty())
     {
-        QMessageBox::information(this, "Внимание!", "Невозможно сохранить результирующее изображение контуров - неправильный путь");
+        QMessageBox::warning(this, "Внимание!", "Невозможно сохранить результирующее изображение контуров - неправильный путь");
         return;
     }
 
     if(PuansonChecker::getInstance()->saveResultImage(result_image_path) == false)
     {
-        QMessageBox::information(this, "Внимание!", "Невозможно сохранить результирующее изображение контуров - попытка сохранения в неправильном формате");
+        QMessageBox::warning(this, "Внимание!", "Невозможно сохранить результирующее изображение контуров - попытка сохранения в неправильном формате");
         return;
     }
 }
@@ -655,10 +647,7 @@ void MainWindow::menuImageWorkEtalonReferencePointsAutoSearchActionTriggered()
 {
     if(!PuansonChecker::getInstance()->isEtalonImageLoaded())
     {
-        QMessageBox msgBox;
-        msgBox.setText("Изображение эталонной детали не загружено!");
-        msgBox.exec();
-
+        QMessageBox::warning(this, "Внимание", "Изображение эталонной детали не загружено!");
         return;
     }
 
@@ -699,10 +688,7 @@ void MainWindow::menuImageWorkEtalonManuallySetReferencePointsActionTriggered()
 {
     if(!PuansonChecker::getInstance()->isEtalonImageLoaded())
     {
-        QMessageBox msgBox;
-        msgBox.setText("Изображение эталонной детали не загружено!");
-        msgBox.exec();
-
+        QMessageBox::warning(this, "Внимание!", "Изображение текущей детали не загружено!");
         return;
     }
 
@@ -759,19 +745,13 @@ void MainWindow::menuImageWorkCurrentLoadActionTriggered()
 
     if(etalon_image = Q_NULLPTR)
     {
-        QMessageBox msgBox;
-        msgBox.setText("Для получения изображения текущей детали необходимо сначала необходимо загрузить эталон!");
-        msgBox.exec();
-
+        QMessageBox::warning(this, "Внимание!", "Для получения изображения текущей детали необходимо сначала необходимо загрузить эталон!");
         return;
     }
 
-    if(!PuansonChecker::getInstance()->getEtalon(PuansonChecker::getInstance()->getActiveEtalonResearchAngle()).isReferencePointsAreSet())
+    if(!etalon_image.isReferencePointsAreSet())
     {
-        QMessageBox msgBox;
-        msgBox.setText("Для загрузки изображения текущей детали необходимо сначала задать реперные точки!");
-        msgBox.exec();
-
+        QMessageBox::warning(this, "Внимание!", "Для получения изображения текущей детали необходимо сначала задать реперные точки!");
         return;
     }
 #endif // 0
@@ -800,19 +780,13 @@ void MainWindow::menuImageWorkCurrentShootAndLoadActionTriggered()
 
     if(etalon_image = Q_NULLPTR)
     {
-        QMessageBox msgBox;
-        msgBox.setText("Для получения изображения текущей детали необходимо сначала необходимо загрузить эталон!");
-        msgBox.exec();
-
+        QMessageBox::warning(this, "Внимание!", "Для получения изображения текущей детали необходимо сначала необходимо загрузить эталон!");
         return;
     }
 
     if(!etalon_image.isReferencePointsAreSet())
     {
-        QMessageBox msgBox;
-        msgBox.setText("Для получения изображения текущей детали необходимо сначала задать реперные точки!");
-        msgBox.exec();
-
+        QMessageBox::warning(this, "Внимание!", "Для получения изображения текущей детали необходимо сначала задать реперные точки!");
         return;
     }
 #endif // 0
@@ -825,10 +799,7 @@ void MainWindow::menuImageWorkCurrentManuallySetReferencePointsActionTriggered()
 {
     if(!PuansonChecker::getInstance()->isCurrentImageLoaded())
     {
-        QMessageBox msgBox;
-        msgBox.setText("Изображение текущей детали не загружено!");
-        msgBox.exec();
-
+        QMessageBox::warning(this, "Внимание!", "Изображение текущей детали не загружено!");
         return;
     }
 
@@ -840,22 +811,19 @@ void MainWindow::menuImageWorkCurrentReferencePointsAutoSearchActionTriggered()
 {
     if(!PuansonChecker::getInstance()->isCurrentImageLoaded())
     {
-        QMessageBox msgBox;
-        msgBox.setText("Изображение текущей детали не загружено!");
-        msgBox.exec();
-
+        QMessageBox::warning(this, "Внимание!", "Изображение текущей детали не загружено!");
         return;
     }
 
     if(reference_point_1_auto_search_area_rect.isNull())
     {
-        QMessageBox::warning(this, "Внимание", "Не задана область поиска левой нижней реперной точки");
+        QMessageBox::warning(this, "Внимание!", "Не задана область поиска левой нижней реперной точки");
         return;
     }
 
     if(reference_point_2_auto_search_area_rect.isNull())
     {
-        QMessageBox::warning(this, "Внимание", "Не задана область поиска правой верхней реперной точки");
+        QMessageBox::warning(this, "Внимание!", "Не задана область поиска правой верхней реперной точки");
         return;
     }
 
@@ -872,7 +840,7 @@ void MainWindow::menuImageWorkCurrentSaveTriggered()
 {
     if(PuansonChecker::getInstance()->getCurrent().isEmpty())
     {
-        QMessageBox::information(this, "Внимание!", "Невозможно сохранить изображение текущей детали - оно не загружено");
+        QMessageBox::warning(this, "Внимание!", "Невозможно сохранить изображение текущей детали - оно не загружено");
         return;
     }
 
@@ -896,13 +864,13 @@ void MainWindow::menuImageWorkCurrentSaveTriggered()
 
     if(current_image_path.isEmpty())
     {
-        QMessageBox::information(this, "Внимание!", "Невозможно сохранить изображение текущей детали - неправильный путь");
+        QMessageBox::warning(this, "Внимание!", "Невозможно сохранить изображение текущей детали - неправильный путь");
         return;
     }
 
     if(PuansonChecker::getInstance()->saveCurrentImage(current_image_path) == false)
     {
-        QMessageBox::information(this, "Внимание!", "Невозможно сохранить изображение текущей детали - попытка сохранения в неправильном формате");
+        QMessageBox::warning(this, "Внимание!", "Невозможно сохранить изображение текущей детали - попытка сохранения в неправильном формате");
         return;
     }
 }
@@ -944,8 +912,8 @@ void MainWindow::drawIdealContour(const QPoint &_ideal_origin_point, const qreal
 
     ideal_item = ui->graphicsView->scene()->addPath(ideal_path, QPen(Qt::red, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 
-    /*QPainterPath ideal_measurements_path = PuansonChecker::getInstance()->getEtalon().getIdealContourMeasurementsPath();
-    ideal_item = ui->graphicsView->scene()->addPath(ideal_measurements_path, QPen(Qt::green, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));*/
+    QPainterPath ideal_measurements_path = PuansonChecker::getInstance()->getEtalon().getIdealContourMeasurementsPath();
+    ideal_item = ui->graphicsView->scene()->addPath(ideal_measurements_path, QPen(Qt::green, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 }
 
 void MainWindow::drawReferencePointAutoSearchArea(const ReferencePointType_e reference_point_type, const QRect &search_area_rect)
@@ -985,8 +953,7 @@ void MainWindow::drawReferencePointAutoSearchArea(const ReferencePointType_e ref
 // Удаление реперных точек
 void MainWindow::removeReferencePoints()
 {
-    int i = 0;
-
+    qint32 i = 0;
     QGraphicsItem *current_item;
 
     while(i < ui->graphicsView->scene()->items().size() - 1)
@@ -1007,8 +974,7 @@ void MainWindow::removeReferencePoints()
 // Удаление реперных точек и идеального контура
 void MainWindow::removeReferencePointsAndIdealContour()
 {
-    int i = 0;
-
+    qint32 i = 0;
     QGraphicsItem *current_item;
 
     while(i < ui->graphicsView->scene()->items().size() - 1)
@@ -1065,16 +1031,16 @@ void MainWindow::setCalibrationMode(CalibrationMode_e mode)
 
     switch(calibration_mode)
     {
-        case CalibrationMode_e::REFERENCE_POINT_1:
-            removeReferencePoints();
+    case CalibrationMode_e::REFERENCE_POINT_1:
+        removeReferencePoints();
 
-            ui->label_2->setText("Калибровка. Укажите реперную точку 1.");
-            setImageCursor(Qt::CrossCursor);
+        ui->label_2->setText("Калибровка. Укажите реперную точку 1.");
+        setImageCursor(Qt::CrossCursor);
         break;
-        case CalibrationMode_e::REFERENCE_POINT_2:
-            ui->label_2->setText("Калибровка. Укажите реперную точку 2.");
+    case CalibrationMode_e::REFERENCE_POINT_2:
+        ui->label_2->setText("Калибровка. Укажите реперную точку 2.");
         break;
-        case CalibrationMode_e::REFERENCE_POINT_1_AREA:
+    case CalibrationMode_e::REFERENCE_POINT_1_AREA:
         {
             if(reference_point_1_auto_search_area_ideal_item != Q_NULLPTR)
                 ui->graphicsView->scene()->removeItem(reference_point_1_auto_search_area_ideal_item);
@@ -1090,7 +1056,7 @@ void MainWindow::setCalibrationMode(CalibrationMode_e mode)
             ui->label_2->setText("Укажите область автоматического поиска левой нижней реперной точки.");
         }
         break;
-        case CalibrationMode_e::REFERENCE_POINT_2_AREA:
+    case CalibrationMode_e::REFERENCE_POINT_2_AREA:
         {
             if(reference_point_2_auto_search_area_ideal_item != Q_NULLPTR)
                 ui->graphicsView->scene()->removeItem(reference_point_2_auto_search_area_ideal_item);
@@ -1106,17 +1072,17 @@ void MainWindow::setCalibrationMode(CalibrationMode_e mode)
             ui->label_2->setText("Укажите область автоматического поиска правой верней реперной точки.");
         }
         break;
-        case CalibrationMode_e::IDEAL_IMPOSE:
-            ui->label_2->setText("Совместите контур идеальной детали с границами эталона и установите его двойным щелчком левой кнопки мыши.");
-            ideal_origin_point = QPoint(1000, 500);
-            ideal_rotation_angle = 135.0;
-            break;
-        case CalibrationMode_e::NO_CALIBRATION:
-        default:
-            drawReferencePoints(reference_point1, reference_point2);
+    case CalibrationMode_e::IDEAL_IMPOSE:
+        ui->label_2->setText("Совместите контур идеальной детали с границами эталона и установите его двойным щелчком левой кнопки мыши.");
+        ideal_origin_point = QPoint(1000, 500);
+        ideal_rotation_angle = 135.0;
+        break;
+    case CalibrationMode_e::NO_CALIBRATION:
+    default:
+        drawReferencePoints(reference_point1, reference_point2);
 
-            ui->label_2->setText("Файл " + PuansonChecker::getInstance()->getEtalon().getFilename());
-            setImageCursor(Qt::ArrowCursor);
+        ui->label_2->setText("Файл " + PuansonChecker::getInstance()->getEtalon().getFilename());
+        setImageCursor(Qt::ArrowCursor);
         break;
     }
 }
@@ -1127,7 +1093,7 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *event)
 
     switch(calibration_mode)
     {
-        case CalibrationMode_e::IDEAL_IMPOSE:
+    case CalibrationMode_e::IDEAL_IMPOSE:
         {
             PuansonChecker::getInstance()->getEtalon().setIdealContourPointOfOrigin(ideal_origin_point);
             PuansonChecker::getInstance()->getEtalon().setIdealContourRotationAngle(ideal_rotation_angle);
@@ -1167,9 +1133,7 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *event)
                 {
                     // Задание позиции областей поиска реперных точек(только для ракурса 1)
                     if(PuansonChecker::getInstance()->getActiveEtalonResearchAngle() == 1)
-                    {
                         menuImageWorkSetLeftBottomReferencePointSearchAreaActionTriggered();
-                    }
                 }
                 else if(previous_dialog_result == RETURN_TO_IDEAL_CONTOUR_IMPOSE_ETALON_DIALOG_RESULT)
                 {
@@ -1204,7 +1168,7 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *event)
             }
         }
         break;
-        case CalibrationMode_e::REFERENCE_POINT_1_AREA:
+    case CalibrationMode_e::REFERENCE_POINT_1_AREA:
         {
             PuansonChecker::getInstance()->setReferencePointSearchArea(ReferencePointType_e::REFERENCE_POINT_1, reference_point_1_auto_search_area_rect);
             setCalibrationMode(CalibrationMode_e::NO_CALIBRATION);
@@ -1218,7 +1182,7 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *event)
                 menuImageWorkSetRightTopReferencePointSearchAreaActionTriggered();
         }
         break;
-        case CalibrationMode_e::REFERENCE_POINT_2_AREA:
+    case CalibrationMode_e::REFERENCE_POINT_2_AREA:
         {
             PuansonChecker::getInstance()->setReferencePointSearchArea(ReferencePointType_e::REFERENCE_POINT_2, reference_point_2_auto_search_area_rect);
             setCalibrationMode(CalibrationMode_e::NO_CALIBRATION);
@@ -1236,7 +1200,7 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *event)
             }
         }
         break;
-        default:
+    default:
         break;
     }
 }
@@ -1245,7 +1209,7 @@ void MainWindow::mousePressEvent(const QPoint &p)
 {
     switch(calibration_mode)
     {
-        case CalibrationMode_e::REFERENCE_POINT_1:
+    case CalibrationMode_e::REFERENCE_POINT_1:
         {
             reference_point1 = p;
 
@@ -1257,7 +1221,7 @@ void MainWindow::mousePressEvent(const QPoint &p)
             setCalibrationMode(CalibrationMode_e::REFERENCE_POINT_2);
         }
         break;
-        case CalibrationMode_e::REFERENCE_POINT_2:
+    case CalibrationMode_e::REFERENCE_POINT_2:
         {
             reference_point2 = p;
 
@@ -1290,23 +1254,23 @@ void MainWindow::mousePressEvent(const QPoint &p)
             PuansonChecker::getInstance()->updateContoursImage();
         }
         break;
-        case CalibrationMode_e::IDEAL_IMPOSE:
+    case CalibrationMode_e::IDEAL_IMPOSE:
         {
             ideal_impose_mouse_pressed = true;
             ideal_impose_previous_point = p;
             setImageCursor(Qt::ClosedHandCursor);
         }
         break;
-        case CalibrationMode_e::REFERENCE_POINT_1_AREA:
-        case CalibrationMode_e::REFERENCE_POINT_2_AREA:
+    case CalibrationMode_e::REFERENCE_POINT_1_AREA:
+    case CalibrationMode_e::REFERENCE_POINT_2_AREA:
         {
             set_reference_point_auto_search_area_mouse_pressed = true;
             previous_reference_point_auto_search_area_rect_top_left_point = p;
             setImageCursor(Qt::SizeAllCursor);
         }
         break;
-        case CalibrationMode_e::NO_CALIBRATION:
-        default:
+    case CalibrationMode_e::NO_CALIBRATION:
+    default:
         break;
     }
 }
@@ -1315,18 +1279,18 @@ void MainWindow::mouseReleaseEvent(const QPoint &p)
 {
     Q_UNUSED(p)
 
-     switch(calibration_mode)
-     {
-        case CalibrationMode_e::IDEAL_IMPOSE:
-            ideal_impose_mouse_pressed = false;
-            setImageCursor(Qt::OpenHandCursor);
+    switch(calibration_mode)
+    {
+    case CalibrationMode_e::IDEAL_IMPOSE:
+        ideal_impose_mouse_pressed = false;
+        setImageCursor(Qt::OpenHandCursor);
         break;
-        case CalibrationMode_e::REFERENCE_POINT_1_AREA:
-        case CalibrationMode_e::REFERENCE_POINT_2_AREA:
-            set_reference_point_auto_search_area_mouse_pressed = false;
-            setImageCursor(Qt::ArrowCursor);
+    case CalibrationMode_e::REFERENCE_POINT_1_AREA:
+    case CalibrationMode_e::REFERENCE_POINT_2_AREA:
+        set_reference_point_auto_search_area_mouse_pressed = false;
+        setImageCursor(Qt::ArrowCursor);
         break;
-        default:
+    default:
         break;
     }
 }
@@ -1346,7 +1310,8 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event)
     {
         ReferencePointType_e reference_point_type;
 
-        switch (calibration_mode){
+        switch (calibration_mode)
+        {
         case CalibrationMode_e::REFERENCE_POINT_1_AREA:
         default:
             reference_point_type = ReferencePointType_e::REFERENCE_POINT_1;
@@ -1565,6 +1530,5 @@ MainWindow::MainWindow() :
 
 MainWindow::~MainWindow()
 {
-    delete scene;
     delete ui;
 }

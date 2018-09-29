@@ -30,8 +30,10 @@ CurrentResearchResultAndProtocolDialog::CurrentResearchResultAndProtocolDialog(c
     current_detail_protocol += "<b>Диаметр d7(2)</b>: " + QString::number(current_detail_dimensions.diameter_7_2_dimension) + "<br>";
     current_detail_protocol += "<b>Диаметр d8</b>: " + QString::number(current_detail_dimensions.diameter_8_dimension) + "<br>";
     current_detail_protocol += "<b>Диаметр d9</b>: " + QString::number(current_detail_dimensions.diameter_9_dimension) + "<br>";
-    current_detail_protocol += "<b>Ширина паза</b>: " + QString::number(current_detail_dimensions.groove_width_dimension) + "<br>";
-    current_detail_protocol += "<b>Глубина паза</b>: " + QString::number(current_detail_dimensions.groove_depth_dimension) + "<br>";
+    current_detail_protocol += "<b>Ширина паза у горла</b>: " + QString::number(current_detail_dimensions.groove_top_width_dimension) + "<br>";
+    current_detail_protocol += "<b>Ширина паза у дна</b>: " + QString::number(current_detail_dimensions.groove_bottom_width_dimension) + "<br>";
+    current_detail_protocol += "<b>Глубина паза у левой стенки</b>: " + QString::number(current_detail_dimensions.groove_left_depth_dimension) + "<br>";
+    current_detail_protocol += "<b>Глубина паза у правой стенки</b>: " + QString::number(current_detail_dimensions.groove_right_depth_dimension) + "<br>";
     ui->currentDetailProtocolLabel->setText(current_detail_protocol);
 
     QString ideal_detail_protocol;

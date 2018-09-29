@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Подтверждение результата исследования ракурса эталона</string>
+   <string>Действия после исследования ракурса эталона</string>
   </property>
   <widget class="QPushButton" name="passToNextAngleButton">
    <property name="geometry">

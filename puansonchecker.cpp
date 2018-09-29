@@ -25,10 +25,10 @@ const cv::Vec3b PuansonChecker::empty_contour_color_2 = cv::Vec3b(0, 0, 0);
 
 const cv::Vec3b PuansonChecker::inner_contour_color = cv::Vec3b(250, 100, 100);
 const cv::Vec3b PuansonChecker::outer_contour_color = cv::Vec3b(100, 250, 100);
-const cv::Vec3b PuansonChecker::etalon_contour_color = cv::Vec3b( 255, 255, 255 );
-const cv::Vec3b PuansonChecker::current_contour_color = cv::Vec3b( 50, 50, 250 );
+const cv::Vec3b PuansonChecker::etalon_contour_color = cv::Vec3b(255, 255, 255);
+const cv::Vec3b PuansonChecker::current_contour_color = cv::Vec3b(50, 50, 250);
 
-PuansonChecker *PuansonChecker::getInstance(const QApplication *app)
+PuansonChecker *PuansonChecker::getInstance(QApplication *app)
 {
     if(instance == Q_NULLPTR)
         instance = new PuansonChecker(app);
@@ -66,22 +66,21 @@ int PuansonChecker::loadImage(ImageType_e image_type, const QString &path, Puans
     return 0;
 }
 
-PuansonChecker::PuansonChecker(const QApplication *app)
+PuansonChecker::PuansonChecker(QApplication *app):
+    QObject(Q_NULLPTR),
+    application(const_cast<QApplication *>(app)),
+    general_settings(new GeneralSettings(CONFIGURATION_FILE)),
+    camera(new PhotoCamera()),
+    machine(new PuansonMachine(this)),
+    main_window(new MainWindow()),
+    current_image_window(new CurrentForm(this)),
+    contours_window(new ContoursForm(this))
 {
-    application = const_cast<QApplication *>(app);
-    general_settings = new GeneralSettings(CONFIGURATION_FILE);
-    camera = new PhotoCamera();
-    machine = new PuansonMachine();
-
     CannyThreshold1 = DEFAULT_CANNY_THRES_1;
     CannyThreshold2 = DEFAULT_CANNY_THRES_2;
 
     draw_etalon_contour_flag = false;
     //calculate_contour_on_rotation = false;
-
-    main_window = new MainWindow();
-    current_image_window = new CurrentForm(this);
-    contours_window = new ContoursForm(this);
 
     current_image_window->show();
     contours_window->show();
@@ -97,11 +96,8 @@ PuansonChecker::PuansonChecker(const QApplication *app)
     general_settings->getToleranceFields(ext_tolerance_mkm_array, int_tolerance_mkm_array);
     general_settings->getReferencePointDistanceMkm(reference_points_distance);
 
-//    for(int angle = 1; angle <= PUANSON_IMAGE_MAX_ANGLE; angle++)
-//    {
-        getEtalon().setToleranceFields(ext_tolerance_mkm_array[/*angle - 1*/0], int_tolerance_mkm_array[/*angle - 1*/0]);
-        getEtalon().setReferencePointDistanceMkm(reference_points_distance);
-//    }
+    getEtalon().setToleranceFields(ext_tolerance_mkm_array[0], int_tolerance_mkm_array[0]);
+    getEtalon().setReferencePointDistanceMkm(reference_points_distance);
 
     QMap<quint8, QPoint> detail_photo_shooting_positions = general_settings->getDetailPhotoShootingPositions();
     machine->setAnglePositions(detail_photo_shooting_positions);
@@ -116,24 +112,6 @@ PuansonChecker::~PuansonChecker()
 {
     if(load_image_future.isRunning())
         load_image_future.waitForFinished();
-
-    delete general_settings;
-    general_settings = Q_NULLPTR;
-
-    delete camera;
-    camera = Q_NULLPTR;
-
-    delete machine;
-    machine = Q_NULLPTR;
-
-    delete main_window;
-    main_window = Q_NULLPTR;
-
-    delete current_image_window;
-    current_image_window = Q_NULLPTR;
-
-    delete contours_window;
-    contours_window = Q_NULLPTR;
 }
 
 void PuansonChecker::updateContoursImage()
@@ -411,7 +389,9 @@ QPointF PuansonChecker::findReferencePoint(const ReferencePointType_e reference_
             point_color = gray_image_reference_point_area.at<uchar>(upper_level_y, x);
 
             if(x != 0 && point_color == 0/*black*/ && incoming_point == Point(0, 0))
+            {
                 incoming_point = Point(x, upper_level_y);
+            }
             else if(outcoming_point == Point(0, 0) && incoming_point != Point(0, 0) && point_color >= 200/*white*/)
             {
                 outcoming_point = Point(x, upper_level_y);
@@ -422,13 +402,9 @@ QPointF PuansonChecker::findReferencePoint(const ReferencePointType_e reference_
         upper_point = Point();
 
         if(incoming_point != Point(0, 0) && outcoming_point != Point(0, 0))
-        {
             upper_point = (incoming_point + outcoming_point) / 2;
-        }
         else if(!vertical_points.empty())
-        {
             upper_point.y = vertical_points.back().y + 5;
-        }
 
         if(!vertical_points.empty() &&
             ((incoming_point == Point(0, 0) && outcoming_point == Point(0, 0)) || (abs(vertical_points.back().x - upper_point.x) > 1)))
@@ -461,9 +437,7 @@ QPointF PuansonChecker::findReferencePoint(const ReferencePointType_e reference_
         }
 
         if(incoming_point != Point(0, 0) && outcoming_point != Point(0, 0))
-        {
             left_point = (incoming_point + outcoming_point) / 2;
-        }
         else
             left_point.x = horizontal_points.back().x + 5;
 
@@ -519,7 +493,7 @@ QPointF PuansonChecker::findReferencePoint(const ReferencePointType_e reference_
 
     //line(gray_image_reference_point_area, p1, p2, Scalar(250, 250, 250));
 
-    p1 = Point(- qRound(B_vertical / A_vertical), 0);
+    p1 = Point(-qRound(B_vertical / A_vertical), 0);
     p2 = Point(qRound(((gray_image_reference_point_area.rows - 1.0) - B_vertical) / A_vertical), qRound(gray_image_reference_point_area.rows - 1.0));
 
     //line(gray_image_reference_point_area, p1, p2, Scalar(250, 250, 250));
@@ -535,7 +509,7 @@ QPointF PuansonChecker::findReferencePoint(const ReferencePointType_e reference_
     // -----------------------
 }
 
-bool PuansonChecker::checkDetail(QVector<QPoint> &bad_points)
+bool PuansonChecker::checkDetail(QVector<QPoint> &bad_points) const
 {
     using namespace std;
 
@@ -809,25 +783,25 @@ void PuansonChecker::moveImages(const int &dx, const int &dy, const ImageWindow 
 
     if(main_window)
     {
-        if((!scroll_event || dynamic_cast<const QWidget *>(owner_window) != main_window) && isEtalonImageLoaded())
+        if((!scroll_event || dynamic_cast<const QWidget *>(owner_window) != main_window.data()) && isEtalonImageLoaded())
             main_window->moveImage(dx, dy);
-        else if(scroll_event && dynamic_cast<const QWidget *>(owner_window) == main_window)
+        else if(scroll_event && dynamic_cast<const QWidget *>(owner_window) == main_window.data())
             main_window->shiftImageCoords(dx, dy);
     }
 
     if(current_image_window)
     {
-        if((!scroll_event || dynamic_cast<const QWidget *>(owner_window) != current_image_window) && isCurrentImageLoaded())
+        if((!scroll_event || dynamic_cast<const QWidget *>(owner_window) != current_image_window.data()) && isCurrentImageLoaded())
             current_image_window->moveImage(dx, dy);
-        else if(scroll_event && dynamic_cast<const QWidget *>(owner_window) == current_image_window)
+        else if(scroll_event && dynamic_cast<const QWidget *>(owner_window) == current_image_window.data())
             current_image_window->shiftImageCoords(dx, dy);
     }
 
     if(contours_window)
     {
-        if((!scroll_event || dynamic_cast<const QWidget *>(owner_window) != contours_window) && (!getEtalon().isEmpty() && isCurrentImageLoaded()))
+        if((!scroll_event || dynamic_cast<const QWidget *>(owner_window) != contours_window.data()) && (!getEtalon().isEmpty() && isCurrentImageLoaded()))
             contours_window->moveImage(dx, dy);
-        else if(scroll_event && dynamic_cast<const QWidget *>(owner_window) == contours_window)
+        else if(scroll_event && dynamic_cast<const QWidget *>(owner_window) == contours_window.data())
             contours_window->shiftImageCoords(dx, dy);
     }
 }
@@ -1001,7 +975,7 @@ void PuansonChecker::cameraConnectionStatusChangedSlot(bool connected)
 #define GLARE_COLOR_RANGE_W 100
 #define NUMBER_OF_DETAIL_GLARES 2
 
-cv::Mat PuansonChecker::getContour(PuansonImage &puanson_image)
+cv::Mat PuansonChecker::getContour(PuansonImage &puanson_image) const
 {
     using namespace cv;
     using namespace std;
@@ -1024,7 +998,7 @@ public:
         Scalar inner_contour_color = Scalar(250, 100, 100);
         Scalar outer_contour_color = Scalar(100, 250, 100);
 
-        int thickness = CV_FILLED;
+        qint32 thickness = CV_FILLED;
 
         switch(image_type)
         {
@@ -1039,8 +1013,8 @@ public:
                 break;
         }
 
-        vector<vector<Point> > outer_contours = detail_contours;
-        vector<vector<Point> > inner_contours = detail_contours;
+        vector<vector<Point>> outer_contours = detail_contours;
+        vector<vector<Point>> inner_contours = detail_contours;
 
         // Внутренняя точка
         qint32 j; // Индекс
@@ -1203,37 +1177,38 @@ private:
         int y = 0;
 
         int number_of_glare_points = 0;
+        Point seedPoint;
 
         while(y != gray_roi.rows)
         {
-                uchar& c = gray_roi.at<uchar>(y, gray_roi.cols / 2);
-                Point seedPoint(gray_roi.cols / 2, y);
+            uchar& c = gray_roi.at<uchar>(y, gray_roi.cols / 2);
+            seedPoint = Point(gray_roi.cols / 2, y);
 
-                if(number_of_detected_glares == 0 && !detail_area_flag && c < DETAIL_COLOR_THRESHOLD)
-                    detail_area_flag = true;
-                else if(detail_area_flag && number_of_detected_glares == NUMBER_OF_DETAIL_GLARES)
-                    detail_area_flag = false;
+            if(number_of_detected_glares == 0 && !detail_area_flag && c < DETAIL_COLOR_THRESHOLD)
+                detail_area_flag = true;
+            else if(detail_area_flag && number_of_detected_glares == NUMBER_OF_DETAIL_GLARES)
+                detail_area_flag = false;
 
-                if(detail_area_flag && c > GLARE_COLOR_THRESHOLD - GLARE_COLOR_RANGE_W)
+            if(detail_area_flag && c > GLARE_COLOR_THRESHOLD - GLARE_COLOR_RANGE_W)
+            {
+                if(number_of_glare_points++)
                 {
-                    if(number_of_glare_points++)
+                    // Fill
+                    if(c > GLARE_COLOR_THRESHOLD)
                     {
-                        // Fill
-                        if(c > GLARE_COLOR_THRESHOLD)
-                        {
-                            floodFill(gray_roi, seedPoint, GLARE_COLOR_THRESHOLD - GLARE_COLOR_RANGE_W, Q_NULLPTR, Scalar(c - GLARE_COLOR_THRESHOLD + GLARE_COLOR_RANGE_W), Scalar(255 - c), FLOODFILL_FIXED_RANGE + 8);
+                        floodFill(gray_roi, seedPoint, GLARE_COLOR_THRESHOLD - GLARE_COLOR_RANGE_W, Q_NULLPTR, Scalar(c - GLARE_COLOR_THRESHOLD + GLARE_COLOR_RANGE_W), Scalar(255 - c), FLOODFILL_FIXED_RANGE + 8);
 
-                            number_of_glare_points = 0;
-                            number_of_detected_glares++;
-                        }
-
-                        //seedPoint.y += HORIZONTAL_FIELD_PX;
-
-                        //circle(puanson_image.getImage(), seedPoint, 50, Scalar(120, 150, 50));
+                        number_of_glare_points = 0;
+                        number_of_detected_glares++;
                     }
+
+                    //seedPoint.y += HORIZONTAL_FIELD_PX;
+
+                    //circle(puanson_image.getImage(), seedPoint, 50, Scalar(120, 150, 50));
                 }
-                else if(number_of_glare_points != 0)
-                    number_of_glare_points = 0;
+            }
+            else if(number_of_glare_points != 0)
+                number_of_glare_points = 0;
 
             y++;
         }
@@ -1245,9 +1220,7 @@ private:
     blur( gray_roi, gray_roi, Size(6,6) );
 
     if(!(CannyThreshold1 < CannyThreshold2))
-    {
         return image_contour;
-    }
 
     Canny( gray_roi, bin1, CannyThreshold1, CannyThreshold2, 3 );
 
@@ -1260,9 +1233,7 @@ private:
     detail_contours.resize(detail_contours0.size());
 
     for( size_t k = 0; k < detail_contours0.size(); k++ )
-    {
         approxPolyDP(Mat(detail_contours0[k]), detail_contours[k], 3, true);
-    }
 
     //Scalar inner_line_color(229, 43, 80);
 
@@ -1308,11 +1279,9 @@ private:
                 QVector<QLine> control_lines = segment.getControlLines(30, analysis_rect);
 
                 for(QLine control_line : control_lines)
-                {
                     line(image_contour, Point(control_line.x1(), control_line.y1()),
                          Point(control_line.x2(), control_line.y2()),
                          Scalar(180, 180, 180));
-                }
             }
         }
     }
@@ -1722,9 +1691,9 @@ private:
     if(puanson_image.isIdealContourSet())
     {
         const quint16 contours_per_thread = 10; // Количество контуров, обрабатываемых одним потоком
-        quint16 ext_tolerance_px, int_tolerance_px;
+        /*quint16 ext_tolerance_px, int_tolerance_px;
 
-        puanson_image.getToleranceFields(ext_tolerance_px, int_tolerance_px);
+        puanson_image.getToleranceFields(ext_tolerance_px, int_tolerance_px);*/
 
         //qDebug() << "this " << this << "before parallel_for_ " << QTime::currentTime();
 
@@ -1784,9 +1753,7 @@ void PuansonChecker::drawContoursImage()
     QVector<QPoint> bad_points;
 
     if(images_combined_by_reference_points)
-    {
         checkDetail(bad_points);
-    }
 
     QImage img(QImage(reinterpret_cast<const unsigned char*>(contours_image.data),
                   contours_image.cols, contours_image.rows,
@@ -1841,9 +1808,7 @@ void PuansonChecker::drawContoursImage()
     //contours_window->drawIdealContour(getEtalon().getIdealContourPath(), getEtalon().getIdealContourMeasurementsPath());
 
     if(images_combined_by_reference_points)
-    {
         contours_window->drawBadPoints(bad_points);
-    }
 }
 
 void PuansonChecker::shiftCurrentImage(const float dx, const float dy)
@@ -1993,10 +1958,8 @@ bool PuansonChecker::combineImagesByReferencePoints()
         /*QString combine_transformation_message;
         combine_transformation_message = "Изображения совмещены: сдвиг dx " + QString::number(shift_dx) + " dy " + QString::number(shift_dy) + "; угол поворота " + QString::number(rotation_angle_in_radians) +  " радиан.";
 
-        QMessageBox msgBox;
-        msgBox.setText(combine_transformation_message);
-        msgBox.setModal(false);
-        msgBox.show();*/
+        QMessageBox::warning(this, "Внимание!", combine_transformation_message);
+        */
 
         getCurrent().setImageTransform(current_puanson_image_transform);
 
@@ -2139,6 +2102,7 @@ bool PuansonChecker::findMeasurementContourPoints(const QRect &analysis_rect)
     function<bool (const int, const QLine &)> conditionLambda = [](const int current_x, const QLine &control_line) -> bool { return (current_x <= (control_line.x1() > control_line.x2() ? control_line.x1() : control_line.x2())) && (current_x >= (control_line.x1() < control_line.x2() ? control_line.x1() : control_line.x2())); };
     up_dir_flag = true;
 
+    // Измерение диаметров
     for(const QLine &measurement_line : measurement_lines)
     {
 //        if(0)
@@ -2274,14 +2238,12 @@ bool PuansonChecker::findMeasurementContourPoints(const QRect &analysis_rect)
                 }
                 else if(outer_point.isNull() && current_point_color == outer_contour_color)
                 {
-                      outer_point = QPoint(current_x, current_y);
+                    outer_point = QPoint(current_x, current_y);
                 }
                 else if(current_detail_point.isNull() && current_point_color == current_contour_color)
                 {
                     if(!outer_point.isNull() && inner_point.isNull())
-                    {
                         current_detail_point = QPoint(current_x, current_y);
-                    }
                 }
 
                 if(!inner_point.isNull() && !outer_point.isNull() && !current_detail_point.isNull())
@@ -2450,7 +2412,8 @@ void PuansonChecker::researchEtalonAngle(quint8 angle)
 
         etalon_research_creation_dialog.exec();
 
-        switch(etalon_research_creation_dialog.result()){
+        switch(etalon_research_creation_dialog.result())
+        {
         case QDialog::Accepted:
             break;
         case QDialog::Rejected:
@@ -2528,7 +2491,7 @@ void PuansonChecker::researchEtalonAngle(quint8 angle)
             {
                 qint32 reply;
 
-                QMessageBox question(main_window);
+                QMessageBox question(main_window.data());
                 question.setWindowTitle("Внимание");
                 question.setText("Невозможно поместить деталь в нужную позицию с помощью станка. Отменить исследование или продолжить в ручном режиме?");
                 question.addButton("Отменить", QMessageBox::RejectRole);
@@ -2537,13 +2500,13 @@ void PuansonChecker::researchEtalonAngle(quint8 angle)
 
                 if (reply == QMessageBox::ApplyRole)
                 {
-                    QMessageBox::information(main_window, "Информационное сообщение", "Поместите деталь в нужную позицию и нажмите \"OK\"");
+                    QMessageBox::information(main_window.data(), "Информационное сообщение", "Поместите деталь в нужную позицию и нажмите \"OK\"");
                     main_window->menuImageWorkEtalonShootAndLoadActionTriggered();
                 }
                 else
                 {
                     PuansonChecker::getInstance()->cancelEtalonResearch();
-                    QMessageBox::information(main_window, "Исследование завершено", "Результат исследования: \"Отменено пользователем\"");
+                    QMessageBox::information(main_window.data(), "Исследование завершено", "Результат исследования: \"Отменено пользователем\"");
                 }
             }
         }
@@ -2554,7 +2517,7 @@ void PuansonChecker::researchEtalonAngle(quint8 angle)
     case CLOSE_DIALOG_RESULT:
     default:
         PuansonChecker::getInstance()->cancelEtalonResearch();
-        QMessageBox::information(main_window, "Исследование завершено", "Результат исследования: \"Отменено пользователем\"");
+        QMessageBox::information(main_window.data(), "Исследование завершено", "Результат исследования: \"Отменено пользователем\"");
         break;
     }
 }

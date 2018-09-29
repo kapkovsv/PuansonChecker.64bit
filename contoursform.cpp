@@ -183,7 +183,6 @@ void ContoursForm::mouseDoubleClickEvent(const QPoint &p)
         {
             if(!measurement.current_detail_position_is_set)
             {
-
                 if(qSqrt((measurement.current_detail_point - p).x() * (measurement.current_detail_point - p).x() + (measurement.current_detail_point - p).y() * (measurement.current_detail_point - p).y()) <= MEASUREMENT_POINT_CONTOUR_RADIUS)
                 {
                     ui->graphicsView->scene()->removeItem(measurement.current_detail_point_item);
@@ -323,14 +322,12 @@ void ContoursForm::drawImage(const QImage &img)
         }
 #endif // Q_OS_WIN
 
-        QMessageBox msgBox;
-        msgBox.setText(memory_string);
-        msgBox.exec();
+        QMessageBox::warning(this, "Внимание", memory_string);
     }
 
     scene->addPixmap(pixmap);
     scene->setSceneRect(0, 0, img.width(), img.height());
-    ui->graphicsView->setScene(scene);
+    ui->graphicsView->setScene(scene.data());
 }
 
 void ContoursForm::etalonContourCheckBoxStateChanged(int state)
@@ -355,19 +352,13 @@ bool ContoursForm::combineImagesByReferencePointsButtonPressed()
 {
     if(!PuansonChecker::getInstance()->isEtalonImageLoaded())
     {
-        QMessageBox msgBox;
-        msgBox.setText("Изображение эталонной детали не загружено!");
-        msgBox.exec();
-
+        QMessageBox::warning(this, "Внимание!", "Изображение эталонной детали не загружено!");
         return false;
     }
 
     if(!PuansonChecker::getInstance()->isCurrentImageLoaded())
     {
-        QMessageBox msgBox;
-        msgBox.setText("Изображение текущей детали не загружено!");
-        msgBox.exec();
-
+        QMessageBox::warning(this, "Внимание!", "Изображение текущей детали не загружено!");
         return false;
     }
 
@@ -416,8 +407,5 @@ ContoursForm::ContoursForm(PuansonChecker *checker) :
 
 ContoursForm::~ContoursForm()
 {
-    scene->clear();
-
-    delete scene;
     delete ui;
 }

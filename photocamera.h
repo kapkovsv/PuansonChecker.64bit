@@ -17,7 +17,7 @@ class PhotoCamera : public QObject
 
 public:
     PhotoCamera();
-    ~PhotoCamera();
+    ~PhotoCamera() Q_DECL_OVERRIDE;
 
     bool Connect();
     bool Disconnect();

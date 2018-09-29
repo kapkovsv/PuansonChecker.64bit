@@ -44,9 +44,14 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
+    QTranslator qtTranslator;
+    qtTranslator.load("qt_ru",QLibraryInfo::location(QLibraryInfo::TranslationsPath));
+    a.installTranslator(&qtTranslator);
+
     //qInstallMessageHandler(customMessageOutput); // custom message handler for debugging
 
-    PuansonChecker::getInstance(&a);
+    QScopedPointer<PuansonChecker> puanson_checker(PuansonChecker::getInstance(&a));
+    Q_UNUSED(puanson_checker)
 
     return a.exec();
 }

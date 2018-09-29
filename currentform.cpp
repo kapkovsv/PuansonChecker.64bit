@@ -132,10 +132,10 @@ void CurrentFormGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouse
             {
                 case IMAGE_MOVE_EDITING:
                 {
-                    int x = mouseEvent->screenPos().x();
-                    int y = mouseEvent->screenPos().y();
-                    int dx = x - previousX;
-                    int dy = y - previousY;
+                    qint32 x = mouseEvent->screenPos().x();
+                    qint32 y = mouseEvent->screenPos().y();
+                    qint32 dx = x - previousX;
+                    qint32 dy = y - previousY;
 
                     PuansonChecker::getInstance()->shiftCurrentImage(dx, dy);
                     PuansonChecker::getInstance()->drawCurrentImage();
@@ -165,12 +165,12 @@ void CurrentFormGraphicsScene::wheelEvent(QGraphicsSceneWheelEvent *event)
 {
     if(window->getCalibrationMode() == CalibrationMode_e::NO_CALIBRATION && window->getImageMoveMode() == IMAGE_MOVE_EDITING)
     {
-        int delta = event->delta();
+        qint32 delta = event->delta();
 
         if(event->buttons() & Qt::RightButton)
             delta *= 10;
 
-        double rotate_angle = delta / 120.0 * 0.01;
+        qreal rotate_angle = delta / 120.0 * 0.01;
 
         PuansonChecker::getInstance()->rotateCurrentImage(rotate_angle);
         PuansonChecker::getInstance()->drawCurrentImage();
@@ -223,7 +223,7 @@ void CurrentForm::drawImage(const QImage &img)
     scene->setSceneRect(0, 0, img.width(), img.height());
     pixmap_item = scene->addPixmap(QPixmap::fromImage(img));
 
-    ui->graphicsView->setScene(scene);
+    ui->graphicsView->setScene(scene.data());
 }
 
 void CurrentForm::removeReferencePoints()
@@ -233,7 +233,7 @@ void CurrentForm::removeReferencePoints()
     if(ui->graphicsView->scene() == Q_NULLPTR)
         return;
 
-    int i = 0;
+    qint32 i = 0;
     while(i < ui->graphicsView->scene()->items().size() - 1)
     {
         current_item = ui->graphicsView->scene()->items()[i];
@@ -414,24 +414,16 @@ void CurrentForm::shotAndLoadButtonPressedSlot()
 void CurrentForm::setReferencePointsManuallyButtonPressedSlot()
 {
     if(PuansonChecker::getInstance()->isCurrentImageLoaded())
-    {
         setCalibrationMode(CalibrationMode_e::REFERENCE_POINT_1);
-    }
     else
-    {
-        QMessageBox msgBox;
-        msgBox.setText("Изображение текущей детали не загружено!");
-        msgBox.exec();
-    }
+        QMessageBox::warning(this, "Внимание!", "Изображение текущей детали не загружено!");
 }
 
 void CurrentForm::setReferencePointsAutomaticButtonPressedSlot()
 {
     if(!PuansonChecker::getInstance()->isCurrentImageLoaded())
     {
-        QMessageBox msgBox;
-        msgBox.setText("Изображение текущей детали не загружено!");
-        msgBox.exec();
+        QMessageBox::warning(this, "Внимание!", "Изображение текущей детали не загружено!");
 
         return;
     }
@@ -501,11 +493,10 @@ void CurrentForm::setCalibrationMode(CalibrationMode_e mode)
 
 CurrentForm::CurrentForm(PuansonChecker *checker) :
     QWidget(Q_NULLPTR),
-    ImageWindow(),
+    ImageWindow(new CurrentFormGraphicsScene(this)),
     ui(new Ui::CurrentForm),
     image_move_mode(IMAGE_MOVE_VIEWING)
 {
-    this->scene = new CurrentFormGraphicsScene(this);
     ui->setupUi(this);
 
     //ui->calculateContourOnRotationCheckBox->setCheckState(checker->getCalculateContourOnRotationFlag() ? Qt::Checked : Qt::Unchecked);

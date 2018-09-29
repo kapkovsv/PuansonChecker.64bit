@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Подтверждение результата исследования ракурса текущей детали</string>
+   <string>Действия после исследования ракурса текущей детали</string>
   </property>
   <widget class="QPushButton" name="researchThisAngleAgainButton">
    <property name="geometry">

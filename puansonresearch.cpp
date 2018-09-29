@@ -2,8 +2,13 @@
 #include "puansonchecker.h"
 
 PuansonResearch::PuansonResearch(const quint8 number_of_angles, const PuansonModel detail_puanson_model, const QDateTime date_time_of_creation, const QString &folder_path):
-number_of_angles(number_of_angles), detail_puanson_model(detail_puanson_model), date_time_of_creation(date_time_of_creation), folder_path(folder_path)
-{  }
+    number_of_angles(number_of_angles), detail_puanson_model(detail_puanson_model), date_time_of_creation(date_time_of_creation), folder_path(folder_path)
+{
+}
+
+PuansonResearch::~PuansonResearch()
+{
+}
 
 bool PuansonResearch::getAngleParameters(const quint8 angle, QPoint &ideal_contour_point_of_origin, qreal &ideal_contour_rotation_angle, QPair<QPoint, QPoint> &calibration_reference_points_position, qreal &calibration_ratio) const
 {
@@ -47,9 +52,7 @@ void PuansonResearch::updateCalibrationRatio()
     PuansonChecker::getInstance()->getGeneralSettings()->getReferencePointDistanceMkm(reference_points_distance_mkm);
 
     for(quint8 angle = 1; angle <= PUANSON_IMAGE_MAX_ANGLE; angle++)
-    {
         calibration_ratio_map[angle] = reference_points_distance_mkm / QLineF(calibration_reference_points_position_map[angle].first, calibration_reference_points_position_map[angle].second).length();
-    }
 }
 
 bool PuansonResearch::loadEtalonAngle(const quint8 angle)
@@ -192,7 +195,6 @@ bool PuansonResearch::loadEtalonAngle(const quint8 angle)
     if(loaded_parameters == ETALON_ANGLE_FULL_NUMBER_OF_PARAMETERS - 4)
     {
         setAngleParameters(angle, ideal_contour_point_of_origin, ideal_contour_rotation_angle, calibration_reference_points_position, reference_points_distance_mkm / QLineF(calibration_reference_points_position.first, calibration_reference_points_position.second).length());
-
         return true;
     }
     else

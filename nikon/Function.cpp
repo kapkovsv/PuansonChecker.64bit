@@ -156,21 +156,17 @@ BOOL Close_Module( LPRefObj pRefMod )
     BOOL bRet;
     LPRefObj pRefSrc, pRefItm, pRefDat;
     ULONG i, j, k;
-printf("in Close_Module line %d\n", __LINE__);
+
     if(pRefMod->pObject != NULL)
     {
-        printf("in Close_Module line %d\n", __LINE__);
         for(i = 0; i < pRefMod->ulChildCount; i ++)
         {
-            printf("in Close_Module line %d\n", __LINE__);
             pRefSrc = GetRefChildPtr_Index( pRefMod, i );
             for(j = 0; j < pRefSrc->ulChildCount; j ++)
             {
-                printf("in Close_Module line %d\n", __LINE__);
                 pRefItm = GetRefChildPtr_Index( pRefSrc, j );
                 for(k = 0; k < pRefItm->ulChildCount; k ++)
                 {
-                    printf("in Close_Module line %d\n", __LINE__);
                     pRefDat = GetRefChildPtr_Index( pRefItm, k );
                     bRet = ResetProc( pRefDat );
                     if ( bRet == false )	return false;

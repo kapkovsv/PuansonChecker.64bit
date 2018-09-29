@@ -19,6 +19,7 @@ class GeneralSettings
 
 public:
     GeneralSettings(const QString &config_file);
+    ~GeneralSettings();
 
     bool loadSettingsFromConfigFile();
     bool saveSettingsToConfigFile();

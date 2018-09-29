@@ -20,13 +20,6 @@ EtalonResearchCreationDialog::EtalonResearchCreationDialog(QWidget *parent) :
     connect(ui->buttonBox, SIGNAL(accepted()), SLOT(etalonResearchCreationDialogAccepted()));
     connect(ui->buttonBox, SIGNAL(rejected()), SLOT(reject()));
 
-    ui->puansonModelComboBox->setStyleSheet("QListView::item {                              \
-                                            border-bottom: 5px solid white; margin:3px; }  \
-                                            QListView::item:selected {                     \
-                                            border-bottom: 5px solid black; margin:3px;    \
-                                            color: black;                                  \
-                                           }");
-
     ui->creationDateTimeEdit->setDateTime(QDateTime::currentDateTime());
 
     PuansonModel current_etalon_model = PuansonChecker::getInstance()->getEtalon().getDetailPuansonModel();
@@ -92,7 +85,7 @@ void EtalonResearchCreationDialog::etalonResearchCreationDialogAccepted()
 
     if(etalon_research_folder_path.isEmpty())
     {
-        QMessageBox::information(this, "Внимание!", "Не указан путь с папкой для сохранения");
+        QMessageBox::warning(this, "Внимание!", "Не указан путь с папкой для сохранения");
         ui->saveFolderPathLineEdit->setFocus();
         return;
     }

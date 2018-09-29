@@ -108,7 +108,7 @@ LIBS += $$PWD\install\x64\mingw\bin\libopencv_calib3d330.dll
 LIBS += -lws2_32 -lwinmm -lwinusb -lsetupapi
 # -lodbc32 -lodbccp32
 
-#LIBS += C:\Users\1\Documents\PuansonChecker\NkdPTP.dll
+#LIBS += $$PWD\NkdPTP.dll
 }
 else: linux-g++ {
 INCLUDEPATH += /usr/local/include/

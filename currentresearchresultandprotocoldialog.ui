@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Исследование завершено</string>
+   <string>Исследование текущей детали завершено</string>
   </property>
   <widget class="QLabel" name="reseultLabel">
    <property name="geometry">

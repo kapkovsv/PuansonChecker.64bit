@@ -2,8 +2,8 @@
 #include <QGraphicsPixmapItem>
 #include <QScrollBar>
 
-ImageWindow::ImageWindow():
-    scene(new ImageGraphicsScene(this))
+ImageWindow::ImageWindow(QGraphicsScene *_scene):
+    scene(_scene == Q_NULLPTR ? new ImageGraphicsScene(this) : _scene)
 {
     image_x = 0;
     image_y = 0;
@@ -13,7 +13,6 @@ ImageWindow::ImageWindow():
 
 ImageWindow::~ImageWindow()
 {
-    delete scene;
 }
 
 ImageGraphicsScene::ImageGraphicsScene(ImageWindow *owner_window):
@@ -92,9 +91,7 @@ void ImageGraphicsScene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *mouseEv
     if(mouseEvent->buttons() & Qt::LeftButton)
     {
         if(window->getCalibrationMode() != CalibrationMode_e::NO_CALIBRATION)
-        {
             window->mouseDoubleClickEvent(mouseEvent->scenePos().toPoint());
-        }
     }
 }
 

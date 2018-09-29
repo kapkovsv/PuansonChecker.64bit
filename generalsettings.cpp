@@ -8,6 +8,10 @@ GeneralSettings::GeneralSettings(const QString &config_file)
     loadSettingsFromConfigFile();
 }
 
+GeneralSettings::~GeneralSettings()
+{
+}
+
 void GeneralSettings::resetSettings()
 {
     referencePointDistanceMkm = 0;

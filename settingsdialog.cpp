@@ -146,10 +146,7 @@ void SettingsDialog::SettingsDialogAccepted()
     {
         if(PuansonChecker::getInstance()->getEtalon().getCalibrationRatio() == 0.0)
         {
-            QMessageBox msgBox;
-            msgBox.setText("Не задано соотношение px / мкм для ракурса 1!");
-            msgBox.exec();
-
+            QMessageBox::warning(this, "Внимание!", "Не задано соотношение px / мкм для ракурса 1!");
             fail_accept = true;
         }
         else
@@ -168,10 +165,7 @@ void SettingsDialog::SettingsDialogAccepted()
     {
         if(PuansonChecker::getInstance()->getEtalon().getCalibrationRatio() == 0.0)
         {
-            QMessageBox msgBox;
-            msgBox.setText("Не задано соотношение px / мкм для ракурса 2!");
-            msgBox.exec();
-
+            QMessageBox::warning(this, "Внимание!", "Не задано соотношение px / мкм для ракурса 2!");
             fail_accept = true;
         }
         else
@@ -190,10 +184,7 @@ void SettingsDialog::SettingsDialogAccepted()
     {
         if(PuansonChecker::getInstance()->getEtalon().getCalibrationRatio() == 0.0)
         {
-            QMessageBox msgBox;
-            msgBox.setText("Не задано соотношение px / мкм для ракурса 3!");
-            msgBox.exec();
-
+            QMessageBox::warning(this, "Внимание!", "Не задано соотношение px / мкм для ракурса 3!");
             fail_accept = true;
         }
         else
@@ -212,10 +203,7 @@ void SettingsDialog::SettingsDialogAccepted()
     {
         if(PuansonChecker::getInstance()->getEtalon().getCalibrationRatio() == 0.0)
         {
-            QMessageBox msgBox;
-            msgBox.setText("Не задано соотношение px / мкм для ракурса 4!");
-            msgBox.exec();
-
+            QMessageBox::warning(this, "Внимание!", "Не задано соотношение px / мкм для ракурса 4!");
             fail_accept = true;
         }
         else
@@ -234,10 +222,7 @@ void SettingsDialog::SettingsDialogAccepted()
     {
         if(PuansonChecker::getInstance()->getEtalon().getCalibrationRatio() == 0.0)
         {
-            QMessageBox msgBox;
-            msgBox.setText("Не задано соотношение px / мкм для ракурса 5!");
-            msgBox.exec();
-
+            QMessageBox::warning(this, "Внимание!", "Не задано соотношение px / мкм для ракурса 5!");
             fail_accept = true;
         }
         else
@@ -256,10 +241,7 @@ void SettingsDialog::SettingsDialogAccepted()
     {
         if(PuansonChecker::getInstance()->getEtalon().getCalibrationRatio() == 0.0)
         {
-            QMessageBox msgBox;
-            msgBox.setText("Не задано соотношение px / мкм для ракурса 5!");
-            msgBox.exec();
-
+            QMessageBox::warning(this, "Внимание!", "Не задано соотношение px / мкм для ракурса 6!");
             fail_accept = true;
         }
         else

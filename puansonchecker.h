@@ -8,6 +8,7 @@
 #include <QtConcurrent>
 #include <QFuture>
 #include <QFutureWatcher>
+#include <QScopedPointer>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/utility.hpp>
@@ -67,8 +68,7 @@ class PuansonChecker: public QObject
     static const cv::Vec3b current_contour_color;
 
 private:
-    PuansonChecker(const QApplication *app);
-    ~PuansonChecker();
+    PuansonChecker(QApplication *app);
 
 public:
     PuansonChecker() = delete;
@@ -77,7 +77,8 @@ public:
     PuansonChecker& operator=(const PuansonChecker&) = delete;
     PuansonChecker& operator=(PuansonChecker&&) = delete;
 
-    static PuansonChecker *getInstance(const QApplication *app = Q_NULLPTR);
+    static PuansonChecker *getInstance(QApplication *app = Q_NULLPTR);
+    ~PuansonChecker() Q_DECL_OVERRIDE;
 
     void quit();
 
@@ -222,7 +223,17 @@ public:
         return etalon_puanson_image;
     }
 
+    const PuansonImage &getEtalon() const
+    {
+        return etalon_puanson_image;
+    }
+
     PuansonResearch &getLoadedResearch()
+    {
+        return loaded_research;
+    }
+
+    const PuansonResearch &getLoadedResearch() const
     {
         return loaded_research;
     }
@@ -283,7 +294,7 @@ public:
     bool detectDeviations(const Rect &analysis_area);
 
     QVector<QPointF> findReferencePoints(const PuansonImage &reference_point_image) const;
-    bool checkDetail(QVector<QPoint> &bad_points);
+    bool checkDetail(QVector<QPoint> &bad_points) const;
 
     const PuansonImage &getCurrent() const
     {
@@ -341,7 +352,7 @@ public:
     // Machine
     PuansonMachine *getMachine() const
     {
-        return machine;
+        return machine.data();
     }
     // ------
 
@@ -364,7 +375,7 @@ public:
     // -----------
 
     // Calculate image contour
-    cv::Mat getContour(PuansonImage &puanson_image);
+    cv::Mat getContour(PuansonImage &puanson_image) const;
     // -----------------------
 
     // Saving images
@@ -415,7 +426,7 @@ public:
 
     inline GeneralSettings *getGeneralSettings() const
     {
-        return general_settings;
+        return general_settings.data();
     }
 
     void setReferencePointSearchArea(const ReferencePointType_e reference_point_type, const QRect &area_rect);
@@ -436,32 +447,32 @@ signals:
     void cameraConnectionStatusChanged(bool connected);
 
 private:
-    static PuansonChecker *instance;
+    static PuansonChecker *instance;        // Указатель на единственный экземляр PuansonChecker
 
     static void drawReferencePointOnContoursImage(const QPaintDevice &paint_device, const QPoint &position, const Qt::GlobalColor color, const QString &text);
     static QPointF findReferencePoint(const ReferencePointType_e reference_point_type, const PuansonImage &reference_point_image);
 
     // Приложение
-    QApplication *application; // Указатель на единственный экземляр PuansonChecker
+    QApplication *application;
     // ----------
 
     // Общие настройки программы
-    GeneralSettings *general_settings;
+    QScopedPointer<GeneralSettings> general_settings;
     // -------------------------
 
-    // Все окна программы
-    MainWindow *main_window;
-    CurrentForm *current_image_window;
-    ContoursForm *contours_window;
-    // ------------------
-
     // Фотокамера
-    PhotoCamera *camera;
+    QScopedPointer<PhotoCamera> camera;
     // ----------
 
     // Станок
-    PuansonMachine *machine;
+    QScopedPointer<PuansonMachine> machine;
     // ------
+
+    // Все окна программы
+    QScopedPointer<MainWindow> main_window;
+    QScopedPointer<CurrentForm> current_image_window;
+    QScopedPointer<ContoursForm> contours_window;
+    // ------------------
 
     // Ракурс эталона
     PuansonImage etalon_puanson_image;      // Активный ракурс эталона

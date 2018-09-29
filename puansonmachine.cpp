@@ -92,6 +92,10 @@ PuansonMachine::PuansonMachine(QObject *parent) : QObject(parent)
         angles_position_map.insert(angle, QPoint());
 }
 
+PuansonMachine::~PuansonMachine()
+{
+}
+
 bool PuansonMachine::moveToAnglePosition(const quint8 new_angle)
 {
     if(new_angle >= 1 && new_angle <= NUMBER_OF_ETALON_ANGLES)
@@ -165,7 +169,6 @@ bool PuansonMachine::setAnglePosition(const quint8 angle, const QPoint &new_pos)
     if(angle >= 1 && angle <= NUMBER_OF_ETALON_ANGLES)
     {
         angles_position_map[angle] = new_pos;
-
         return true;
     }
 
